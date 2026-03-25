@@ -1,0 +1,5 @@
+{
+  "name": "TravelAgent OS",
+  "description": "A simplified TravelAgent OS featuring a secure login page and a robust notification system.",
+  "requestFramePermissions": []
+}
