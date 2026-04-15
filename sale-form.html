@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Venda — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    /* ── Sale Form ──────────────────────────────────────────── */
+    body { padding-bottom: 80px; }
+
+    /* Sticky top bar */
+    .sale-topbar {
+      position: sticky; top: 0; z-index: 200;
+      background: #1e1b4b; color: white;
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0 1.25rem; height: 56px; border-bottom: 2px solid #4f46e5;
+      flex-wrap: nowrap; overflow: hidden;
+    }
+    .sale-topbar-icon { font-size: 18px; color: #a5b4fc; flex-shrink: 0; }
+    .sale-topbar-title { font-size: 13px; font-weight: 900; letter-spacing: 0.04em; color: white; white-space: nowrap; flex-shrink: 0; }
+    .sale-topbar-client {
+      flex: 1; min-width: 120px; background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius);
+      color: white; padding: 0.4rem 0.75rem; font-size: 13px; font-weight: 600;
+      outline: none; transition: background 0.2s;
+    }
+    .sale-topbar-client::placeholder { color: rgba(255,255,255,0.4); }
+    .sale-topbar-client:focus { background: rgba(255,255,255,0.15); border-color: #818cf8; }
+    .sale-topbar-btn {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      color: white; border-radius: var(--radius); padding: 0.4rem 0.75rem;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      cursor: pointer; white-space: nowrap; transition: background 0.2s; flex-shrink: 0;
+    }
+    .sale-topbar-btn:hover { background: rgba(255,255,255,0.22); }
+    .sale-topbar-select {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: white; border-radius: var(--radius); padding: 0.4rem 0.75rem;
+      font-size: 12px; font-weight: 600; cursor: pointer; outline: none;
+      flex-shrink: 0; max-width: 180px;
+    }
+    .sale-topbar-select option { background: #1e1b4b; color: white; }
+
+    /* Accordion teal */
+    .acc-teal { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
+    .acc-teal-header {
+      background: #0d9488; color: white; padding: 0.75rem 1rem;
+      display: flex; align-items: center; gap: 0.625rem; cursor: pointer;
+      user-select: none;
+    }
+    .acc-teal-header:hover { background: #0f766e; }
+    .acc-teal-badge { background: rgba(255,255,255,0.25); border-radius: 0.35rem; padding: 0.1rem 0.5rem; font-size: 11px; font-weight: 800; }
+    .acc-teal-title { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; flex: 1; }
+    .acc-teal-actions { display: flex; gap: 4px; }
+    .acc-teal-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 0.35rem; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: background 0.15s; }
+    .acc-teal-btn:hover { background: rgba(255,255,255,0.35); }
+    .acc-teal-body { padding: 1.25rem; background: var(--card-bg); }
+
+    /* Accordion generic */
+    .acc-generic { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
+    .acc-generic-header {
+      background: var(--bg-page); padding: 0.875rem 1.25rem;
+      display: flex; align-items: center; gap: 0.625rem; cursor: pointer;
+      user-select: none; border-bottom: 1px solid transparent; transition: border-color 0.15s;
+    }
+    .acc-generic-header:hover { background: var(--primary-light); }
+    .acc-generic-header.open { border-bottom-color: var(--border-color); }
+    .acc-generic-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-heading); flex: 1; }
+    .acc-generic-body { padding: 1.25rem; background: var(--card-bg); }
+
+    /* Sub-section */
+    .sub-section { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
+    .sub-section-title { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Search with lupa */
+    .search-lupa { position: relative; }
+    .search-lupa input { padding-right: 2.5rem; }
+    .search-lupa .bi-search { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; cursor: pointer; transition: color 0.15s; }
+    .search-lupa .bi-search:hover { color: var(--primary); }
+
+    /* Pax card */
+    .pax-cards-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pax-card {
+      background: #0d9488; color: white; border-radius: var(--radius);
+      padding: 0.625rem 0.875rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
+    }
+    .pax-card:hover { background: #0f766e; }
+    .pax-card-name { font-size: 12px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pax-card-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 0.25rem; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .pax-card-btn:hover { background: rgba(255,255,255,0.35); }
+
+    /* Itinerary row */
+    .itin-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr auto; gap: 0.5rem; align-items: end; margin-bottom: 0.5rem; }
+    @media(max-width:900px) { .itin-row { grid-template-columns: 1fr 1fr; } }
+
+    /* Pricing field */
+    .pricing-row { display: flex; align-items: center; justify-content: space-between; padding: 0.375rem 0; border-bottom: 1px dashed var(--border-color); gap: 0.5rem; }
+    .pricing-row:last-child { border-bottom: none; }
+    .pricing-row-label { font-size: 12px; color: var(--text-body); font-weight: 500; flex: 1; white-space: nowrap; }
+    .pricing-row-prefix { font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+    .pricing-row-input { width: 110px; flex-shrink: 0; }
+    .pricing-total {
+      background: var(--primary); color: white; border-radius: var(--radius);
+      padding: 0.625rem 1rem; display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.75rem;
+    }
+    .pricing-total-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85; }
+    .pricing-total-value { font-size: 1.1rem; font-weight: 900; }
+    .result-box {
+      background: #0d9488; color: white; border-radius: var(--radius);
+      padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.75rem;
+    }
+
+    /* Warning notice */
+    .warning-notice { background: #fef3c7; border: 1px solid #f59e0b; border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 0.75rem; }
+
+    /* Sticky footer */
+    .sale-footer {
+      position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; z-index: 150;
+      background: #f1f5f9; border-top: 2px solid var(--border-color);
+      display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem;
+      flex-wrap: wrap;
+    }
+    @media(max-width:991px) { .sale-footer { left: 0; } }
+    .sale-footer-totals { display: flex; gap: 1.5rem; flex: 1; flex-wrap: wrap; }
+    .sale-footer-item { display: flex; flex-direction: column; }
+    .sale-footer-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); }
+    .sale-footer-value { font-size: 14px; font-weight: 900; color: var(--text-heading); }
+    .sale-footer-value.result { color: #10b981; }
+    .sale-footer-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* Add item button */
+    .btn-add-item {
+      width: 100%; border: 2px dashed var(--border-color); border-radius: var(--radius-lg);
+      padding: 1rem; text-align: center; cursor: pointer; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; transition: var(--transition); background: none;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-add-item:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    /* Nationality input */
+    .collapse-body { display: block; }
+    .collapse-body.hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html" class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"  class="os-nav-item active" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"  class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <main class="os-main">
+    <!-- Minimal topbar -->
+    <header class="os-topbar" style="display:none" id="os-topbar-hidden">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+    </header>
+
+    <!-- Sale Sticky Top Bar -->
+    <div class="sale-topbar" id="sale-topbar">
+      <button class="os-icon-btn" id="sidebar-open" style="color:rgba(255,255,255,0.7);border-color:transparent">
+        <i class="bi bi-list"></i>
+      </button>
+      <i class="bi bi-folder2-open sale-topbar-icon"></i>
+      <span class="sale-topbar-title" id="sale-topbar-title">Venda</span>
+      <span id="sale-status-badge" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:.4rem;padding:.2rem .5rem;font-size:10px;font-weight:800;letter-spacing:.08em;color:white;flex-shrink:0">COTAÇÃO</span>
+      <input type="text" class="sale-topbar-client" id="sale-client-input" placeholder="Nome do viajante / cliente principal">
+      <button class="sale-topbar-btn"><i class="bi bi-upload me-1"></i>Importar</button>
+      <button class="sale-topbar-btn" id="btn-pdf-gen"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+      <select class="sale-topbar-select" id="doc-type">
+        <option value="">Selecionar documento</option>
+        <option value="confirmacao">Confirmação de Reserva</option>
+        <option value="contrato">Contrato</option>
+        <option value="voucher">Voucher</option>
+        <option value="recibo">Recibo</option>
+        <option value="nao-seguro">Não Contratação de Seguro</option>
+        <option value="venda">Venda</option>
+      </select>
+      <select class="sale-topbar-select" id="topbar-currency">
+        <!-- currencies by JS -->
+      </select>
+    </div>
+
+    <div class="os-content">
+
+      <!-- Button to collapse all -->
+      <div class="d-flex justify-content-end mb-3">
+        <button class="btn-os-ghost" id="btn-collapse-all"><i class="bi bi-arrows-collapse me-1"></i>Recolher Tudo</button>
+      </div>
+
+      <!-- INFORMAÇÕES GERAIS -->
+      <div class="acc-generic mb-3" id="acc-info-gerais">
+        <div class="acc-generic-header open" data-acc="info-gerais">
+          <i class="bi bi-info-circle-fill text-primary"></i>
+          <span class="acc-generic-title">Informações Gerais</span>
+          <i class="bi bi-chevron-up" id="chevron-info-gerais"></i>
+        </div>
+        <div class="acc-generic-body" id="body-info-gerais">
+          <div class="row g-3">
+            <div class="col-12 col-md-3">
+              <label class="os-label">Data da Venda</label>
+              <input type="date" class="input-os" id="sale-date" value="">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="os-label">Grupo</label>
+              <div class="search-lupa">
+                <input type="text" class="input-os" id="sale-group" placeholder="Buscar grupo...">
+                <i class="bi bi-search"></i>
+              </div>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="os-label">Voucher Status</label>
+              <select class="input-os" id="sale-voucher">
+                <option value="">Não disponível</option>
+                <option value="disponivel">Disponível</option>
+                <option value="enviado">Enviado ao cliente</option>
+                <option value="confirmado">Confirmado</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="os-label">Consultor</label>
+              <div class="search-lupa">
+                <input type="text" class="input-os" id="sale-consultant" placeholder="Buscar consultor...">
+                <i class="bi bi-search"></i>
+              </div>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="os-label">Início da Viagem <span class="text-muted">(auto)</span></label>
+              <input type="date" class="input-os" id="sale-start" readonly style="opacity:.7">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="os-label">Fim da Viagem <span class="text-muted">(auto)</span></label>
+              <input type="date" class="input-os" id="sale-end" readonly style="opacity:.7">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="os-label">Responsável pela Compra</label>
+              <div class="search-lupa">
+                <input type="text" class="input-os" id="sale-buyer" placeholder="Buscar contato ou empresa...">
+                <i class="bi bi-search"></i>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn-os-ghost" data-bs-toggle="modal" data-bs-target="#modalResumoPax">
+              <i class="bi bi-people me-1"></i>Resumo Pax
+            </button>
+            <button class="btn-os-ghost" data-bs-toggle="modal" data-bs-target="#modalResumoProduto">
+              <i class="bi bi-box me-1"></i>Resumo Produto
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Container -->
+      <div id="items-container">
+        <!-- Item 1 rendered by JS -->
+      </div>
+
+      <!-- Add New Item -->
+      <button class="btn-add-item mb-3" id="btn-add-item">
+        <i class="bi bi-plus-circle-fill"></i> Novo Item de Venda
+      </button>
+
+      <!-- Observações -->
+      <div class="acc-generic mb-3">
+        <div class="acc-generic-header open" data-acc="obs">
+          <i class="bi bi-chat-text-fill text-primary"></i>
+          <span class="acc-generic-title">Observações</span>
+          <i class="bi bi-chevron-up" id="chevron-obs"></i>
+        </div>
+        <div class="acc-generic-body" id="body-obs">
+          <textarea class="input-os" rows="3" placeholder="Observações gerais da venda..."></textarea>
+        </div>
+      </div>
+
+      <!-- Condições gerais -->
+      <div class="acc-generic mb-3">
+        <div class="acc-generic-header" data-acc="cond">
+          <i class="bi bi-list-check text-primary"></i>
+          <span class="acc-generic-title">Condições Gerais</span>
+          <i class="bi bi-info-circle text-muted" title="Texto contratual" style="font-size:14px"></i>
+          <i class="bi bi-chevron-down ms-auto" id="chevron-cond"></i>
+        </div>
+        <div class="acc-generic-body hidden" id="body-cond">
+          <textarea class="input-os" rows="4" placeholder="Insira aqui as condições gerais e texto contratual..."></textarea>
+        </div>
+      </div>
+
+      <!-- Regras -->
+      <div class="acc-generic mb-3">
+        <div class="acc-generic-header" data-acc="regras">
+          <i class="bi bi-shield-fill text-primary"></i>
+          <span class="acc-generic-title">Regras</span>
+          <i class="bi bi-chevron-down ms-auto" id="chevron-regras"></i>
+        </div>
+        <div class="acc-generic-body hidden" id="body-regras">
+          <textarea class="input-os" rows="3" placeholder="Regras específicas desta venda..."></textarea>
+        </div>
+      </div>
+
+      <!-- Anexo -->
+      <div class="acc-generic mb-3">
+        <div class="acc-generic-header" data-acc="anexo">
+          <i class="bi bi-paperclip text-primary"></i>
+          <span class="acc-generic-title">Anexo</span>
+          <i class="bi bi-chevron-down ms-auto" id="chevron-anexo"></i>
+        </div>
+        <div class="acc-generic-body hidden" id="body-anexo">
+          <div class="border border-dashed rounded p-4 text-center text-muted" style="cursor:pointer;border-style:dashed!important">
+            <i class="bi bi-cloud-upload fs-3 d-block mb-2"></i>
+            <div style="font-size:13px;font-weight:600">Clique para selecionar ou arraste arquivos</div>
+            <div style="font-size:11px">PDF, JPG, PNG, XLSX até 10MB</div>
+            <input type="file" multiple style="display:none">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- os-content -->
+  </main>
+</div><!-- os-wrapper -->
+
+<!-- Sticky Footer -->
+<div class="sale-footer" id="sale-footer">
+  <div class="sale-footer-totals">
+    <div class="sale-footer-item">
+      <span class="sale-footer-label">Total Bruto</span>
+      <span class="sale-footer-value" id="footer-gross">R$ 0,00</span>
+    </div>
+    <div class="sale-footer-item">
+      <span class="sale-footer-label">Total Líquido</span>
+      <span class="sale-footer-value" id="footer-net">R$ 0,00</span>
+    </div>
+    <div class="sale-footer-item">
+      <span class="sale-footer-label">Taxas</span>
+      <span class="sale-footer-value" id="footer-fees">R$ 0,00</span>
+    </div>
+    <div class="sale-footer-item">
+      <span class="sale-footer-label">Resultado Total</span>
+      <span class="sale-footer-value result" id="footer-result">R$ 0,00</span>
+    </div>
+  </div>
+  <div class="sale-footer-actions">
+    <button class="btn-os-ghost" onclick="window.location.href='reservas.html'">
+      <i class="bi bi-arrow-left me-1"></i>Voltar
+    </button>
+    <button class="btn-os-ghost" id="btn-save-sale">
+      <i class="bi bi-floppy me-1"></i>Salvar Venda
+    </button>
+    <button class="btn-os" onclick="goPayment('supplier-customer')">
+      <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Fornecedor
+    </button>
+    <button class="btn-os" onclick="goPayment('finalize')" style="background:#0d9488">
+      <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Agência
+    </button>
+    <button class="btn-os" onclick="goPayment('supplier-agency')" style="background:#1e3a5f">
+      <i class="bi bi-arrow-left-right me-1"></i>Pgto Fornecedor ↔ Agência
+    </button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Modal Resumo Pax -->
+<div class="modal fade" id="modalResumoPax" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title"><i class="bi bi-people me-2"></i>Resumo da Venda por Pax</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-os-wrap">
+          <table class="table-os">
+            <thead>
+              <tr>
+                <th>Viajante</th>
+                <th>Valor Tarifa (BRL)</th>
+                <th>Valor Bruto (BRL)</th>
+                <th>Valor Líquido (BRL)</th>
+                <th>Resultado (BRL)</th>
+              </tr>
+            </thead>
+            <tbody id="pax-summary-body">
+              <tr><td colspan="5" class="text-center py-3 text-muted">Nenhum viajante cadastrado.</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--bg-page)">
+                <td class="fw-700">TOTAL</td>
+                <td class="fw-700" id="pax-sum-tarifa">R$ 0,00</td>
+                <td class="fw-700" id="pax-sum-bruto">R$ 0,00</td>
+                <td class="fw-700" id="pax-sum-liquido">R$ 0,00</td>
+                <td class="fw-700" id="pax-sum-result">R$ 0,00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Resumo Produto -->
+<div class="modal fade" id="modalResumoProduto" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title"><i class="bi bi-box me-2"></i>Resumo da Venda por Produto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-os-wrap">
+          <table class="table-os">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Valor Tarifa (BRL)</th>
+                <th>Valor Bruto (BRL)</th>
+                <th>Valor Líquido (BRL)</th>
+                <th>Resultado (BRL)</th>
+              </tr>
+            </thead>
+            <tbody id="prod-summary-body">
+              <tr><td colspan="5" class="text-center py-3 text-muted">Nenhum produto cadastrado.</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--bg-page)">
+                <td class="fw-700">TOTAL</td>
+                <td class="fw-700">R$ 0,00</td>
+                <td class="fw-700" id="prod-sum-bruto">R$ 0,00</td>
+                <td class="fw-700">R$ 0,00</td>
+                <td class="fw-700">R$ 0,00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ── Constants ─────────────────────────────────────────────── */
+const CURRENCIES = [
+  {code:'BRL',label:'REAL'},{code:'USD',label:'DÓLAR AMERICANO'},{code:'EUR',label:'EURO'},
+  {code:'GBP',label:'LIBRA ESTERLINA'},{code:'CAD',label:'DÓLAR CANADENSE'},{code:'AUD',label:'DÓLAR AUSTRALIANO'},
+  {code:'CHF',label:'FRANCO SUÍÇO'},{code:'JPY',label:'IENE JAPONÊS'},{code:'CNY',label:'YUAN CHINÊS'},
+  {code:'MXN',label:'PESO MEXICANO'},{code:'ARS',label:'PESO ARGENTINO'},{code:'CLP',label:'PESO CHILENO'},
+  {code:'COP',label:'PESO COLOMBIANO'},{code:'PEN',label:'SOL PERUANO'},{code:'UYU',label:'PESO URUGUAIO'},
+  {code:'BOB',label:'BOLIVIANO'},{code:'HKD',label:'DÓLAR DE HONG KONG'},{code:'SGD',label:'DÓLAR DE SINGAPURA'},
+  {code:'NOK',label:'COROA NORUEGUESA'},{code:'SEK',label:'COROA SUECA'},{code:'DKK',label:'COROA DINAMARQUESA'},
+  {code:'PLN',label:'ZLÓTI POLONÊS'},{code:'TRY',label:'LIRA TURCA'},{code:'ILS',label:'SHEKEL ISRAELENSE'},
+  {code:'SAR',label:'RIAL SAUDITA'},{code:'AED',label:'DIRHAM DOS EAU'},{code:'INR',label:'RUPIA INDIANA'},
+  {code:'MYR',label:'RINGGIT MALAIO'},{code:'THB',label:'BAHT TAILANDÊS'},{code:'PHP',label:'PESO FILIPINO'},
+  {code:'IDR',label:'RÚPIA INDONÉSIA'},{code:'KRW',label:'WON SUL-COREANO'},{code:'NZD',label:'DÓLAR NEOZELANDÊS'},
+  {code:'ZAR',label:'RAND SUL-AFRICANO'},{code:'EGP',label:'LIBRA EGÍPCIA'},{code:'CUP',label:'PESO CUBANO'},
+];
+
+const ITEM_TYPES = {
+  AIRFARE:'Passagem Aérea', HOSTING:'Diária de Hospedagem',
+  INSURANCE:'Seguro Viagem', PACKAGE:'Pacote Turístico',
+  CAR:'Aluguel de Veículo', BUS:'Rodoviário', TRAIN:'Trem',
+  CRUISE:'Cruzeiro', TOUR:'Passeio', TICKET:'Ingresso',
+  EDUCATIONAL:'Educacional', OTHER:'Outros',
+};
+
+const PAYMENT_METHODS = [
+  'Dinheiro','Pix','Cartão de Crédito','Cartão de Débito',
+  'Débito em Conta','Depósito','Cheque','Faturado',
+  'Boleto','Transferência','Pré Pagamento','Carta de Crédito'
+];
+
+const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const numVal   = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
+
+/* ── URL params ─────────────────────────────────────────────── */
+const params  = new URLSearchParams(location.search);
+const saleId  = params.get('id') ? +params.get('id') : null;  // ID numérico do banco
+let   saleCodigo = null;  // YYYYMMDD-0001
+let   clienteId  = null;  // ID do cliente selecionado
+let   vendaStatus = 'cotacao';
+
+/* ── Currencies ─────────────────────────────────────────────── */
+function populateCurrencySelects() {
+  const opts = CURRENCIES.map(c => `<option value="${c.code}">${c.label} (${c.code})</option>`).join('');
+  document.getElementById('topbar-currency').innerHTML = opts;
+  document.querySelectorAll('select.item-currency, select.supplier-currency').forEach(s => s.innerHTML = opts);
+}
+
+/* ── Today default ──────────────────────────────────────────── */
+document.getElementById('sale-date').value = new Date().toISOString().slice(0,10);
+
+/* ── Accordions ─────────────────────────────────────────────── */
+document.querySelectorAll('[data-acc]').forEach(header => {
+  header.addEventListener('click', () => {
+    const key     = header.dataset.acc;
+    const body    = document.getElementById(`body-${key}`);
+    const chevron = document.getElementById(`chevron-${key}`);
+    if (!body) return;
+    body.classList.toggle('hidden');
+    if (chevron) chevron.className = body.classList.contains('hidden') ? 'bi bi-chevron-down ms-auto' : 'bi bi-chevron-up';
+    if (!header.classList.contains('ms-auto')) header.classList.toggle('open', !body.classList.contains('hidden'));
+  });
+});
+
+document.getElementById('btn-collapse-all').addEventListener('click', () => {
+  document.querySelectorAll('.acc-teal-body, .acc-generic-body').forEach(b => b.classList.add('hidden'));
+  document.querySelectorAll('[class*="chevron-"]').forEach(c => { c.className = c.className.replace('chevron-up','chevron-down'); });
+});
+
+/* ── Item Builder ───────────────────────────────────────────── */
+let itemCount = 0;
+
+function currencyOptions() {
+  return CURRENCIES.map(c => `<option value="${c.code}">${c.label} (${c.code})</option>`).join('');
+}
+
+function buildItinRow(idx, leg) {
+  return `<div class="itin-row mb-2" id="itin-${idx}-${leg}">
+    <div><label class="os-label">Origem</label>
+      <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: GRU - São Paulo"><i class="bi bi-search"></i></div>
+    </div>
+    <div><label class="os-label">Destino</label>
+      <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: GIG - Rio de Janeiro"><i class="bi bi-search"></i></div>
+    </div>
+    <div><label class="os-label">Saída</label><input type="datetime-local" class="input-os"></div>
+    <div><label class="os-label">Chegada</label><input type="datetime-local" class="input-os"></div>
+    <div><label class="os-label">Voo</label><input type="text" class="input-os" placeholder="LA3045"></div>
+    <div style="display:flex;align-items:flex-end;gap:4px">
+      <button class="acc-teal-btn" style="background:#10b981;width:30px;height:38px" onclick="addItinRow(${idx})"><i class="bi bi-plus-lg"></i></button>
+      <button class="acc-teal-btn" style="background:#ef4444;width:30px;height:38px" onclick="removeItinRow('itin-${idx}-${leg}')"><i class="bi bi-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function addItinRow(itemIdx) {
+  const container = document.getElementById(`itin-container-${itemIdx}`);
+  const leg = Date.now();
+  container.insertAdjacentHTML('beforeend', buildItinRow(itemIdx, leg));
+}
+function removeItinRow(id) {
+  const el = document.getElementById(id);
+  if (el && el.parentElement.children.length > 1) el.remove();
+}
+
+function buildPaxSection(itemIdx, paxIdx) {
+  const id = `${itemIdx}-pax-${paxIdx}`;
+  return `<div class="row g-3" id="pax-form-${id}">
+    <div class="col-12"><div class="d-flex gap-2 align-items-center">
+      <div class="form-check me-2"><input class="form-check-input" type="radio" name="pax-type-${id}" id="pax-cadastrado-${id}" value="cadastrado" checked>
+        <label class="form-check-label" for="pax-cadastrado-${id}" style="font-size:12px">Contato cadastrado</label></div>
+      <div class="form-check"><input class="form-check-input" type="radio" name="pax-type-${id}" id="pax-outro-${id}" value="outro">
+        <label class="form-check-label" for="pax-outro-${id}" style="font-size:12px">Alterar para outro contato</label></div>
+    </div></div>
+    <div class="col-6 col-md-4"><label class="os-label">Nome</label>
+      <input type="text" class="input-os pax-name" data-item="${itemIdx}" data-pax="${paxIdx}" placeholder="Nome" oninput="updatePaxCard(${itemIdx},${paxIdx},this.value)"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Sobrenome</label>
+      <input type="text" class="input-os" placeholder="Sobrenome"></div>
+    <div class="col-12 col-md-4"><label class="os-label">Sexo</label>
+      <select class="input-os"><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+    <div class="col-6 col-md-3"><label class="os-label">Aniversário</label><input type="date" class="input-os"></div>
+    <div class="col-6 col-md-2"><label class="os-label">Idade</label><input type="number" class="input-os" placeholder="0"></div>
+    <div class="col-6 col-md-3"><label class="os-label">CPF</label><input type="text" class="input-os" placeholder="000.000.000-00"></div>
+    <div class="col-6 col-md-4"><label class="os-label">RG</label><input type="text" class="input-os" placeholder="RG"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Nacionalidade</label>
+      <div class="search-lupa"><input type="text" class="input-os" placeholder="Brasileira"><i class="bi bi-search"></i></div></div>
+    <div class="col-6 col-md-4"><label class="os-label">Estado Civil</label>
+      <select class="input-os"><option>Solteiro(a)</option><option>Casado(a)</option><option>União estável</option>
+      <option>Viúvo(a)</option><option>Divorciado(a)</option><option>Separado(a)</option></select></div>
+    <div class="col-12"><div class="os-section-divider">Passaporte</div></div>
+    <div class="col-6 col-md-4"><label class="os-label">No. Passaporte</label><input type="text" class="input-os" placeholder="BR123456"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Vencimento</label><input type="date" class="input-os"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Nacionalidade Passaporte</label>
+      <div class="search-lupa"><input type="text" class="input-os" placeholder="Brasileira"><i class="bi bi-search"></i></div></div>
+    <div class="col-12"><div class="os-section-divider">Contato</div></div>
+    <div class="col-6 col-md-4"><label class="os-label">E-mail</label><input type="email" class="input-os" placeholder="email@exemplo.com"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Telefone</label><input type="tel" class="input-os" placeholder="(11) 99999-9999"></div>
+    <div class="col-6 col-md-4"><label class="os-label">Origem</label>
+      <div class="search-lupa"><input type="text" class="input-os" placeholder="Cidade/origem"><i class="bi bi-search"></i></div></div>
+  </div>`;
+}
+
+function buildPaxPricingSection(itemIdx, paxIdx) {
+  const pfx = `p-${itemIdx}-${paxIdx}`;
+  return `<div class="sub-section mt-3" id="pax-pricing-${itemIdx}-${paxIdx}">
+    <div class="sub-section-title"><i class="bi bi-person-badge-fill text-primary"></i>Taxas, Tarifas e Valores do Passageiro</div>
+    <div class="warning-notice"><i class="bi bi-exclamation-triangle-fill me-1"></i>A Venda não poderá ser alterada caso exista algum Título criado.</div>
+    <div class="row g-2 mb-2">
+      <div class="col-6 col-md-3"><label class="os-label">Moeda</label>
+        <select class="input-os item-currency" onchange="onCurrencyChange(this,'${pfx}')">
+          ${currencyOptions()}
+        </select></div>
+      <div class="col-6 col-md-3"><label class="os-label">Câmbio (1 <span id="${pfx}-cur-label">BRL</span> = X BRL)</label>
+        <input type="number" class="input-os" id="${pfx}-exchange" value="1" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+    </div>
+    <div class="row g-2">
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-label">Tarifa</span>
+          <input type="number" id="${pfx}-tarifa" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-label">Taxa de Embarque</span>
+          <input type="number" id="${pfx}-embarque" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-label">Taxa Fornecedor</span>
+          <input type="number" id="${pfx}-taxaforn" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-label">Tarifa Cheia</span>
+          <input type="number" id="${pfx}-tarifacheia" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Taxa Bagagem</span>
+          <input type="number" id="${pfx}-bagagem" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Res. Assento</span>
+          <input type="number" id="${pfx}-assento" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">RAV</span>
+          <input type="number" id="${pfx}-rav" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">DU</span>
+          <input type="number" id="${pfx}-du" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Desconto</span>
+          <input type="number" id="${pfx}-desconto" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Taxas Adic. (Fee)</span>
+          <input type="number" id="${pfx}-feeadic" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Web Check-in</span>
+          <input type="number" id="${pfx}-webcheckin" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcPaxTotal('${pfx}')"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="os-label">Tipo Passageiro</label>
+        <select class="input-os mb-2">
+          <option value="ADT">ADT = Adulto</option><option value="CHD">CHD = Criança</option>
+          <option value="INF">INF = Bebê de colo</option><option value="INS">INS</option><option value="UNN">UNN</option>
+        </select>
+        <label class="os-label">No. do Bilhete</label>
+        <input type="text" class="input-os" placeholder="000-0000000000">
+      </div>
+    </div>
+    <div class="pricing-total">
+      <span class="pricing-total-label">Total Bruto do Passageiro (BRL)</span>
+      <span class="pricing-total-value" id="${pfx}-gross-total">R$ 0,00</span>
+    </div>
+  </div>`;
+}
+
+function buildSupplierPricingSection(itemIdx) {
+  const pfx = `s-${itemIdx}`;
+  return `<div class="sub-section mt-3" id="supplier-pricing-${itemIdx}">
+    <div class="sub-section-title"><i class="bi bi-building-fill text-warning"></i>Taxas, Tarifas e Valores do Fornecedor</div>
+    <div class="warning-notice"><i class="bi bi-exclamation-triangle-fill me-1"></i>A Venda não poderá ser alterada caso exista algum título criado.</div>
+    <div class="row g-2 mb-2">
+      <div class="col-6 col-md-3"><label class="os-label">Moeda Fornecedor</label>
+        <select class="input-os supplier-currency" onchange="onSupplierCurrencyChange(this,'${pfx}')">
+          ${currencyOptions()}
+        </select></div>
+      <div class="col-6 col-md-3"><label class="os-label">Câmbio (1 <span id="${pfx}-cur-label">BRL</span> = X BRL)</label>
+        <input type="number" class="input-os" id="${pfx}-exchange" value="1" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+    </div>
+    <div class="row g-2">
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-label">Tarifa</span>
+          <input type="number" id="${pfx}-tarifa" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-label">Taxa Embarque</span>
+          <input type="number" id="${pfx}-embarque" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Taxa Bagagem</span>
+          <input type="number" id="${pfx}-bagagem" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-label">Desconto (%)</span>
+          <input type="number" id="${pfx}-desc-pct" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Valor Desconto</span>
+          <input type="number" id="${pfx}-desc-val" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+        <div class="pricing-row"><span class="pricing-row-label">Comissão (%)</span>
+          <input type="number" id="${pfx}-com-pct" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Valor Comissão</span>
+          <input type="number" id="${pfx}-com-val" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pricing-row"><span class="pricing-row-label">Incentivo (%)</span>
+          <input type="number" id="${pfx}-inc-pct" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Valor Incentivo</span>
+          <input type="number" id="${pfx}-inc-val" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Outras Taxas</span>
+          <input type="number" id="${pfx}-outras" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(+)</span><span class="pricing-row-label">Taxa Cartão</span>
+          <input type="number" id="${pfx}-cartao" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="os-section-divider mb-2">Comissionamento Consultor</div>
+        <div class="pricing-row"><span class="pricing-row-label">Comissão Consultor (%)</span>
+          <input type="number" id="${pfx}-cons-pct" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Vlr. Comis. Consultor</span>
+          <input type="number" id="${pfx}-cons-val" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+        <button class="btn-os-ghost mt-1" style="font-size:11px" onclick="applyDefaultComm('${pfx}')"><i class="bi bi-magic me-1"></i>Aplicar Padrão</button>
+        <div class="os-section-divider mt-2 mb-2">Comissionamento Matriz</div>
+        <div class="pricing-row"><span class="pricing-row-label">Comissão Matriz (%)</span>
+          <input type="number" id="${pfx}-matriz-pct" class="input-os pricing-row-input" value="0" step="0.01" oninput="calcSupplierResult('${pfx}')"></div>
+        <div class="pricing-row"><span class="pricing-row-prefix">(-)</span><span class="pricing-row-label">Vlr. Comis. Matriz</span>
+          <input type="number" id="${pfx}-matriz-val" class="input-os pricing-row-input" value="0" step="0.01" readonly style="opacity:.7"></div>
+      </div>
+    </div>
+    <div class="result-box">
+      <span class="pricing-total-label">Resultado da Venda (BRL)</span>
+      <span class="pricing-total-value" id="${pfx}-result">R$ 0,00</span>
+    </div>
+  </div>`;
+}
+
+function buildAirfareFields(itemIdx) {
+  return `<div id="airfare-fields-${itemIdx}">
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: TREND VIAGENS" required><i class="bi bi-search"></i></div></div>
+      <div class="col-12 col-md-4"><label class="os-label">Companhia Aérea / Fornecedor de Serviço</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: LATAM, GOL..."><i class="bi bi-search"></i></div></div>
+      <div class="col-6 col-md-2"><label class="os-label">Localizador</label>
+        <input type="text" class="input-os" placeholder="ABC123"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Data de Emissão</label>
+        <input type="date" class="input-os"></div>
+      <div class="col-12"><label class="os-label">Destino</label>
+        <div class="d-flex gap-3">
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" id="nacional-${itemIdx}" value="nacional" checked>
+            <label class="form-check-label" for="nacional-${itemIdx}" style="font-size:13px">Nacional</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" id="intl-${itemIdx}" value="internacional">
+            <label class="form-check-label" for="intl-${itemIdx}" style="font-size:13px">Internacional</label></div>
+        </div></div>
+    </div>
+    <!-- Itinerário -->
+    <div class="sub-section">
+      <div class="sub-section-title"><i class="bi bi-map-fill text-primary"></i>Itinerário</div>
+      <div id="itin-container-${itemIdx}">${buildItinRow(itemIdx, 0)}</div>
+    </div>
+    <!-- Viajantes -->
+    <div class="sub-section">
+      <div class="sub-section-title"><i class="bi bi-people-fill text-primary"></i>Viajantes</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-3">
+          <div class="pax-cards-list" id="pax-cards-${itemIdx}">
+            <!-- pax cards rendered here -->
+          </div>
+          <button class="btn-add-item mt-2" style="padding:.625rem" onclick="addPax(${itemIdx})">
+            <i class="bi bi-plus-circle"></i> Adicionar Viajante
+          </button>
+        </div>
+        <div class="col-12 col-md-9">
+          <div id="pax-forms-${itemIdx}"></div>
+        </div>
+      </div>
+    </div>
+    ${buildSupplierPricingSection(itemIdx)}
+    <div class="row g-3 mt-2">
+      <div class="col-12"><label class="os-label">Descrição dos Serviços</label>
+        <textarea class="input-os" rows="2" placeholder="Descreva os serviços inclusos..."></textarea></div>
+      <div class="col-12"><label class="os-label">Observações</label>
+        <textarea class="input-os" rows="2" placeholder="Observações específicas deste item..."></textarea></div>
+    </div>
+  </div>`;
+}
+
+function buildHostingFields(itemIdx) {
+  return `<div id="hosting-fields-${itemIdx}">
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor do hotel"><i class="bi bi-search"></i></div></div>
+      <div class="col-12 col-md-4"><label class="os-label">Hotel / Fornecedor de Serviço</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Nome do hotel"><i class="bi bi-search"></i></div></div>
+      <div class="col-6 col-md-2"><label class="os-label">Check-in</label><input type="datetime-local" class="input-os"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Check-out</label><input type="datetime-local" class="input-os"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Reserva</label><input type="text" class="input-os" placeholder="No. reserva"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Data Emissão</label><input type="date" class="input-os"></div>
+      <div class="col-6 col-md-3"><label class="os-label">Acomodação</label>
+        <select class="input-os"><option>Single</option><option>Double</option><option>Triple</option><option>Suite</option><option>Apart</option></select></div>
+      <div class="col-6 col-md-3"><label class="os-label">Categoria</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: Superior, Deluxe"><i class="bi bi-search"></i></div></div>
+      <div class="col-6 col-md-3"><label class="os-label">Regime</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: Café da manhã incluso"><i class="bi bi-search"></i></div></div>
+      <div class="col-6 col-md-3"><label class="os-label">Serviços Inclusos</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Serviços inclusos"><i class="bi bi-search"></i></div></div>
+      <div class="col-12"><label class="os-label">Destino</label>
+        <div class="d-flex gap-3">
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" value="nacional" checked>
+            <label class="form-check-label" style="font-size:13px">Nacional</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" value="internacional">
+            <label class="form-check-label" style="font-size:13px">Internacional</label></div>
+        </div></div>
+    </div>
+    ${buildSupplierPricingSection(itemIdx)}
+  </div>`;
+}
+
+function buildGenericFields(itemIdx, typeLabel) {
+  return `<div id="generic-fields-${itemIdx}">
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor"><i class="bi bi-search"></i></div></div>
+      <div class="col-12 col-md-4"><label class="os-label">Fornecedor de Serviço</label>
+        <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor de serviço"><i class="bi bi-search"></i></div></div>
+      <div class="col-6 col-md-2"><label class="os-label">Reserva / Referência</label>
+        <input type="text" class="input-os" placeholder="Código"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Emissão</label><input type="date" class="input-os"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Início</label><input type="date" class="input-os"></div>
+      <div class="col-6 col-md-2"><label class="os-label">Fim</label><input type="date" class="input-os"></div>
+      <div class="col-12 col-md-6"><label class="os-label">Descrição</label>
+        <input type="text" class="input-os" placeholder="Descrição do serviço"></div>
+      <div class="col-12"><label class="os-label">Destino</label>
+        <div class="d-flex gap-3">
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" value="nacional" checked>
+            <label class="form-check-label" style="font-size:13px">Nacional</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="dest-${itemIdx}" value="internacional">
+            <label class="form-check-label" style="font-size:13px">Internacional</label></div>
+        </div></div>
+    </div>
+    ${buildSupplierPricingSection(itemIdx)}
+  </div>`;
+}
+
+function buildItemAccordion(itemIdx) {
+  return `<div class="acc-teal" id="item-acc-${itemIdx}">
+    <div class="acc-teal-header" data-item-idx="${itemIdx}">
+      <span class="acc-teal-badge">${itemIdx}</span>
+      <span class="acc-teal-title" id="item-title-${itemIdx}">NOVO ITEM DE VENDA</span>
+      <div class="acc-teal-actions">
+        <button class="acc-teal-btn" title="Recolher" onclick="toggleItemAcc(${itemIdx}, event)"><i class="bi bi-chevron-up" id="item-chevron-${itemIdx}"></i></button>
+        <button class="acc-teal-btn" title="Duplicar item" onclick="duplicateItem(${itemIdx}, event)"><i class="bi bi-copy"></i></button>
+        <button class="acc-teal-btn" style="background:#ef4444" title="Remover item" onclick="removeItem(${itemIdx}, event)"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="acc-teal-body" id="item-body-${itemIdx}">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="os-label">Selecione o item de venda</label>
+          <select class="input-os" id="item-type-${itemIdx}" onchange="onItemTypeChange(${itemIdx})">
+            <option value="">— Selecione o tipo —</option>
+            <option value="AIRFARE">Passagem Aérea</option>
+            <option value="HOSTING">Diária de Hospedagem</option>
+            <option value="INSURANCE">Seguro Viagem</option>
+            <option value="PACKAGE">Pacote Turístico</option>
+            <option value="CAR">Aluguel de Veículo</option>
+            <option value="BUS">Rodoviário</option>
+            <option value="TRAIN">Trem</option>
+            <option value="CRUISE">Cruzeiro</option>
+            <option value="TOUR">Passeio</option>
+            <option value="TICKET">Ingresso</option>
+            <option value="EDUCATIONAL">Educacional</option>
+            <option value="OTHER">Outros</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="os-label">Orçamento do Atendimento relacionado</label>
+          <div class="search-lupa">
+            <input type="text" class="input-os" placeholder="Buscar atendimento...">
+            <i class="bi bi-search"></i>
+          </div>
+        </div>
+      </div>
+      <div id="item-fields-${itemIdx}">
+        <!-- Fields rendered on type change -->
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Pax management ─────────────────────────────────────────── */
+const paxState = {}; // itemIdx → [{id, name}]
+
+function addPax(itemIdx) {
+  if (!paxState[itemIdx]) paxState[itemIdx] = [];
+  const paxIdx = Date.now();
+  paxState[itemIdx].push({ id: paxIdx, name: 'Novo Viajante' });
+  renderPax(itemIdx);
+}
+
+function removePax(itemIdx, paxId) {
+  paxState[itemIdx] = paxState[itemIdx].filter(p => p.id !== paxId);
+  renderPax(itemIdx);
+}
+
+function updatePaxCard(itemIdx, paxId, val) {
+  if (!paxState[itemIdx]) return;
+  const pax = paxState[itemIdx].find(p => p.id === paxId);
+  if (pax) pax.name = val || 'Novo Viajante';
+  const card = document.querySelector(`#pax-cards-${itemIdx} [data-pax-id="${paxId}"] .pax-card-name`);
+  if (card) card.textContent = pax ? pax.name : val;
+}
+
+function renderPax(itemIdx) {
+  const cardsEl  = document.getElementById(`pax-cards-${itemIdx}`);
+  const formsEl  = document.getElementById(`pax-forms-${itemIdx}`);
+  if (!cardsEl || !formsEl) return;
+  const paxList  = paxState[itemIdx] || [];
+  cardsEl.innerHTML = paxList.map(p => `
+    <div class="pax-card" data-pax-id="${p.id}" onclick="selectPax(${itemIdx},${p.id})">
+      <span class="pax-card-name">${p.name}</span>
+      <button class="pax-card-btn" title="Documentos"><i class="bi bi-file-text"></i></button>
+      <button class="pax-card-btn" title="Custos Pax"><i class="bi bi-currency-dollar"></i></button>
+      <button class="pax-card-btn" style="background:rgba(239,68,68,0.3)" onclick="removePax(${itemIdx},${p.id});event.stopPropagation()"><i class="bi bi-trash"></i></button>
+    </div>`).join('');
+
+  formsEl.innerHTML = paxList.map(p => `
+    <div id="pax-form-wrapper-${itemIdx}-${p.id}">
+      <div class="sub-section mb-2">
+        <div class="sub-section-title"><i class="bi bi-person-fill text-primary"></i>Dados do Viajante — ${p.name}</div>
+        ${buildPaxSection(itemIdx, p.id)}
+      </div>
+      ${buildPaxPricingSection(itemIdx, p.id)}
+    </div>`).join('');
+}
+
+function selectPax(itemIdx, paxId) {
+  // scroll to pax form
+  const el = document.getElementById(`pax-form-wrapper-${itemIdx}-${paxId}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Item type change ───────────────────────────────────────── */
+function onItemTypeChange(itemIdx) {
+  const type   = document.getElementById(`item-type-${itemIdx}`).value;
+  const fields = document.getElementById(`item-fields-${itemIdx}`);
+  const title  = document.getElementById(`item-title-${itemIdx}`);
+  const LABELS = { AIRFARE:'Passagem Aérea', HOSTING:'Diária de Hospedagem', INSURANCE:'Seguro Viagem',
+    PACKAGE:'Pacote Turístico', CAR:'Aluguel de Veículo', BUS:'Rodoviário', TRAIN:'Trem',
+    CRUISE:'Cruzeiro', TOUR:'Passeio', TICKET:'Ingresso', EDUCATIONAL:'Educacional', OTHER:'Outros' };
+  if (title) title.textContent = LABELS[type] || 'NOVO ITEM DE VENDA';
+  if (!type) { fields.innerHTML = ''; return; }
+  if (type === 'AIRFARE') {
+    fields.innerHTML = buildAirfareFields(itemIdx);
+    // init first pax
+    if (!paxState[itemIdx] || !paxState[itemIdx].length) addPax(itemIdx);
+    else renderPax(itemIdx);
+  } else if (type === 'HOSTING') {
+    fields.innerHTML = buildHostingFields(itemIdx);
+  } else {
+    fields.innerHTML = buildGenericFields(itemIdx, LABELS[type]);
+  }
+  populateCurrencySelects();
+}
+
+function toggleItemAcc(itemIdx, e) {
+  e.stopPropagation();
+  const body    = document.getElementById(`item-body-${itemIdx}`);
+  const chevron = document.getElementById(`item-chevron-${itemIdx}`);
+  body.classList.toggle('hidden');
+  chevron.className = body.classList.contains('hidden') ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+}
+
+function removeItem(itemIdx, e) {
+  e.stopPropagation();
+  const el = document.getElementById(`item-acc-${itemIdx}`);
+  if (el) el.remove();
+  updateFooterTotals();
+}
+
+function duplicateItem(itemIdx, e) {
+  e.stopPropagation();
+  itemCount++;
+  const container = document.getElementById('items-container');
+  container.insertAdjacentHTML('beforeend', buildItemAccordion(itemCount));
+  if(typeof Notify !== 'undefined') Notify.info('Item duplicado. Configure o novo item.');
+}
+
+/* ── Add item ───────────────────────────────────────────────── */
+document.getElementById('btn-add-item').addEventListener('click', () => {
+  itemCount++;
+  const container = document.getElementById('items-container');
+  container.insertAdjacentHTML('beforeend', buildItemAccordion(itemCount));
+});
+
+/* ── Calculations ───────────────────────────────────────────── */
+function calcPaxTotal(pfx) {
+  const tarifa    = numVal(`${pfx}-tarifa`);
+  const embarque  = numVal(`${pfx}-embarque`);
+  const taxaforn  = numVal(`${pfx}-taxaforn`);
+  const bagagem   = numVal(`${pfx}-bagagem`);
+  const assento   = numVal(`${pfx}-assento`);
+  const rav       = numVal(`${pfx}-rav`);
+  const du        = numVal(`${pfx}-du`);
+  const desconto  = numVal(`${pfx}-desconto`);
+  const feeadic   = numVal(`${pfx}-feeadic`);
+  const webcheckin= numVal(`${pfx}-webcheckin`);
+  const gross = tarifa + embarque + taxaforn + bagagem + assento + rav + du - desconto + feeadic + webcheckin;
+  const el = document.getElementById(`${pfx}-gross-total`);
+  if (el) el.textContent = fmtMoney(Math.max(0, gross));
+  updateFooterTotals();
+}
+
+function calcSupplierResult(pfx) {
+  const tarifa   = numVal(`${pfx}-tarifa`);
+  const embarque = numVal(`${pfx}-embarque`);
+  const bagagem  = numVal(`${pfx}-bagagem`);
+  const base     = tarifa + embarque + bagagem;
+
+  const descPct  = numVal(`${pfx}-desc-pct`);
+  const descVal  = base * descPct / 100;
+  const comPct   = numVal(`${pfx}-com-pct`);
+  const comVal   = base * comPct / 100;
+  const incPct   = numVal(`${pfx}-inc-pct`);
+  const incVal   = base * incPct / 100;
+  const outras   = numVal(`${pfx}-outras`);
+  const cartao   = numVal(`${pfx}-cartao`);
+  const consPct  = numVal(`${pfx}-cons-pct`);
+  const consVal  = base * consPct / 100;
+  const matPct   = numVal(`${pfx}-matriz-pct`);
+  const matVal   = base * matPct / 100;
+
+  const setVal = (id, v) => { const e = document.getElementById(id); if(e) e.value = v.toFixed(2); };
+  setVal(`${pfx}-desc-val`, descVal);
+  setVal(`${pfx}-com-val`,  comVal);
+  setVal(`${pfx}-inc-val`,  incVal);
+  setVal(`${pfx}-cons-val`, consVal);
+  setVal(`${pfx}-matriz-val`, matVal);
+
+  const totalPaid = base - descVal - comVal - incVal + outras + cartao;
+  const result    = comVal + incVal - consVal - matVal;
+  const el = document.getElementById(`${pfx}-result`);
+  if (el) el.textContent = fmtMoney(result);
+  updateFooterTotals();
+}
+
+function onCurrencyChange(sel, pfx) {
+  const label = document.getElementById(`${pfx}-cur-label`);
+  if (label) label.textContent = sel.value;
+  const excEl = document.getElementById(`${pfx}-exchange`);
+  if (excEl) excEl.value = sel.value === 'BRL' ? '1' : '';
+}
+
+function onSupplierCurrencyChange(sel, pfx) {
+  const label = document.getElementById(`${pfx}-cur-label`);
+  if (label) label.textContent = sel.value;
+  const excEl = document.getElementById(`${pfx}-exchange`);
+  if (excEl) excEl.value = sel.value === 'BRL' ? '1' : '';
+}
+
+function applyDefaultComm(pfx) {
+  const el = document.getElementById(`${pfx}-cons-pct`);
+  if (el) { el.value = '10'; calcSupplierResult(pfx); }
+}
+
+function updateFooterTotals() {
+  let gross = 0;
+  document.querySelectorAll('[id^="p-"][id$="-gross-total"]').forEach(el => {
+    gross += parseFloat(el.textContent.replace(/[^\d,]/g,'').replace(',','.')) || 0;
+  });
+  document.getElementById('footer-gross').textContent  = fmtMoney(gross);
+  document.getElementById('footer-net').textContent    = fmtMoney(gross);
+  document.getElementById('footer-result').textContent = fmtMoney(gross * 0.086);
+}
+
+/* ── Cliente Autocomplete ───────────────────────────────────── */
+let clienteDebounce = null;
+const clienteInput  = document.getElementById('sale-client-input');
+let   clienteDropdown = null;
+
+function renderClienteDropdown(clientes) {
+  if (clienteDropdown) clienteDropdown.remove();
+  if (!clientes.length) return;
+  clienteDropdown = document.createElement('div');
+  clienteDropdown.style.cssText =
+    'position:absolute;top:100%;left:0;right:0;z-index:9999;background:#fff;' +
+    'border:1px solid #e2e8f0;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden';
+  clientes.forEach(c => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:.625rem 1rem;cursor:pointer;font-size:13px;font-weight:600;border-bottom:1px solid #f1f5f9';
+    row.innerHTML = `<strong>${c.nome || c.razao_social}</strong> <small class="text-muted">${c.tipo_pessoa === 'PJ' ? c.cnpj || '' : c.cpf || ''}</small>`;
+    row.addEventListener('click', () => {
+      clienteId = c.id;
+      clienteInput.value = c.nome || c.razao_social;
+      clienteDropdown.remove();
+      clienteDropdown = null;
+    });
+    row.addEventListener('mouseenter', () => row.style.background = '#f8fafc');
+    row.addEventListener('mouseleave', () => row.style.background = '');
+    clienteDropdown.appendChild(row);
+  });
+  const wrap = clienteInput.closest('div') || clienteInput.parentElement;
+  wrap.style.position = 'relative';
+  wrap.appendChild(clienteDropdown);
+}
+
+clienteInput.addEventListener('input', () => {
+  clearTimeout(clienteDebounce);
+  const q = clienteInput.value.trim();
+  if (!q) { clienteId = null; if (clienteDropdown) clienteDropdown.remove(); return; }
+  clienteDebounce = setTimeout(async () => {
+    try {
+      const res  = await Auth.apiFetch(`/api/clientes?q=${encodeURIComponent(q)}&limit=8`);
+      const body = await res.json();
+      if (body.ok) renderClienteDropdown(body.data);
+    } catch {}
+  }, 280);
+});
+document.addEventListener('click', e => {
+  if (clienteDropdown && !clienteDropdown.contains(e.target) && e.target !== clienteInput) {
+    clienteDropdown.remove(); clienteDropdown = null;
+  }
+});
+
+/* ── Coleta dados da venda do DOM ───────────────────────────── */
+function coletarVenda() {
+  const observacoes     = document.querySelector('#body-obs textarea')?.value || null;
+  const condicoes_gerais= document.querySelector('#body-cond textarea')?.value || null;
+  const regras          = document.querySelector('#body-regras textarea')?.value || null;
+  const data_abertura   = document.getElementById('sale-date')?.value || null;
+  const moeda_base      = document.getElementById('topbar-currency')?.value || 'BRL';
+
+  // Coleta itens do DOM
+  const itens = [];
+  document.querySelectorAll('[id^="item-acc-"]').forEach(acc => {
+    const idx  = acc.id.replace('item-acc-', '');
+    const tipo = document.getElementById(`item-type-${idx}`)?.value;
+    if (!tipo) return;
+
+    // Preços do fornecedor
+    const pfx       = `s-${idx}`;
+    const tarifa    = parseFloat(document.getElementById(`${pfx}-tarifa`)?.value || 0) || 0;
+    const taxas     = parseFloat(document.getElementById(`${pfx}-embarque`)?.value || 0) || 0;
+    const outros    = parseFloat(document.getElementById(`${pfx}-outras`)?.value || 0) || 0;
+    const taxa_cambio  = parseFloat(document.getElementById(`${pfx}-exchange`)?.value || 1) || 1;
+    const moeda_forn   = document.querySelector(`#item-acc-${idx} .supplier-currency`)?.value || 'BRL';
+    const com_pct      = parseFloat(document.getElementById(`${pfx}-com-pct`)?.value || 0) || 0;
+    const markup_val   = parseFloat(document.getElementById(`${pfx}-cons-pct`)?.value || 0) || 0;
+
+    // Localizador / datas
+    const locInputs = acc.querySelectorAll('input[placeholder*="ABC123"], input[placeholder*="No. reserva"], input[placeholder*="Código"]');
+    const localizador = locInputs[0]?.value || null;
+    const dateInputs  = acc.querySelectorAll('input[type="date"]');
+
+    itens.push({
+      tipo_produto: tipo,
+      localizador,
+      moeda_fornecedor: moeda_forn,
+      taxa_cambio,
+      tarifa,
+      taxas,
+      outros_custos: outros,
+      comissao_forn_pct: com_pct,
+      markup_tipo: 'percentual',
+      markup_valor: markup_val,
+    });
+  });
+
+  return {
+    cliente_id: clienteId || null,
+    origem_lead: 'agencia',
+    moeda_base,
+    data_abertura,
+    observacoes,
+    condicoes_gerais,
+    regras,
+    itens,
+    pax: [],
+  };
+}
+
+/* ── Save ───────────────────────────────────────────────────── */
+document.getElementById('btn-save-sale').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-sale');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+
+  try {
+    const payload = coletarVenda();
+    let res, body;
+
+    if (saleId) {
+      // Atualiza cabeçalho
+      res  = await Auth.apiFetch(`/api/vendas/${saleId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      body = await res.json();
+      if (!body.ok) throw new Error(body.error);
+
+      // Nota: itens são salvos individualmente via addItem / updateItem
+      Notify.success('Venda atualizada!');
+    } else {
+      // Cria nova
+      res  = await Auth.apiFetch('/api/vendas', { method: 'POST', body: JSON.stringify(payload) });
+      body = await res.json();
+      if (!body.ok) throw new Error(body.error);
+
+      saleCodigo = body.codigo;
+      document.getElementById('sale-topbar-title').textContent = `Venda ${body.codigo}`;
+      history.replaceState(null, '', `?id=${body.id}`);
+      Notify.success(`Venda ${body.codigo} criada com sucesso!`);
+    }
+  } catch (err) {
+    Notify.error(`Erro ao salvar: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-floppy me-1"></i>Salvar Venda';
+  }
+});
+
+/* ── Mudança de status ──────────────────────────────────────── */
+async function mudarStatus(status) {
+  if (!saleId) { Notify.error('Salve a venda antes de mudar o status.'); return; }
+  const LABELS = { confirmada: 'confirmar', cancelada: 'cancelar', concluida: 'concluir', cotacao: 'voltar para cotação' };
+  if (!confirm(`Deseja ${LABELS[status] || status} esta venda?`)) return;
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${saleId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    vendaStatus = status;
+    Notify.success(`Status alterado para ${status}.`);
+    // Atualiza badge de status no topbar
+    const badge = document.getElementById('sale-status-badge');
+    if (badge) badge.textContent = status.toUpperCase();
+  } catch (err) { Notify.error(err.message); }
+}
+
+/* ── Carrega venda existente ────────────────────────────────── */
+async function carregarVenda(id) {
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${id}`);
+    const body = await res.json();
+    if (!body.ok) { Notify.error('Venda não encontrada.'); return; }
+    const v = body.data;
+
+    saleCodigo  = v.codigo;
+    vendaStatus = v.status;
+    clienteId   = v.cliente_id;
+
+    document.getElementById('sale-topbar-title').textContent = `Venda ${v.codigo}`;
+    document.getElementById('sale-date').value = v.data_abertura?.slice(0, 10) || '';
+    if (v.cliente_nome) clienteInput.value = v.cliente_nome;
+    if (v.observacoes) {
+      const ta = document.querySelector('#body-obs textarea');
+      if (ta) ta.value = v.observacoes;
+    }
+
+    // Atualiza moeda base
+    const currSel = document.getElementById('topbar-currency');
+    if (currSel && v.moeda_base) currSel.value = v.moeda_base;
+
+    // Status badge
+    const badge = document.getElementById('sale-status-badge');
+    if (badge) { badge.textContent = v.status.toUpperCase(); }
+
+    // Renderiza itens existentes (simplificado — apenas tipo + localizador)
+    const container = document.getElementById('items-container');
+    container.innerHTML = '';
+    itemCount = 0;
+    if (v.itens?.length) {
+      v.itens.forEach(it => {
+        itemCount++;
+        container.insertAdjacentHTML('beforeend', buildItemAccordion(itemCount));
+        const sel = document.getElementById(`item-type-${itemCount}`);
+        if (sel) { sel.value = it.tipo_produto; onItemTypeChange(itemCount); }
+      });
+    } else {
+      itemCount++;
+      container.innerHTML = buildItemAccordion(itemCount);
+    }
+
+    // Atualiza totais no rodapé
+    document.getElementById('footer-gross').textContent = fmtMoney(v.total_venda || 0);
+    document.getElementById('footer-net').textContent   = fmtMoney(v.total_custo || 0);
+
+  } catch (err) { Notify.error(`Erro ao carregar venda: ${err.message}`); }
+}
+
+function goPayment(type) {
+  const id = saleId || 'nova';
+  const pages = {
+    'supplier-customer': `sale-supplier-customer-payment.html?id=${id}`,
+    'finalize':          `sale-finalize.html?id=${id}`,
+    'supplier-agency':   `sale-supplier-agency-payment.html?id=${id}`,
+  };
+  window.location.href = pages[type];
+}
+
+/* ── Sidebar open fix (inside sale-topbar) ─────────────────── */
+document.getElementById('sidebar-open').addEventListener('click', () => {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('os-overlay');
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('active');
+});
+document.getElementById('sidebar-close')?.addEventListener('click', () => {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('os-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+});
+
+/* ── Init ───────────────────────────────────────────────────── */
+(async () => {
+  await App.init();
+
+  // Popula moedas do contexto (API) ou fallback local
+  const ctx = Auth.getContexto();
+  const moedasOptions = ctx?.moedas?.length
+    ? ctx.moedas.map(m => `<option value="${m.codigo}">${m.codigo} — ${m.nome}</option>`).join('')
+    : CURRENCIES.map(c => `<option value="${c.code}">${c.code} — ${c.label}</option>`).join('');
+  document.getElementById('topbar-currency').innerHTML = moedasOptions;
+
+  // PDF btn placeholder
+  document.getElementById('btn-pdf-gen').addEventListener('click', () => {
+    Notify.info('Gerador de PDF em breve.');
+  });
+
+  // Carrega venda ou inicia nova
+  if (saleId) {
+    await carregarVenda(saleId);
+  } else {
+    document.getElementById('sale-topbar-title').textContent = 'Nova Venda';
+    itemCount++;
+    document.getElementById('items-container').innerHTML = buildItemAccordion(itemCount);
+  }
+})();
+</script>
+</body>
+</html>

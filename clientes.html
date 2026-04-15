@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes & Fornecedores — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <!-- Main -->
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <h1 class="os-page-title">CRM</h1>
+        <span class="os-page-subtitle">Clientes & Fornecedores</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="btn-os" id="btn-novo-registro">
+          <i class="bi bi-plus-lg me-1"></i> <span id="btn-novo-label">Novo Cliente</span>
+        </button>
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content">
+
+      <!-- Tabs -->
+      <div class="os-tabs mb-4">
+        <button class="os-tab active" data-tab="clientes">
+          <i class="bi bi-person-fill me-1"></i> Clientes
+          <span class="os-tab-count" id="count-clientes">0</span>
+        </button>
+        <button class="os-tab" data-tab="fornecedores">
+          <i class="bi bi-building me-1"></i> Fornecedores
+          <span class="os-tab-count" id="count-fornecedores">0</span>
+        </button>
+      </div>
+
+      <!-- ── Tab Clientes ───────────────────────────────────── -->
+      <div id="tab-clientes">
+        <div class="card-os mb-4">
+          <div class="input-os-wrap">
+            <i class="bi bi-search input-icon"></i>
+            <input type="text" id="q-clientes" class="input-os" placeholder="Buscar por nome, CPF, e-mail ou telefone...">
+          </div>
+        </div>
+        <div class="card-os">
+          <div class="table-os-wrap">
+            <table class="table-os">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Contato</th>
+                  <th>CPF / Passaporte</th>
+                  <th>Agente</th>
+                  <th>Cadastro</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-clientes">
+                <tr><td colspan="6" class="text-center py-5 text-muted">
+                  <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pag-clientes"></div>
+        </div>
+      </div>
+
+      <!-- ── Tab Fornecedores ───────────────────────────────── -->
+      <div id="tab-fornecedores" style="display:none">
+        <div class="card-os mb-4">
+          <div class="d-flex gap-3">
+            <div class="flex-grow-1">
+              <div class="input-os-wrap">
+                <i class="bi bi-search input-icon"></i>
+                <input type="text" id="q-fornecedores" class="input-os" placeholder="Buscar por nome ou CNPJ...">
+              </div>
+            </div>
+            <select id="filter-tipo-forn" class="input-os" style="max-width:160px">
+              <option value="">Todos os tipos</option>
+              <option value="operadora">Operadora</option>
+              <option value="consolidadora">Consolidadora</option>
+              <option value="hotel">Hotel</option>
+              <option value="aerea">Aérea</option>
+              <option value="seguro">Seguro</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-os">
+          <div class="table-os-wrap">
+            <table class="table-os">
+              <thead>
+                <tr>
+                  <th>Fornecedor</th>
+                  <th>Tipo</th>
+                  <th>CNPJ</th>
+                  <th>Contato</th>
+                  <th>Comissão Padrão</th>
+                  <th>Reservas</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-fornecedores">
+                <tr><td colspan="7" class="text-center py-5 text-muted">
+                  <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pag-fornecedores"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+
+<!-- ── Modal Cliente ─────────────────────────────────────────── -->
+<div class="modal fade" id="modalCliente" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title" id="titulo-cliente">Novo Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cliente-id">
+        <div class="row g-3">
+          <div class="col-12 col-md-8">
+            <label class="os-label">Nome Completo *</label>
+            <input type="text" id="c-nome" class="input-os" placeholder="Nome do cliente" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Data de Nascimento</label>
+            <input type="date" id="c-nasc" class="input-os">
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">E-mail</label>
+            <input type="email" id="c-email" class="input-os" placeholder="email@cliente.com">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="os-label">Telefone</label>
+            <input type="text" id="c-tel" class="input-os" placeholder="(11) 99999-9999">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="os-label">WhatsApp</label>
+            <input type="text" id="c-wpp" class="input-os" placeholder="(11) 99999-9999">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">CPF</label>
+            <input type="text" id="c-cpf" class="input-os" placeholder="000.000.000-00">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Passaporte</label>
+            <input type="text" id="c-passaporte" class="input-os" placeholder="AB123456">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Agente Responsável</label>
+            <select id="c-agente" class="input-os">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="os-label">Endereço</label>
+            <input type="text" id="c-end" class="input-os" placeholder="Rua, número, cidade, estado">
+          </div>
+          <div class="col-12">
+            <label class="os-label">Observações</label>
+            <textarea id="c-obs" class="input-os" rows="2" style="resize:vertical"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-os" id="btn-salvar-cliente">
+          <i class="bi bi-check-lg me-1"></i> Salvar Cliente
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Fornecedor ──────────────────────────────────────── -->
+<div class="modal fade" id="modalFornecedor" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title" id="titulo-fornecedor">Novo Fornecedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="fornecedor-id">
+        <div class="row g-3">
+          <div class="col-12 col-md-8">
+            <label class="os-label">Nome / Nome Fantasia *</label>
+            <input type="text" id="f-nome" class="input-os" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Tipo *</label>
+            <select id="f-tipo" class="input-os">
+              <option value="operadora">Operadora</option>
+              <option value="consolidadora">Consolidadora</option>
+              <option value="hotel">Hotel</option>
+              <option value="aerea">Aérea</option>
+              <option value="seguro">Seguro</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Razão Social</label>
+            <input type="text" id="f-razao" class="input-os">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="os-label">CNPJ</label>
+            <input type="text" id="f-cnpj" class="input-os" placeholder="00.000.000/0001-00">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="os-label">Comissão Padrão (%)</label>
+            <input type="number" id="f-comissao" class="input-os" step="0.01" min="0" placeholder="0">
+          </div>
+          <div class="col-12"><div class="os-section-divider">Contato Comercial</div></div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Nome do Contato</label>
+            <input type="text" id="f-contato-nome" class="input-os">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">E-mail</label>
+            <input type="email" id="f-contato-email" class="input-os">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Telefone</label>
+            <input type="text" id="f-contato-tel" class="input-os">
+          </div>
+          <div class="col-12">
+            <label class="os-label">Condições de Pagamento</label>
+            <textarea id="f-condicoes" class="input-os" rows="2" style="resize:vertical" placeholder="Ex: 30/60 dias, boleto..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="os-label">Observações</label>
+            <textarea id="f-obs" class="input-os" rows="2" style="resize:vertical"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-os" id="btn-salvar-fornecedor">
+          <i class="bi bi-check-lg me-1"></i> Salvar Fornecedor
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  App.init();
+
+  let activeTab = 'clientes';
+  const modalCliente    = new bootstrap.Modal('#modalCliente');
+  const modalFornecedor = new bootstrap.Modal('#modalFornecedor');
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  const TIPO_FORN = { operadora:'Operadora', consolidadora:'Consolidadora', hotel:'Hotel', aerea:'Aérea', seguro:'Seguro', outro:'Outro' };
+
+  // ── Tabs ─────────────────────────────────────────────────────
+  document.querySelectorAll('.os-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeTab = tab.dataset.tab;
+      document.getElementById('tab-clientes').style.display    = activeTab === 'clientes'    ? '' : 'none';
+      document.getElementById('tab-fornecedores').style.display = activeTab === 'fornecedores' ? '' : 'none';
+      document.getElementById('btn-novo-label').textContent = activeTab === 'clientes' ? 'Novo Cliente' : 'Novo Fornecedor';
+    });
+  });
+
+  // ── Botão novo ────────────────────────────────────────────────
+  document.getElementById('btn-novo-registro').addEventListener('click', async () => {
+    if (activeTab === 'clientes') {
+      document.getElementById('titulo-cliente').textContent = 'Novo Cliente';
+      document.getElementById('cliente-id').value = '';
+      document.getElementById('modalCliente').querySelector('form, .modal-body').querySelectorAll('input,select,textarea').forEach(el => { if (el.type !== 'hidden') el.value = ''; });
+      await carregarAgentesSelect();
+      modalCliente.show();
+    } else {
+      document.getElementById('titulo-fornecedor').textContent = 'Novo Fornecedor';
+      document.getElementById('fornecedor-id').value = '';
+      document.getElementById('modalFornecedor').querySelector('.modal-body').querySelectorAll('input,select,textarea').forEach(el => { if (el.type !== 'hidden') el.value = ''; });
+      modalFornecedor.show();
+    }
+  });
+
+  async function carregarAgentesSelect() {
+    const res  = await Auth.apiFetch('/api/usuarios');
+    const data = await res.json();
+    if (!data.ok) return;
+    const sel = document.getElementById('c-agente');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Sem agente específico</option>' +
+      data.data.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+    if (cur) sel.value = cur;
+  }
+
+  // ── Clientes ──────────────────────────────────────────────────
+  async function carregarClientes(page = 1) {
+    const q = document.getElementById('q-clientes').value.trim();
+    const tbody = document.getElementById('tbody-clientes');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+
+    const params = new URLSearchParams({ page, limit: 20 });
+    if (q) params.set('q', q);
+
+    const res  = await Auth.apiFetch('/api/clientes?' + params);
+    const data = await res.json();
+
+    document.getElementById('count-clientes').textContent = data.total || 0;
+
+    if (!data.data?.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Nenhum cliente encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.data.map(c => `
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="os-avatar sm">${(c.nome||'?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()}</div>
+            <div>
+              <div class="fw-600">${c.nome}</div>
+              <div class="text-muted" style="font-size:11px">${c.email||'—'}</div>
+            </div>
+          </div>
+        </td>
+        <td>${c.telefone||c.whatsapp||'—'}</td>
+        <td>${c.cpf||c.passaporte||'—'}</td>
+        <td>${c.agente_nome||'—'}</td>
+        <td>${fmtDate(c.criado_em)}</td>
+        <td class="text-end">
+          <button class="os-icon-btn btn-edit-cliente" data-id="${c.id}" title="Editar">
+            <i class="bi bi-pencil-fill"></i>
+          </button>
+          <button class="os-icon-btn text-danger btn-del-cliente" data-id="${c.id}" data-nome="${c.nome}" title="Excluir">
+            <i class="bi bi-trash-fill"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    renderPag('pag-clientes', data.total, page, carregarClientes);
+  }
+
+  // Editar cliente
+  document.getElementById('tbody-clientes').addEventListener('click', async e => {
+    const btnEdit = e.target.closest('.btn-edit-cliente');
+    const btnDel  = e.target.closest('.btn-del-cliente');
+
+    if (btnEdit) {
+      const res  = await Auth.apiFetch('/api/clientes/' + btnEdit.dataset.id);
+      const data = await res.json();
+      if (!data.ok) { Notify.error('Erro ao carregar cliente'); return; }
+      const c = data.data;
+      await carregarAgentesSelect();
+      document.getElementById('titulo-cliente').textContent = 'Editar Cliente';
+      document.getElementById('cliente-id').value     = c.id;
+      document.getElementById('c-nome').value         = c.nome || '';
+      document.getElementById('c-nasc').value         = c.data_nascimento?.slice(0,10) || '';
+      document.getElementById('c-email').value        = c.email || '';
+      document.getElementById('c-tel').value          = c.telefone || '';
+      document.getElementById('c-wpp').value          = c.whatsapp || '';
+      document.getElementById('c-cpf').value          = c.cpf || '';
+      document.getElementById('c-passaporte').value   = c.passaporte || '';
+      document.getElementById('c-agente').value       = c.agente_id || '';
+      document.getElementById('c-end').value          = c.endereco || '';
+      document.getElementById('c-obs').value          = c.observacoes || '';
+      modalCliente.show();
+    }
+
+    if (btnDel) {
+      if (!confirm(`Excluir o cliente "${btnDel.dataset.nome}"?`)) return;
+      const res  = await Auth.apiFetch('/api/clientes/' + btnDel.dataset.id, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) { Notify.success('Cliente excluído.'); carregarClientes(); }
+      else Notify.error('Erro: ' + data.error);
+    }
+  });
+
+  // Salvar cliente
+  document.getElementById('btn-salvar-cliente').addEventListener('click', async () => {
+    const id   = document.getElementById('cliente-id').value;
+    const nome = document.getElementById('c-nome').value.trim();
+    if (!nome) { Notify.error('Nome é obrigatório.'); return; }
+
+    const body = {
+      nome,
+      email:           document.getElementById('c-email').value.trim(),
+      telefone:        document.getElementById('c-tel').value.trim(),
+      whatsapp:        document.getElementById('c-wpp').value.trim(),
+      cpf:             document.getElementById('c-cpf').value.trim(),
+      passaporte:      document.getElementById('c-passaporte').value.trim(),
+      data_nascimento: document.getElementById('c-nasc').value || null,
+      agente_id:       document.getElementById('c-agente').value || null,
+      endereco:        document.getElementById('c-end').value.trim(),
+      observacoes:     document.getElementById('c-obs').value.trim(),
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url    = id ? `/api/clientes/${id}` : '/api/clientes';
+    const res    = await Auth.apiFetch(url, { method, body: JSON.stringify(body) });
+    const data   = await res.json();
+    if (data.ok) { Notify.success(id ? 'Cliente atualizado!' : 'Cliente cadastrado!'); modalCliente.hide(); carregarClientes(); }
+    else Notify.error('Erro: ' + data.error);
+  });
+
+  // ── Fornecedores ──────────────────────────────────────────────
+  async function carregarFornecedores(page = 1) {
+    const q    = document.getElementById('q-fornecedores').value.trim();
+    const tipo = document.getElementById('filter-tipo-forn').value;
+    const tbody = document.getElementById('tbody-fornecedores');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+
+    const params = new URLSearchParams({ page, limit: 20 });
+    if (q)    params.set('q', q);
+    if (tipo) params.set('tipo', tipo);
+
+    const res  = await Auth.apiFetch('/api/fornecedores?' + params);
+    const data = await res.json();
+
+    document.getElementById('count-fornecedores').textContent = data.total || 0;
+
+    if (!data.data?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Nenhum fornecedor encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.data.map(f => `
+      <tr>
+        <td>
+          <div class="fw-600">${f.nome}</div>
+          <div class="text-muted" style="font-size:11px">${f.razao_social||''}</div>
+        </td>
+        <td><span class="os-badge badge-blue">${TIPO_FORN[f.tipo]||f.tipo}</span></td>
+        <td>${f.cnpj||'—'}</td>
+        <td>
+          <div>${f.contato_nome||'—'}</div>
+          <div class="text-muted" style="font-size:11px">${f.contato_email||''}</div>
+        </td>
+        <td>${f.comissao_padrao ? f.comissao_padrao + '%' : '—'}</td>
+        <td>${f.total_reservas || 0}</td>
+        <td class="text-end">
+          <button class="os-icon-btn btn-edit-forn" data-id="${f.id}" title="Editar">
+            <i class="bi bi-pencil-fill"></i>
+          </button>
+          <button class="os-icon-btn text-danger btn-del-forn" data-id="${f.id}" data-nome="${f.nome}" title="Inativar">
+            <i class="bi bi-trash-fill"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    renderPag('pag-fornecedores', data.total, page, carregarFornecedores);
+  }
+
+  document.getElementById('tbody-fornecedores').addEventListener('click', async e => {
+    const btnEdit = e.target.closest('.btn-edit-forn');
+    const btnDel  = e.target.closest('.btn-del-forn');
+
+    if (btnEdit) {
+      const res  = await Auth.apiFetch('/api/fornecedores/' + btnEdit.dataset.id);
+      const data = await res.json();
+      if (!data.ok) { Notify.error('Erro ao carregar fornecedor'); return; }
+      const f = data.data;
+      document.getElementById('titulo-fornecedor').textContent = 'Editar Fornecedor';
+      document.getElementById('fornecedor-id').value      = f.id;
+      document.getElementById('f-nome').value             = f.nome || '';
+      document.getElementById('f-tipo').value             = f.tipo || 'operadora';
+      document.getElementById('f-razao').value            = f.razao_social || '';
+      document.getElementById('f-cnpj').value             = f.cnpj || '';
+      document.getElementById('f-comissao').value         = f.comissao_padrao || '';
+      document.getElementById('f-contato-nome').value    = f.contato_nome || '';
+      document.getElementById('f-contato-email').value   = f.contato_email || '';
+      document.getElementById('f-contato-tel').value     = f.contato_telefone || '';
+      document.getElementById('f-condicoes').value       = f.condicoes_pgto || '';
+      document.getElementById('f-obs').value             = f.observacoes || '';
+      modalFornecedor.show();
+    }
+
+    if (btnDel) {
+      if (!confirm(`Inativar o fornecedor "${btnDel.dataset.nome}"?`)) return;
+      const res  = await Auth.apiFetch('/api/fornecedores/' + btnDel.dataset.id, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) { Notify.success('Fornecedor inativado.'); carregarFornecedores(); }
+      else Notify.error('Erro: ' + data.error);
+    }
+  });
+
+  document.getElementById('btn-salvar-fornecedor').addEventListener('click', async () => {
+    const id   = document.getElementById('fornecedor-id').value;
+    const nome = document.getElementById('f-nome').value.trim();
+    if (!nome) { Notify.error('Nome é obrigatório.'); return; }
+
+    const body = {
+      nome,
+      tipo:             document.getElementById('f-tipo').value,
+      razao_social:     document.getElementById('f-razao').value.trim(),
+      cnpj:             document.getElementById('f-cnpj').value.trim(),
+      comissao_padrao:  parseFloat(document.getElementById('f-comissao').value) || 0,
+      contato_nome:     document.getElementById('f-contato-nome').value.trim(),
+      contato_email:    document.getElementById('f-contato-email').value.trim(),
+      contato_telefone: document.getElementById('f-contato-tel').value.trim(),
+      condicoes_pgto:   document.getElementById('f-condicoes').value.trim(),
+      observacoes:      document.getElementById('f-obs').value.trim(),
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url    = id ? `/api/fornecedores/${id}` : '/api/fornecedores';
+    const res    = await Auth.apiFetch(url, { method, body: JSON.stringify(body) });
+    const data   = await res.json();
+    if (data.ok) { Notify.success(id ? 'Fornecedor atualizado!' : 'Fornecedor cadastrado!'); modalFornecedor.hide(); carregarFornecedores(); }
+    else Notify.error('Erro: ' + data.error);
+  });
+
+  // ── Paginação genérica ────────────────────────────────────────
+  function renderPag(elId, total, page, fn) {
+    const pages = Math.ceil(total / 20);
+    const el = document.getElementById(elId);
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    let html = '<div class="d-flex align-items-center gap-2 p-3">';
+    html += `<button class="os-icon-btn" ${page<=1?'disabled':''} data-pg="${page-1}"><i class="bi bi-chevron-left"></i></button>`;
+    for (let i=1; i<=pages; i++)
+      html += `<button class="os-page-btn ${i===page?'active':''}" data-pg="${i}">${i}</button>`;
+    html += `<button class="os-icon-btn" ${page>=pages?'disabled':''} data-pg="${page+1}"><i class="bi bi-chevron-right"></i></button>`;
+    html += '</div>';
+    el.innerHTML = html;
+    el.querySelectorAll('[data-pg]').forEach(btn => btn.addEventListener('click', () => fn(+btn.dataset.pg)));
+  }
+
+  // ── Buscas com debounce ───────────────────────────────────────
+  let timerC, timerF;
+  document.getElementById('q-clientes').addEventListener('input', () => { clearTimeout(timerC); timerC = setTimeout(() => carregarClientes(1), 400); });
+  document.getElementById('q-fornecedores').addEventListener('input', () => { clearTimeout(timerF); timerF = setTimeout(() => carregarFornecedores(1), 400); });
+  document.getElementById('filter-tipo-forn').addEventListener('change', () => carregarFornecedores(1));
+
+  // Init
+  carregarClientes();
+  carregarFornecedores();
+</script>
+
+</body>
+</html>
