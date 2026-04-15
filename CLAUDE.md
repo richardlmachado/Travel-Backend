@@ -1,7 +1,9 @@
 # TravelAgent OS — CLAUDE.md
 
 **Idioma: SEMPRE responda em Português do Brasil (pt-BR).**  
-**Ao iniciar sessão: leia SESSION.md imediatamente para saber onde o projeto parou.**
+**Ao iniciar sessão: leia SESSION.md imediatamente para saber onde o projeto parou.**  
+**Ao encerrar sessão: atualize SESSION.md com o ID da sessão atual, data, status e resumo do que foi feito.**  
+**ID da sessão atual está nos arquivos `.jsonl` em `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\` — pegar o mais recente via `ls -lt`.**
 
 ## Stack
 
