@@ -1,12 +1,15 @@
 # SESSION — TravelAgent OS
 
 > **Ao iniciar qualquer sessão: leia este arquivo antes de qualquer coisa.**  
-> **Ao encerrar qualquer sessão: atualize este arquivo com o que foi feito.**
+> **Ao encerrar qualquer sessão: atualize este arquivo com ID da sessão, data, status e o que foi feito.**  
+> **O transcript completo da última sessão está no caminho indicado em "Transcript" — consulte para detalhes de código/decisões.**
 
 ---
 
 ## Última sessão
 
+**ID:** `f5b93eff-5faf-431d-b163-ce9e30504ea8`  
+**Transcript:** `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\f5b93eff-5faf-431d-b163-ce9e30504ea8.jsonl`  
 **Data:** 2026-04-15  
 **Status:** Sprint 3 — Fase 1 concluída
 
