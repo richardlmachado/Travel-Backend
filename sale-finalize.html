@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento Cliente ↔ Agência — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    body { padding-bottom: 80px; }
+
+    .sale-topbar {
+      position: sticky; top: 0; z-index: 200;
+      background: #0f766e; color: white;
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0 1.25rem; height: 56px; border-bottom: 2px solid #0d9488;
+    }
+    .sale-topbar-title { font-size: 14px; font-weight: 900; color: white; }
+    .sale-topbar-badge { background: rgba(255,255,255,0.25); color: white; border-radius: 0.35rem; padding: 0.2rem 0.625rem; font-size: 11px; font-weight: 800; }
+
+    .summary-box { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; position: sticky; top: 72px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); gap: 0.5rem; }
+    .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .summary-row-label { font-size: 12px; color: var(--text-body); font-weight: 500; }
+    .summary-row-value { font-size: 13px; font-weight: 800; color: var(--text-heading); white-space: nowrap; }
+    .summary-row-value.ok      { color: #0d9488; }
+    .summary-row-value.danger  { color: var(--danger); }
+    .summary-row-value.big     { font-size: 1rem; }
+
+    /* Title card */
+    .title-card { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; background: var(--card-bg); }
+    .title-card-header { background: #0d9488; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .title-card-number { font-size: 12px; font-weight: 900; color: white; letter-spacing: 0.06em; }
+    .title-card-actions { display: flex; gap: 4px; }
+    .title-card-action { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 0.35rem; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .title-card-action:hover { background: rgba(255,255,255,0.35); }
+    .title-card-body { padding: 1rem; }
+
+    /* Installment row */
+    .installment-row { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 0.875rem; margin-bottom: 0.5rem; }
+    .installment-grid { display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr auto auto auto; gap: 0.5rem; align-items: end; }
+    @media(max-width:900px) { .installment-grid { grid-template-columns: 1fr 1fr; } }
+
+    /* Add title button */
+    .btn-add-title {
+      width: 100%; border: 2px dashed #0d9488; border-radius: var(--radius-lg);
+      padding: 1rem; text-align: center; cursor: pointer; color: #0d9488;
+      font-size: 13px; font-weight: 700; transition: var(--transition); background: none;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-add-title:hover { background: #f0fdf4; }
+
+    /* Sale footer */
+    .sale-footer {
+      position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; z-index: 150;
+      background: #f1f5f9; border-top: 2px solid var(--border-color);
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 0.5rem; padding: 0.75rem 1.5rem; flex-wrap: wrap;
+    }
+    @media(max-width:991px) { .sale-footer { left: 0; } }
+
+    .search-lupa { position: relative; }
+    .search-lupa input { padding-right: 2.5rem; }
+    .search-lupa .bi-search { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+
+    /* Accordion attach */
+    .attach-acc { border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; margin-top: 0.75rem; }
+    .attach-acc-header { background: var(--bg-page); padding: 0.5rem 0.875rem; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
+    .attach-acc-body { padding: 0.75rem; display: none; }
+    .attach-acc-body.open { display: block; }
+
+    .required-border { border-color: var(--danger) !important; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html" class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"  class="os-nav-item active" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"  class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <main class="os-main">
+    <!-- Sale Topbar -->
+    <div class="sale-topbar">
+      <button class="os-icon-btn" id="sidebar-open" style="color:rgba(255,255,255,0.7);border-color:transparent"><i class="bi bi-list"></i></button>
+      <i class="bi bi-folder2-open" style="color:rgba(255,255,255,0.8);font-size:18px"></i>
+      <span class="sale-topbar-title" id="sale-topbar-title">Venda</span>
+      <span class="sale-topbar-badge" id="sale-topbar-badge">—</span>
+      <div class="ms-2" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85)">
+        <i class="bi bi-arrow-left-right me-1"></i>PAGAMENTO CLIENTE ↔ AGÊNCIA
+      </div>
+    </div>
+
+    <div class="os-content">
+      <div class="row g-4">
+
+        <!-- Left: Summary -->
+        <div class="col-12 col-md-4">
+          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">
+            Sumário (BRL)
+          </h2>
+          <div class="summary-box">
+            <div class="summary-row">
+              <span class="summary-row-label">Total da Venda</span>
+              <span class="summary-row-value ok big" id="sum-total-venda">R$ 5.928,33</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-row-label">Dir. Fornecedor</span>
+              <span class="summary-row-value" id="sum-dir-forn">R$ 5.417,55</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-row-label">Total Líquido</span>
+              <span class="summary-row-value ok" id="sum-liquido">R$ 510,78</span>
+            </div>
+            <div class="summary-row" style="border-top:1px solid var(--border-color);padding-top:.75rem;margin-top:.5rem">
+              <span class="summary-row-label">Total de Títulos</span>
+              <span class="summary-row-value" id="sum-titulos">R$ 0,00</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-row-label">% de Títulos</span>
+              <span class="summary-row-value" id="sum-pct-titulos">0,00%</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-row-label">Valor Pago</span>
+              <span class="summary-row-value ok" id="sum-pago">R$ 0,00</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-row-label">% Restante</span>
+              <span class="summary-row-value danger" id="sum-pct-rest">100,00%</span>
+            </div>
+            <div class="summary-row" style="border-top:2px solid var(--border-color);margin-top:.5rem;padding-top:.75rem">
+              <span class="summary-row-label" style="font-weight:700">Valor Restante</span>
+              <span class="summary-row-value danger big" id="sum-restante">R$ 5.928,33</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Titles -->
+        <div class="col-12 col-md-8">
+          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">
+            Títulos
+          </h2>
+          <div id="titles-container">
+            <!-- Title cards rendered by JS -->
+          </div>
+          <button class="btn-add-title" id="btn-add-title">
+            <i class="bi bi-plus-circle-fill"></i> Adicionar Novo Título
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Sticky Footer -->
+<div class="sale-footer">
+  <button class="btn-os-ghost" id="btn-back-sale"><i class="bi bi-arrow-left me-1"></i>Voltar Venda</button>
+  <button class="btn-os-ghost" id="btn-save"><i class="bi bi-floppy me-1"></i>Salvar Venda</button>
+  <button class="btn-os" onclick="window.location.href='sale-supplier-customer-payment.html' + location.search">
+    <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Fornecedor
+  </button>
+  <button class="btn-os" onclick="window.location.href='sale-supplier-agency-payment.html' + location.search" style="background:#1e3a5f">
+    <i class="bi bi-arrow-left-right me-1"></i>Pgto Fornecedor ↔ Agência
+  </button>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const CURRENCIES = [
+  {code:'BRL',label:'REAL'},{code:'USD',label:'DÓLAR AMERICANO'},{code:'EUR',label:'EURO'},
+  {code:'GBP',label:'LIBRA ESTERLINA'},{code:'CAD',label:'DÓLAR CANADENSE'},{code:'AUD',label:'DÓLAR AUSTRALIANO'},
+  {code:'CHF',label:'FRANCO SUÍÇO'},{code:'JPY',label:'IENE JAPONÊS'},{code:'MXN',label:'PESO MEXICANO'},
+  {code:'ARS',label:'PESO ARGENTINO'},{code:'CLP',label:'PESO CHILENO'},{code:'TRY',label:'LIRA TURCA'},
+];
+const PAYMENT_METHODS = [
+  'Dinheiro','Pix','Cartão de Crédito','Cartão de Débito','Débito em Conta',
+  'Depósito','Cheque','Faturado','Boleto','Transferência','Pré Pagamento','Carta de Crédito'
+];
+const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const fmtPct   = v => new Intl.NumberFormat('pt-BR',{style:'percent',minimumFractionDigits:2}).format(v||0);
+
+const TOTAL_VENDA = 5928.33;
+
+const params = new URLSearchParams(location.search);
+const saleId = params.get('n');
+if (saleId) {
+  document.getElementById('sale-topbar-title').textContent = `Venda #${saleId}`;
+  document.getElementById('sale-topbar-badge').textContent = `#${saleId}`;
+}
+
+let titleCount = 0;
+const titles = {};
+
+function currencyOptions(selected='BRL') {
+  return CURRENCIES.map(c => `<option value="${c.code}" ${c.code===selected?'selected':''}>${c.code}</option>`).join('');
+}
+function methodOptions() {
+  return PAYMENT_METHODS.map(m => `<option>${m}</option>`).join('');
+}
+
+function buildInstallmentRow(titleId, instId, num, totalTitle) {
+  const parcVal = (totalTitle / (num || 1)).toFixed(2);
+  const today   = new Date().toISOString().slice(0,10);
+  return `<div class="installment-row" id="inst-${titleId}-${instId}">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span style="font-size:11px;font-weight:800;color:var(--text-muted);white-space:nowrap">Parcela ${num}</span>
+    </div>
+    <div class="installment-grid">
+      <div><label class="os-label">Vl Parcela (BRL)</label>
+        <input type="number" class="input-os inst-valor" data-title="${titleId}" value="${parcVal}" step="0.01" oninput="recalcSummary()"></div>
+      <div><label class="os-label">Multa/Encargo</label>
+        <input type="number" class="input-os" value="0" step="0.01"></div>
+      <div><label class="os-label">Vlr Líquido</label>
+        <input type="number" class="input-os" value="${parcVal}" step="0.01" readonly style="opacity:.7"></div>
+      <div><label class="os-label">Vencimento <span class="text-danger">*</span></label>
+        <input type="date" class="input-os inst-due required-border" value="${today}"></div>
+      <div style="display:flex;align-items:flex-end;gap:.5rem">
+        <div class="form-check mb-1">
+          <input class="form-check-input" type="checkbox" id="paid-${titleId}-${instId}">
+          <label class="form-check-label" for="paid-${titleId}-${instId}" style="font-size:12px;font-weight:600">Pago</label>
+        </div>
+      </div>
+      <div><label class="os-label">Conta</label>
+        <div style="position:relative"><input type="text" class="input-os" placeholder="Conta..." style="padding-right:2.2rem"><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div></div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="os-icon-btn" style="color:var(--danger)" onclick="removeInstallment('${titleId}','${instId}')"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildTitleCard(titleId) {
+  titleCount++;
+  return `<div class="title-card" id="title-card-${titleId}">
+    <div class="title-card-header">
+      <span class="title-card-number">TÍTULO ${titleCount}</span>
+      <div class="title-card-actions">
+        <button class="title-card-action" title="Duplicar" onclick="duplicateTitle('${titleId}')"><i class="bi bi-copy"></i></button>
+        <button class="title-card-action" style="background:rgba(239,68,68,0.4)" title="Remover" onclick="removeTitle('${titleId}')"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+    <div class="title-card-body">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-5">
+          <label class="os-label">Pagante <span class="text-danger">*</span></label>
+          <div style="position:relative"><input type="text" class="input-os required-border" placeholder="Buscar contato..." id="pagante-${titleId}" oninput="onPaganteInput('${titleId}')"><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div>
+        </div>
+        <div class="col-12 col-md-5">
+          <label class="os-label">Centro de Custo</label>
+          <div style="position:relative"><input type="text" class="input-os" placeholder="Centro de custo..."><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="os-label">% do Total</label>
+          <input type="number" class="input-os title-pct" data-title="${titleId}" value="100" step="0.01" min="0" max="100" oninput="onPctChange('${titleId}')">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="os-label">Moeda</label>
+          <select class="input-os">${currencyOptions()}</select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="os-label">Valor Total (BRL)</label>
+          <input type="number" class="input-os title-amount" id="title-amount-${titleId}" value="${TOTAL_VENDA.toFixed(2)}" step="0.01" oninput="onAmountChange('${titleId}')">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="os-label">Forma de Pagamento</label>
+          <select class="input-os">${methodOptions()}</select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="os-label">Produtos vinculados</label>
+          <select class="input-os">
+            <option value="">— Todos os produtos —</option>
+            <option value="prod1">Passagem Aérea - TREND VIAGENS</option>
+            <option value="prod2">Hospedagem - ATLANTICA HOTELS</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-12 mb-3">
+        <label class="os-label">Observações</label>
+        <textarea class="input-os" rows="2" placeholder="Observações do título..."></textarea>
+      </div>
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <label class="os-label mb-0">N. Parcelas</label>
+        <input type="number" class="input-os title-installments" data-title="${titleId}" value="1" min="1" max="60" style="width:80px" oninput="renderInstallments('${titleId}')">
+      </div>
+      <!-- Installments -->
+      <div id="installments-${titleId}">
+        ${buildInstallmentRow(titleId, 1, 1, TOTAL_VENDA)}
+      </div>
+      <!-- Add installment -->
+      <button class="btn-os-ghost mt-2" style="font-size:11px" onclick="addExtraInstallment('${titleId}')">
+        <i class="bi bi-plus-circle me-1"></i>Adicionar parcela extra
+      </button>
+      <!-- Attach -->
+      <div class="attach-acc mt-2">
+        <div class="attach-acc-header" onclick="toggleAttach('${titleId}')">
+          <i class="bi bi-paperclip"></i> Anexo (comprovantes)
+          <i class="bi bi-chevron-down ms-auto"></i>
+        </div>
+        <div class="attach-acc-body" id="attach-body-${titleId}">
+          <div class="border border-dashed rounded p-3 text-center text-muted" style="cursor:pointer;font-size:12px">
+            <i class="bi bi-cloud-upload d-block fs-5 mb-1"></i> Anexar comprovante de pagamento
+            <input type="file" style="display:none">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addTitle() {
+  const titleId = `t-${Date.now()}`;
+  titles[titleId] = true;
+  document.getElementById('titles-container').insertAdjacentHTML('beforeend', buildTitleCard(titleId));
+  recalcSummary();
+}
+
+function removeTitle(titleId) {
+  const el = document.getElementById(`title-card-${titleId}`);
+  if (el) el.remove();
+  delete titles[titleId];
+  recalcSummary();
+}
+
+function duplicateTitle(titleId) {
+  addTitle();
+  if(typeof Notify !== 'undefined') Notify.info('Título duplicado.');
+}
+
+function renderInstallments(titleId) {
+  const n      = parseInt(document.getElementById(`.title-installments[data-title="${titleId}"]`)?.value || document.querySelector(`.title-installments[data-title="${titleId}"]`)?.value || 1);
+  const amount = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
+  const container = document.getElementById(`installments-${titleId}`);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, i, i, amount));
+  }
+  recalcSummary();
+}
+
+function addExtraInstallment(titleId) {
+  const container  = document.getElementById(`installments-${titleId}`);
+  const count      = container.querySelectorAll('.installment-row').length + 1;
+  const amount     = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
+  container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, Date.now(), count, amount/count));
+}
+
+function removeInstallment(titleId, instId) {
+  const el = document.getElementById(`inst-${titleId}-${instId}`);
+  if (el) el.remove();
+  recalcSummary();
+}
+
+function onPctChange(titleId) {
+  const pct = parseFloat(document.querySelector(`.title-pct[data-title="${titleId}"]`)?.value || 100) / 100;
+  const val  = TOTAL_VENDA * pct;
+  const el   = document.getElementById(`title-amount-${titleId}`);
+  if (el) el.value = val.toFixed(2);
+  renderInstallments(titleId);
+}
+
+function onAmountChange(titleId) {
+  renderInstallments(titleId);
+}
+
+function onPaganteInput(titleId) {
+  const el = document.getElementById(`pagante-${titleId}`);
+  if (el && el.value.trim()) el.classList.remove('required-border');
+}
+
+function toggleAttach(titleId) {
+  const body = document.getElementById(`attach-body-${titleId}`);
+  if (body) body.classList.toggle('open');
+}
+
+function recalcSummary() {
+  let totalTitles = 0;
+  let totalPaid   = 0;
+  document.querySelectorAll('.title-amount').forEach(inp => {
+    totalTitles += parseFloat(inp.value) || 0;
+  });
+  document.querySelectorAll('[id^="paid-"]:checked').forEach(cb => {
+    const row = cb.closest('.installment-row');
+    if (row) {
+      const val = parseFloat(row.querySelector('.inst-valor')?.value || 0);
+      totalPaid += val;
+    }
+  });
+  const rest   = Math.max(0, TOTAL_VENDA - totalTitles);
+  const pctTit = TOTAL_VENDA > 0 ? totalTitles / TOTAL_VENDA : 0;
+  const pctRest= 1 - Math.min(1, pctTit);
+
+  document.getElementById('sum-titulos').textContent    = fmtMoney(totalTitles);
+  document.getElementById('sum-pct-titulos').textContent= fmtPct(pctTit);
+  document.getElementById('sum-pago').textContent       = fmtMoney(totalPaid);
+  document.getElementById('sum-pct-rest').textContent   = fmtPct(pctRest);
+  document.getElementById('sum-restante').textContent   = fmtMoney(rest);
+
+  const restEl = document.getElementById('sum-restante');
+  const pctEl  = document.getElementById('sum-pct-rest');
+  if (restEl) restEl.className = `summary-row-value ${rest > 0 ? 'danger' : 'ok'} big`;
+  if (pctEl)  pctEl.className  = `summary-row-value ${pctRest > 0 ? 'danger' : 'ok'}`;
+}
+
+/* ── Paid checkbox listener ─────────────────────────────────── */
+document.getElementById('titles-container').addEventListener('change', e => {
+  if (e.target.type === 'checkbox') recalcSummary();
+});
+document.getElementById('titles-container').addEventListener('input', e => {
+  if (e.target.classList.contains('inst-valor') || e.target.classList.contains('title-amount')) recalcSummary();
+});
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+document.getElementById('btn-add-title').addEventListener('click', addTitle);
+document.getElementById('btn-back-sale').addEventListener('click', () => {
+  window.location.href = `sale-form.html${location.search}`;
+});
+document.getElementById('btn-save').addEventListener('click', () => {
+  let valid = true;
+  document.querySelectorAll('.inst-due').forEach(inp => {
+    if (!inp.value) { inp.classList.add('required-border'); valid = false; }
+    else inp.classList.remove('required-border');
+  });
+  if (!valid) {
+    if(typeof Notify !== 'undefined') Notify.error('Preencha todos os vencimentos obrigatórios.');
+    return;
+  }
+  if(typeof Notify !== 'undefined') Notify.success('Títulos salvos com sucesso!');
+});
+
+/* ── Sidebar fix ─────────────────────────────────────────────── */
+document.getElementById('sidebar-open').addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.add('open');
+  document.getElementById('os-overlay')?.classList.add('active');
+});
+document.getElementById('sidebar-close')?.addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('os-overlay')?.classList.remove('active');
+});
+
+/* ── Init ────────────────────────────────────────────────────── */
+App.init();
+Theme.apply(localStorage.getItem('travelos-theme') || 'light');
+</script>
+</body>
+</html>

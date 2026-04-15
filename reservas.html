@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    /* ── Sale Dashboard ─────────────────────────────── */
+    .sale-page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+      background: var(--card-bg); gap: 1rem; flex-wrap: wrap;
+    }
+    .sale-page-header-left { display: flex; align-items: center; gap: 0.875rem; }
+    .sale-page-header-icon {
+      width: 44px; height: 44px; background: var(--primary-light); color: var(--primary);
+      border-radius: var(--radius); display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .sale-page-title { font-size: 20px; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); margin: 0; }
+    .sale-page-subtitle { font-size: 12px; color: var(--text-muted); margin: 0; }
+
+    /* Period Section */
+    .period-section {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.25rem;
+    }
+    .period-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.875rem 1.25rem; cursor: pointer; background: var(--bg-page);
+      border-bottom: 1px solid var(--border-color); user-select: none;
+      transition: background 0.15s;
+    }
+    .period-section-header:hover { background: var(--primary-light); }
+    .period-section-title { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-muted); }
+    .period-section-body { padding: 1.25rem; }
+    .period-section-body.collapsed { display: none; }
+    .summary-card { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; }
+    .summary-card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .summary-card-value { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); }
+    .summary-card-value.sm { font-size: 1.05rem; }
+    .period-highlight {
+      background: var(--primary); border-radius: var(--radius-lg); padding: 1.5rem;
+      color: white; display: flex; flex-direction: column; justify-content: center; height: 100%;
+    }
+    .period-highlight-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.75; margin-bottom: 0.5rem; }
+    .period-highlight-value { font-size: 2rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; }
+
+    /* Tabs */
+    .sale-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); overflow-x: auto; scrollbar-width: none; }
+    .sale-tabs::-webkit-scrollbar { display: none; }
+    .sale-tab {
+      display: flex; align-items: center; gap: 0.35rem; padding: 0.75rem 1rem;
+      font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--text-muted); cursor: pointer; border: none; background: none;
+      border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: var(--transition);
+    }
+    .sale-tab:hover { color: var(--primary); }
+    .sale-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Sale Cards */
+    .sale-cards-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;
+    }
+    @media (max-width: 1400px) { .sale-cards-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 1100px) { .sale-cards-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px)  { .sale-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px)  { .sale-cards-grid { grid-template-columns: 1fr; } }
+
+    .sale-card { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; background: var(--card-bg); transition: box-shadow 0.2s, transform 0.15s; cursor: pointer; }
+    .sale-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .sale-card-header { padding: 0.75rem 0.875rem; display: flex; align-items: center; justify-content: space-between; }
+    .sale-card-header.teal    { background: #0d9488; }
+    .sale-card-header.closed  { background: #1e3a5f; }
+    .sale-card-header.pending-c { background: #dc2626; }
+    .sale-card-header.pending-s { background: #d97706; }
+    .sale-card-header.travel  { background: #2563eb; }
+    .sale-card-number { font-size: 11px; font-weight: 900; letter-spacing: 0.06em; color: rgba(255,255,255,0.95); }
+    .sale-card-actions { display: flex; gap: 2px; }
+    .sale-card-action-btn {
+      width: 26px; height: 26px; border-radius: 0.35rem;
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+    }
+    .sale-card-action-btn:hover { background: rgba(255,255,255,0.35); }
+    .sale-card-body { padding: 0.875rem; }
+    .sale-status-dots { display: flex; gap: 4px; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .sale-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: white; }
+    .sale-dot.financial { background: #3b82f6; }
+    .sale-dot.ok        { background: #10b981; }
+    .sale-dot.warning   { background: #f59e0b; }
+    .sale-dot.danger    { background: #ef4444; }
+    .sale-card-client { font-size: 13px; font-weight: 700; color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.3rem; }
+    .sale-card-value { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); margin-bottom: 0.2rem; }
+    .sale-card-period { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 0.2rem; }
+    .sale-card-supplier { font-size: 11px; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sale-card-footer { font-size: 10px; color: var(--text-muted); font-weight: 500; padding-top: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem; }
+
+    /* Search modal field group */
+    .search-with-lupa { position: relative; }
+    .search-with-lupa input { padding-right: 2.5rem; }
+    .search-with-lupa .bi-search { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html" class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"  class="os-nav-item active" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"  class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <!-- Main -->
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <span class="os-page-subtitle">TravelAgent OS</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content p-0">
+
+      <!-- Page Header -->
+      <div class="sale-page-header">
+        <div class="sale-page-header-left">
+          <div class="sale-page-header-icon"><i class="bi bi-folder2-open"></i></div>
+          <div>
+            <h1 class="sale-page-title">Venda</h1>
+            <p class="sale-page-subtitle">Tenha acesso a todas as atividades de vendas.</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn-os-ghost" id="btn-importacao">
+            <i class="bi bi-upload me-1"></i> Nova Importação
+          </button>
+          <button class="btn-os" onclick="window.location.href='sale-form.html'">
+            <i class="bi bi-plus-lg me-1"></i> Nova Venda
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4">
+
+        <!-- VENDAS DO PERÍODO -->
+        <div class="period-section">
+          <div class="period-section-header" id="period-toggle">
+            <span class="period-section-title"><i class="bi bi-bar-chart-fill me-2"></i>Vendas do Período</span>
+            <i class="bi bi-chevron-up" id="period-chevron" style="color:var(--text-muted)"></i>
+          </div>
+          <div class="period-section-body" id="period-body">
+            <div class="row g-3 mb-3 align-items-end">
+              <div class="col-12 col-md-3">
+                <label class="os-label">Filtrar na moeda</label>
+                <select class="input-os" id="currency-filter"></select>
+              </div>
+              <div class="col-12 col-md-7">
+                <label class="os-label">Selecione o período</label>
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                  <span class="text-muted" style="font-size:12px;white-space:nowrap">De</span>
+                  <input type="date" class="input-os" id="period-from" style="flex:1;min-width:130px">
+                  <span class="text-muted" style="font-size:12px;white-space:nowrap">Até</span>
+                  <input type="date" class="input-os" id="period-to" style="flex:1;min-width:130px">
+                  <button class="btn-os" id="btn-filter-period">Filtrar</button>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-8">
+                <div class="row g-3">
+                  <div class="col-6">
+                    <div class="summary-card">
+                      <div class="summary-card-label">Vendas Fechadas</div>
+                      <div class="summary-card-value" id="s-closed-count">—</div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="summary-card">
+                      <div class="summary-card-label">Total de Vendas Fechadas</div>
+                      <div class="summary-card-value sm" id="s-closed-total">—</div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="summary-card">
+                      <div class="summary-card-label">Vendas Abertas</div>
+                      <div class="summary-card-value" id="s-open-count">—</div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="summary-card">
+                      <div class="summary-card-label">Total de Vendas Abertas</div>
+                      <div class="summary-card-value sm" id="s-open-total">—</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="period-highlight" style="min-height:160px">
+                  <div class="period-highlight-label">Vendas Fechadas no Período</div>
+                  <div class="period-highlight-value" id="s-closed-highlight">R$ 0,00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendas Section -->
+        <div class="card-os">
+          <div class="d-flex align-items-start justify-content-between mb-3 gap-2 flex-wrap">
+            <div>
+              <div class="card-os-title">Vendas Abertas e Fechadas</div>
+              <div class="card-os-subtitle">Veja as últimas vendas abertas e fechadas na tabela abaixo ou faça uma busca.</div>
+            </div>
+            <button class="btn-os-ghost" data-bs-toggle="modal" data-bs-target="#modalBuscarVenda">
+              <i class="bi bi-search me-1"></i> Buscar Venda
+            </button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="sale-tabs mb-3" id="sale-tabs">
+            <button class="sale-tab" data-tab="pesquisa"><i class="bi bi-search"></i> Pesquisa</button>
+            <button class="sale-tab active" data-tab="ultimas">Últimas</button>
+            <button class="sale-tab" data-tab="abertas"><i class="bi bi-currency-dollar text-success"></i> Vendas Abertas</button>
+            <button class="sale-tab" data-tab="pendencias-cliente"><i class="bi bi-currency-exchange text-danger"></i> Pendências (Cliente)</button>
+            <button class="sale-tab" data-tab="pendencias-fornecedor"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Pendências (Fornecedor)</button>
+            <button class="sale-tab" data-tab="nao-embarcados"><i class="bi bi-person-x-fill" style="color:#f97316"></i> Não Embarcados</button>
+            <button class="sale-tab" data-tab="em-viagem"><i class="bi bi-airplane-fill text-info"></i> Em Viagem</button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="sale-cards-grid" id="sale-cards-container">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Modal Buscar Venda -->
+<div class="modal fade" id="modalBuscarVenda" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title"><i class="bi bi-search me-2"></i>Buscar Venda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="os-label">No. Venda</label>
+            <input type="text" class="input-os" id="bs-numero" placeholder="Ex: 244">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="os-label">Por Data</label>
+            <select class="input-os" id="bs-tipo-data">
+              <option value="venda">Venda</option>
+              <option value="emissao">Emissão</option>
+              <option value="inicio">Início</option>
+              <option value="retorno">Retorno</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="os-label">De</label>
+            <input type="date" class="input-os" id="bs-de">
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="os-label">Até</label>
+            <input type="date" class="input-os" id="bs-ate">
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Reserva / Localizador</label>
+            <input type="text" class="input-os" id="bs-localizador" placeholder="Código de reserva">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="os-label">Total Mín.</label>
+            <input type="number" class="input-os" id="bs-min" placeholder="0,00">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="os-label">Total Máx.</label>
+            <input type="number" class="input-os" id="bs-max" placeholder="0,00">
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Passageiro</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-passageiro" placeholder="Nome do passageiro">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Responsável pela compra</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-responsavel" placeholder="Nome do responsável">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Grupo</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-grupo" placeholder="Nome do grupo">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Fornecedor de Serviço</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-fornecedor-servico" placeholder="Cia aérea, hotel...">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Consultor</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-consultor" placeholder="Nome do consultor">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="os-label">Fornecedor</label>
+            <div class="search-with-lupa">
+              <input type="text" class="input-os" id="bs-fornecedor" placeholder="Nome do fornecedor">
+              <i class="bi bi-search"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" id="btn-limpar-busca"><i class="bi bi-x-circle me-1"></i>Limpar Busca</button>
+        <button class="btn-os" id="btn-buscar-venda"><i class="bi bi-search me-1"></i>Buscar Vendas</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ── Constants ─────────────────────────────────────────────── */
+const CURRENCIES = [
+  {code:'BRL',label:'REAL'},{code:'USD',label:'DÓLAR AMERICANO'},{code:'EUR',label:'EURO'},
+  {code:'GBP',label:'LIBRA ESTERLINA'},{code:'CAD',label:'DÓLAR CANADENSE'},{code:'AUD',label:'DÓLAR AUSTRALIANO'},
+  {code:'CHF',label:'FRANCO SUÍÇO'},{code:'JPY',label:'IENE JAPONÊS'},{code:'CNY',label:'YUAN CHINÊS'},
+  {code:'MXN',label:'PESO MEXICANO'},{code:'ARS',label:'PESO ARGENTINO'},{code:'CLP',label:'PESO CHILENO'},
+  {code:'COP',label:'PESO COLOMBIANO'},{code:'PEN',label:'SOL PERUANO'},{code:'PYG',label:'GUARANI PARAGUAIO'},
+  {code:'UYU',label:'PESO URUGUAIO'},{code:'BOB',label:'BOLIVIANO'},{code:'HKD',label:'DÓLAR DE HONG KONG'},
+  {code:'SGD',label:'DÓLAR DE SINGAPURA'},{code:'NOK',label:'COROA NORUEGUESA'},{code:'SEK',label:'COROA SUECA'},
+  {code:'DKK',label:'COROA DINAMARQUESA'},{code:'CZK',label:'COROA CHECA'},{code:'PLN',label:'ZLÓTI POLONÊS'},
+  {code:'HUF',label:'FORINTE HÚNGARO'},{code:'RON',label:'LEU ROMENO'},{code:'RUB',label:'RUBLO RUSSO'},
+  {code:'TRY',label:'LIRA TURCA'},{code:'ILS',label:'SHEKEL ISRAELENSE'},{code:'SAR',label:'RIAL SAUDITA'},
+  {code:'AED',label:'DIRHAM DOS EAU'},{code:'KWD',label:'DINAR KUAITIANO'},{code:'QAR',label:'RIYAL DO QATAR'},
+  {code:'INR',label:'RUPIA INDIANA'},{code:'MYR',label:'RINGGIT MALAIO'},{code:'THB',label:'BAHT TAILANDÊS'},
+  {code:'PHP',label:'PESO FILIPINO'},{code:'IDR',label:'RÚPIA INDONÉSIA'},{code:'KRW',label:'WON SUL-COREANO'},
+  {code:'NZD',label:'DÓLAR NEOZELANDÊS'},{code:'ZAR',label:'RAND SUL-AFRICANO'},{code:'EGP',label:'LIBRA EGÍPCIA'},
+  {code:'NGN',label:'NAIRA NIGERIANA'},{code:'CUP',label:'PESO CUBANO'},{code:'JMD',label:'DÓLAR JAMAICANO'},
+];
+
+const ITEM_TYPES = {
+  AIRFARE: 'Passagem Aérea', HOSTING: 'Diária de Hospedagem',
+  INSURANCE: 'Seguro Viagem', PACKAGE: 'Pacote Turístico',
+  CAR: 'Aluguel de Veículo', BUS: 'Rodoviário', TRAIN: 'Trem',
+  CRUISE: 'Cruzeiro', TOUR: 'Passeio', TICKET: 'Ingresso',
+  EDUCATIONAL: 'Educacional', OTHER: 'Outros',
+};
+
+const TIPO_PRODUTO = {
+  pacote:'Pacote Turístico', aereo:'Passagem Aérea', hotel:'Hospedagem',
+  cruzeiro:'Cruzeiro', seguro:'Seguro Viagem', carro:'Aluguel de Veículo',
+  transfer:'Transfer', outro:'Outros',
+};
+
+/* ── Mapeia reserva da API para o formato do card ─────────────── */
+function mapReserva(r) {
+  const hoje   = new Date();
+  const saida  = r.data_saida   ? new Date(r.data_saida)   : null;
+  const retorno= r.data_retorno ? new Date(r.data_retorno) : null;
+  const embarque= r.data_embarque? new Date(r.data_embarque): null;
+
+  const traveling      = saida && retorno && saida <= hoje && hoje <= retorno && r.status === 'confirmada';
+  const hasPendingClient= ['em_aberto','inadimplente','parcial'].includes(r.status_pgto);
+  const hasEmbarked    = embarque && embarque < hoje;
+  const isClosed       = ['confirmada','cancelada','concluida'].includes(r.status);
+
+  const fmt = d => d ? d.toLocaleDateString('pt-BR') : '—';
+  return {
+    id:                r.id,
+    number:            r.id,
+    codigo:            r.codigo,
+    clientName:        r.cliente_nome  || '—',
+    status:            isClosed ? 'CLOSED' : 'OPEN',
+    apiStatus:         r.status,
+    startDate:         fmt(saida),
+    endDate:           fmt(retorno),
+    grossTotal:        r.valor_total   || 0,
+    supplier:          r.fornecedor_nome || '',
+    consultant:        r.agente_nome   || '—',
+    createdAt:         r.criado_em ? new Date(r.criado_em).toLocaleDateString('pt-BR') : '—',
+    itemType:          TIPO_PRODUTO[r.tipo_produto] || r.tipo_produto || '—',
+    hasPendingClient,
+    hasPendingSupplier:r.status_pgto === 'em_aberto' && isClosed,
+    hasEmbarked,
+    traveling,
+    destino:           r.destino,
+  };
+}
+
+/* ── Helpers ────────────────────────────────────────────────── */
+const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+
+function getCardHeaderClass(sale) {
+  if (sale.traveling) return 'travel';
+  if (sale.status === 'PENDING_CLIENT') return 'pending-c';
+  if (sale.hasPendingSupplier) return 'pending-s';
+  if (sale.status === 'CLOSED') return 'closed';
+  return 'teal';
+}
+
+function buildSaleCard(sale) {
+  const hCls = getCardHeaderClass(sale);
+  const statusDots = `
+    <span class="sale-dot financial" title="Financeiro"><i class="bi bi-currency-dollar"></i></span>
+    ${sale.status === 'CLOSED' ? '<span class="sale-dot ok" title="Fechada"><i class="bi bi-check-lg"></i></span>' : ''}
+    ${sale.hasPendingClient ? '<span class="sale-dot danger" title="Pendência Cliente"><i class="bi bi-exclamation"></i></span>' : ''}
+    ${sale.hasPendingSupplier ? '<span class="sale-dot warning" title="Pendência Fornecedor"><i class="bi bi-exclamation"></i></span>' : ''}
+  `;
+  const extraActions = sale.status === 'CLOSED' ? `
+    <button class="sale-card-action-btn" title="Pagamentos"><i class="bi bi-cash"></i></button>
+    <button class="sale-card-action-btn" title="Passageiros"><i class="bi bi-people"></i></button>
+  ` : '';
+  return `
+    <div class="sale-card" onclick="window.location.href='sale-form.html?n=${sale.id}'">
+      <div class="sale-card-header ${hCls}">
+        <span class="sale-card-number">VENDA ${sale.number}</span>
+        <div class="sale-card-actions">
+          <button class="sale-card-action-btn" title="Editar" onclick="event.stopPropagation();window.location.href='sale-form.html?n=${sale.id}'"><i class="bi bi-pencil"></i></button>
+          <button class="sale-card-action-btn" title="Duplicar" onclick="event.stopPropagation()"><i class="bi bi-copy"></i></button>
+          ${extraActions}
+        </div>
+      </div>
+      <div class="sale-card-body">
+        <div class="sale-status-dots">${statusDots}</div>
+        <div class="sale-card-client" title="${sale.clientName}">${sale.clientName}</div>
+        <div class="sale-card-value">${fmtMoney(sale.grossTotal)}</div>
+        <div class="sale-card-period"><i class="bi bi-calendar2 me-1"></i>${sale.startDate} - ${sale.endDate}</div>
+        ${sale.supplier ? `<div class="sale-card-supplier"><i class="bi bi-building me-1"></i>${sale.supplier}</div>` : ''}
+        <div class="sale-card-footer">
+          <i class="bi bi-clock me-1"></i>Criada em: ${sale.createdAt} — ${sale.consultant}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ── Tab Logic ──────────────────────────────────────────────── */
+let activeTab = 'ultimas';
+
+function renderCards(sales) {
+  const container = document.getElementById('sale-cards-container');
+  if (!sales.length) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <i class="bi bi-folder2-open"></i>
+      <div style="font-weight:600;font-size:14px;margin-bottom:4px">Nenhuma venda encontrada</div>
+      <div style="font-size:12px">Tente outra aba ou clique em "Buscar Venda"</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = sales.map(buildSaleCard).join('');
+}
+
+function showLoadingCards() {
+  document.getElementById('sale-cards-container').innerHTML =
+    `<div class="empty-state" style="grid-column:1/-1">
+       <div class="spinner-border spinner-border-sm text-primary"></div>
+       <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Carregando vendas…</div>
+     </div>`;
+}
+
+async function loadSalesForTab(tab) {
+  showLoadingCards();
+  try {
+    const params = new URLSearchParams({ limit: 100 });
+
+    // Filtros por aba
+    if (tab === 'abertas')              params.set('status', 'pendente');
+    else if (tab === 'em-viagem')       params.set('status', 'confirmada');
+
+    // Filtro de período
+    const from = document.getElementById('period-from').value;
+    const to   = document.getElementById('period-to').value;
+    // A API não suporta filtro de data diretamente — filtramos após
+
+    const res  = await Auth.apiFetch('/api/reservas?' + params);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+
+    let all = (body.data || []).map(mapReserva);
+
+    // Filtragem client-side por aba
+    if (tab === 'pendencias-cliente')
+      all = all.filter(s => s.hasPendingClient);
+    else if (tab === 'pendencias-fornecedor')
+      all = all.filter(s => s.hasPendingSupplier);
+    else if (tab === 'nao-embarcados')
+      all = all.filter(s => !s.hasEmbarked && s.status !== 'CLOSED');
+    else if (tab === 'em-viagem')
+      all = all.filter(s => s.traveling);
+
+    // Filtragem por período (data_saida)
+    if (from) {
+      const dtFrom = new Date(from);
+      all = all.filter(s => {
+        if (!s.startDate || s.startDate === '—') return true;
+        const [d,m,y] = s.startDate.split('/');
+        return new Date(`${y}-${m}-${d}`) >= dtFrom;
+      });
+    }
+    if (to) {
+      const dtTo = new Date(to);
+      all = all.filter(s => {
+        if (!s.startDate || s.startDate === '—') return true;
+        const [d,m,y] = s.startDate.split('/');
+        return new Date(`${y}-${m}-${d}`) <= dtTo;
+      });
+    }
+
+    renderCards(all);
+    updateSummaryFromData(all);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('sale-cards-container').innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1">
+         <i class="bi bi-exclamation-triangle text-danger"></i>
+         <div>Erro ao carregar vendas</div>
+       </div>`;
+  }
+}
+
+document.getElementById('sale-tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.sale-tab');
+  if (!tab) return;
+  document.querySelectorAll('.sale-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activeTab = tab.dataset.tab;
+  if (activeTab !== 'pesquisa') loadSalesForTab(activeTab);
+});
+
+/* ── Period Collapse ────────────────────────────────────────── */
+document.getElementById('period-toggle').addEventListener('click', () => {
+  const body    = document.getElementById('period-body');
+  const chevron = document.getElementById('period-chevron');
+  body.classList.toggle('collapsed');
+  chevron.className = body.classList.contains('collapsed') ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+});
+
+/* ── Summary Cards ──────────────────────────────────────────── */
+function updateSummaryFromData(sales) {
+  const open   = sales.filter(s => s.status === 'OPEN');
+  const closed = sales.filter(s => s.status === 'CLOSED');
+  const sumOpen   = open.reduce((a, s) => a + s.grossTotal, 0);
+  const sumClosed = closed.reduce((a, s) => a + s.grossTotal, 0);
+
+  const el = id => document.getElementById(id);
+  if (el('s-open-count'))       el('s-open-count').textContent    = open.length;
+  if (el('s-open-total'))       el('s-open-total').textContent    = fmtMoney(sumOpen);
+  if (el('s-closed-count'))     el('s-closed-count').textContent  = closed.length;
+  if (el('s-closed-total'))     el('s-closed-total').textContent  = fmtMoney(sumClosed);
+  if (el('s-closed-highlight')) el('s-closed-highlight').textContent = fmtMoney(sumClosed);
+}
+
+/* ── Currency dropdown ──────────────────────────────────────── */
+function populateCurrencies() {
+  const sel = document.getElementById('currency-filter');
+  sel.innerHTML = CURRENCIES.map(c => `<option value="${c.code}">${c.label} (${c.code})</option>`).join('');
+}
+
+/* ── Search Modal ───────────────────────────────────────────── */
+document.getElementById('btn-limpar-busca').addEventListener('click', () => {
+  ['bs-numero','bs-localizador','bs-passageiro','bs-responsavel','bs-grupo',
+   'bs-fornecedor-servico','bs-consultor','bs-fornecedor','bs-de','bs-ate','bs-min','bs-max']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+});
+
+document.getElementById('btn-buscar-venda').addEventListener('click', async () => {
+  const q = document.getElementById('bs-numero').value.trim() ||
+            document.getElementById('bs-passageiro').value.trim();
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarVenda'));
+  if(modal) modal.hide();
+  document.querySelectorAll('.sale-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="pesquisa"]').classList.add('active');
+  activeTab = 'pesquisa';
+  showLoadingCards();
+  try {
+    const params = new URLSearchParams({ limit: 50 });
+    if (q) params.set('q', q);
+    const res  = await Auth.apiFetch('/api/reservas?' + params);
+    const body = await res.json();
+    const results = (body.data || []).map(mapReserva);
+    renderCards(results);
+    updateSummaryFromData(results);
+    if(typeof Notify !== 'undefined') Notify.info(`${results.length} resultado(s) encontrado(s).`);
+  } catch {
+    if(typeof Notify !== 'undefined') Notify.error('Erro na busca.');
+  }
+});
+
+/* ── Importação placeholder ─────────────────────────────────── */
+document.getElementById('btn-importacao').addEventListener('click', () => {
+  if(typeof Notify !== 'undefined') Notify.info('Importador de planilha em breve.');
+});
+
+/* ── Init ───────────────────────────────────────────────────── */
+App.init();
+populateCurrencies();
+loadSalesForTab(activeTab);
+
+// Default period (current month)
+const now = new Date();
+document.getElementById('period-from').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+document.getElementById('period-to').value   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+
+// Reload on period change
+document.getElementById('period-from').addEventListener('change', () => { if (activeTab !== 'pesquisa') loadSalesForTab(activeTab); });
+document.getElementById('period-to').addEventListener('change',   () => { if (activeTab !== 'pesquisa') loadSalesForTab(activeTab); });
+
+// Theme icon sync
+const savedTheme = localStorage.getItem('travelos-theme') || 'light';
+document.getElementById('theme-icon').className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  Theme.toggle();
+  const t = document.documentElement.getAttribute('data-bs-theme');
+  document.getElementById('theme-icon').className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+});
+</script>
+</body>
+</html>
