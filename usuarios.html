@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuários — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .role-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .08em; }
+    .role-admin      { background: #ede9fe; color: #6d28d9; }
+    .role-financeiro  { background: #dbeafe; color: #2563eb; }
+    .role-agente     { background: #dcfce7; color: #16a34a; }
+    .cargo-badge { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-dot.active   { background: #16a34a; }
+    .status-dot.inactive { background: #dc2626; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+    .user-avatar.purple { background: #7c3aed; }
+    .user-avatar.blue   { background: #2563eb; }
+    .user-avatar.green  { background: #16a34a; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media(max-width:900px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:480px) { .kpi-grid { grid-template-columns: 1fr; } }
+    .kpi-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem 1rem; display: flex; align-items: flex-start; gap: .875rem; }
+    .kpi-icon { width: 40px; height: 40px; border-radius: var(--radius); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .kpi-icon.purple { background: #ede9fe; color: #7c3aed; }
+    .kpi-icon.blue   { background: #dbeafe; color: #2563eb; }
+    .kpi-icon.green  { background: #dcfce7; color: #16a34a; }
+    .kpi-icon.amber  { background: #fef3c7; color: #d97706; }
+    .kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; color: var(--text-muted); margin-bottom: .25rem; }
+    .kpi-value { font-size: 1.35rem; font-weight: 900; letter-spacing: -.04em; color: var(--text-heading); line-height: 1.1; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-percent"></i> Comissões</a>
+      <a href="lembretes.html" class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
+      <a href="usuarios.html"  class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
+      <a href="configuracoes.html" class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <!-- Main -->
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <h1 class="os-page-title">Equipe</h1>
+        <span class="os-page-subtitle">Gestão de Usuários</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="btn-os" id="btn-novo-usuario"><i class="bi bi-plus-lg me-1"></i> Novo Usuário</button>
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content">
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon purple"><i class="bi bi-people-fill"></i></div>
+          <div><div class="kpi-label">Total</div><div class="kpi-value" id="kpi-total">0</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon green"><i class="bi bi-person-check-fill"></i></div>
+          <div><div class="kpi-label">Ativos</div><div class="kpi-value" id="kpi-ativos">0</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon blue"><i class="bi bi-shield-fill-check"></i></div>
+          <div><div class="kpi-label">Admins</div><div class="kpi-value" id="kpi-admins">0</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon amber"><i class="bi bi-headset"></i></div>
+          <div><div class="kpi-label">Agentes</div><div class="kpi-value" id="kpi-agentes">0</div></div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="os-card mb-3">
+        <div class="os-card-body" style="padding:.75rem 1rem">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input type="text" class="form-control form-control-sm" id="filtro-q" placeholder="Buscar por nome ou email..." style="max-width:260px">
+            <select class="form-select form-select-sm" id="filtro-role" style="max-width:150px">
+              <option value="">Todos os roles</option>
+              <option value="admin">Admin</option>
+              <option value="financeiro">Financeiro</option>
+              <option value="agente">Agente</option>
+            </select>
+            <select class="form-select form-select-sm" id="filtro-cargo" style="max-width:160px">
+              <option value="">Todos os cargos</option>
+              <option value="diretor">Diretor</option>
+              <option value="gerente">Gerente</option>
+              <option value="consultor">Consultor</option>
+              <option value="financeiro">Financeiro</option>
+              <option value="operacional">Operacional</option>
+            </select>
+            <select class="form-select form-select-sm" id="filtro-ativo" style="max-width:130px">
+              <option value="">Todos</option>
+              <option value="1" selected>Ativos</option>
+              <option value="0">Inativos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="os-card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size:13px">
+            <thead>
+              <tr>
+                <th style="width:40px"></th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Cargo</th>
+                <th>Telefone</th>
+                <th>Status</th>
+                <th>Desde</th>
+                <th style="width:100px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr><td colspan="9" class="text-center text-muted py-4">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top" style="font-size:12px">
+          <span class="text-muted" id="table-info">—</span>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" id="btn-prev" disabled><i class="bi bi-chevron-left"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" id="btn-next" disabled><i class="bi bi-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Criar/Editar -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-title">Novo Usuário</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="font-size:12px">Nome completo</label>
+          <input type="text" class="form-control" id="edit-nome" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="font-size:12px">Email</label>
+          <input type="email" class="form-control" id="edit-email" required>
+        </div>
+        <div class="mb-3" id="senha-group">
+          <label class="form-label fw-semibold" style="font-size:12px">Senha</label>
+          <input type="password" class="form-control" id="edit-senha" minlength="6">
+          <div class="form-text">Mínimo 6 caracteres</div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <label class="form-label fw-semibold" style="font-size:12px">Role (permissão)</label>
+            <select class="form-select" id="edit-role">
+              <option value="agente">Agente</option>
+              <option value="financeiro">Financeiro</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold" style="font-size:12px">Cargo</label>
+            <select class="form-select" id="edit-cargo">
+              <option value="consultor">Consultor</option>
+              <option value="gerente">Gerente</option>
+              <option value="diretor">Diretor</option>
+              <option value="financeiro">Financeiro</option>
+              <option value="operacional">Operacional</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="font-size:12px">Telefone</label>
+          <input type="tel" class="form-control" id="edit-telefone" placeholder="(65) 99999-9999">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Resetar Senha -->
+<div class="modal fade" id="modalReset" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Resetar Senha</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="reset-id">
+        <p class="text-muted" style="font-size:13px">Defina uma nova senha para <strong id="reset-nome"></strong>:</p>
+        <input type="password" class="form-control" id="reset-senha" placeholder="Nova senha (min. 6 chars)" minlength="6">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-warning" id="btn-reset-salvar">Resetar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+App.init();
+
+const ROLE_CLASSES = { admin: 'role-admin', financeiro: 'role-financeiro', agente: 'role-agente' };
+const ROLE_LABELS  = { admin: 'Admin', financeiro: 'Financeiro', agente: 'Agente' };
+const AVATAR_COLORS = { admin: 'purple', financeiro: 'blue', agente: 'green' };
+const CARGO_LABELS = { consultor: 'Consultor', gerente: 'Gerente', diretor: 'Diretor', financeiro: 'Financeiro', operacional: 'Operacional' };
+
+let currentPage = 1;
+const pageSize = 20;
+let totalRecords = 0;
+
+const modalEl = new bootstrap.Modal(document.getElementById('modalUsuario'));
+const modalResetEl = new bootstrap.Modal(document.getElementById('modalReset'));
+
+function initials(name) {
+  return (name || '??').split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+async function carregarUsuarios() {
+  const q     = document.getElementById('filtro-q').value.trim();
+  const role  = document.getElementById('filtro-role').value;
+  const cargo = document.getElementById('filtro-cargo').value;
+  const ativo = document.getElementById('filtro-ativo').value;
+
+  const params = new URLSearchParams({ page: currentPage, limit: pageSize });
+  if (q)     params.set('q', q);
+  if (role)  params.set('role', role);
+  if (cargo) params.set('cargo', cargo);
+  if (ativo !== '') params.set('ativo', ativo);
+
+  try {
+    const res  = await Auth.apiFetch(`/api/usuarios/lista?${params}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+
+    totalRecords = body.total;
+    const data = body.data || [];
+
+    // KPIs
+    const allRes = await Auth.apiFetch('/api/usuarios/lista?limit=999&ativo=');
+    const allBody = await allRes.json();
+    const all = allBody.data || [];
+    document.getElementById('kpi-total').textContent   = all.length;
+    document.getElementById('kpi-ativos').textContent  = all.filter(u => u.ativo).length;
+    document.getElementById('kpi-admins').textContent  = all.filter(u => u.role === 'admin').length;
+    document.getElementById('kpi-agentes').textContent = all.filter(u => u.role === 'agente').length;
+
+    // Tabela
+    const tbody = document.getElementById('table-body');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Nenhum usuário encontrado</td></tr>';
+    } else {
+      tbody.innerHTML = data.map(u => `
+        <tr style="opacity:${u.ativo ? 1 : .5}">
+          <td><div class="user-avatar ${AVATAR_COLORS[u.role] || 'blue'}">${initials(u.nome)}</div></td>
+          <td><strong style="font-size:13px">${u.nome}</strong></td>
+          <td style="font-size:12px;color:var(--text-muted)">${u.email}</td>
+          <td><span class="role-badge ${ROLE_CLASSES[u.role] || ''}">${ROLE_LABELS[u.role] || u.role}</span></td>
+          <td><span class="cargo-badge">${CARGO_LABELS[u.cargo] || u.cargo || '—'}</span></td>
+          <td style="font-size:12px">${u.telefone || '—'}</td>
+          <td><span class="status-dot ${u.ativo ? 'active' : 'inactive'}"></span> ${u.ativo ? 'Ativo' : 'Inativo'}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${fmtDate(u.criado_em)}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary" title="Editar" onclick="editarUsuario(${u.id})"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-warning" title="Resetar Senha" onclick="resetarSenha(${u.id},'${u.nome.replace(/'/g, "\\'")}')"><i class="bi bi-key"></i></button>
+              <button class="btn btn-sm btn-outline-${u.ativo ? 'danger' : 'success'}" title="${u.ativo ? 'Desativar' : 'Ativar'}" onclick="toggleStatus(${u.id},${u.ativo ? 0 : 1})">
+                <i class="bi bi-${u.ativo ? 'person-x' : 'person-check'}"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Paginação
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    document.getElementById('table-info').textContent = `${data.length} de ${totalRecords} usuário(s) — Página ${currentPage}/${totalPages || 1}`;
+    document.getElementById('btn-prev').disabled = currentPage <= 1;
+    document.getElementById('btn-next').disabled = currentPage >= totalPages;
+  } catch (err) {
+    Notify.error(err.message);
+  }
+}
+
+// Filtros
+let filterTimer = null;
+document.getElementById('filtro-q').addEventListener('input', () => {
+  clearTimeout(filterTimer);
+  filterTimer = setTimeout(() => { currentPage = 1; carregarUsuarios(); }, 300);
+});
+['filtro-role', 'filtro-cargo', 'filtro-ativo'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { currentPage = 1; carregarUsuarios(); });
+});
+document.getElementById('btn-prev').addEventListener('click', () => { currentPage--; carregarUsuarios(); });
+document.getElementById('btn-next').addEventListener('click', () => { currentPage++; carregarUsuarios(); });
+
+// Novo usuário
+document.getElementById('btn-novo-usuario').addEventListener('click', () => {
+  document.getElementById('modal-title').textContent = 'Novo Usuário';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('edit-nome').value = '';
+  document.getElementById('edit-email').value = '';
+  document.getElementById('edit-senha').value = '';
+  document.getElementById('edit-role').value = 'agente';
+  document.getElementById('edit-cargo').value = 'consultor';
+  document.getElementById('edit-telefone').value = '';
+  document.getElementById('senha-group').style.display = '';
+  document.getElementById('edit-senha').required = true;
+  modalEl.show();
+});
+
+// Editar usuário
+async function editarUsuario(id) {
+  try {
+    const res  = await Auth.apiFetch(`/api/usuarios/${id}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    const u = body.data;
+    document.getElementById('modal-title').textContent = 'Editar Usuário';
+    document.getElementById('edit-id').value = u.id;
+    document.getElementById('edit-nome').value = u.nome;
+    document.getElementById('edit-email').value = u.email;
+    document.getElementById('edit-senha').value = '';
+    document.getElementById('edit-role').value = u.role;
+    document.getElementById('edit-cargo').value = u.cargo || 'consultor';
+    document.getElementById('edit-telefone').value = u.telefone || '';
+    document.getElementById('senha-group').style.display = 'none';
+    document.getElementById('edit-senha').required = false;
+    modalEl.show();
+  } catch (err) { Notify.error(err.message); }
+}
+
+// Salvar (criar ou editar)
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  const id   = document.getElementById('edit-id').value;
+  const nome = document.getElementById('edit-nome').value.trim();
+  const email = document.getElementById('edit-email').value.trim();
+  if (!nome || !email) { Notify.error('Nome e email obrigatórios'); return; }
+
+  const payload = {
+    nome, email,
+    role:     document.getElementById('edit-role').value,
+    cargo:    document.getElementById('edit-cargo').value,
+    telefone: document.getElementById('edit-telefone').value.trim() || null,
+  };
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    let res;
+    if (id) {
+      res = await Auth.apiFetch(`/api/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    } else {
+      const senha = document.getElementById('edit-senha').value;
+      if (!senha || senha.length < 6) { Notify.error('Senha deve ter pelo menos 6 caracteres'); btn.disabled = false; btn.textContent = 'Salvar'; return; }
+      payload.senha = senha;
+      res = await Auth.apiFetch('/api/usuarios', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success(id ? 'Usuário atualizado' : 'Usuário criado');
+    modalEl.hide();
+    carregarUsuarios();
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false; btn.textContent = 'Salvar';
+});
+
+// Toggle ativo/inativo
+async function toggleStatus(id, ativo) {
+  if (!confirm(ativo ? 'Reativar este usuário?' : 'Desativar este usuário?')) return;
+  try {
+    const res = await Auth.apiFetch(`/api/usuarios/${id}/status`, { method: 'PATCH', body: JSON.stringify({ ativo }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success(ativo ? 'Usuário reativado' : 'Usuário desativado');
+    carregarUsuarios();
+  } catch (err) { Notify.error(err.message); }
+}
+
+// Resetar senha
+function resetarSenha(id, nome) {
+  document.getElementById('reset-id').value = id;
+  document.getElementById('reset-nome').textContent = nome;
+  document.getElementById('reset-senha').value = '';
+  modalResetEl.show();
+}
+
+document.getElementById('btn-reset-salvar').addEventListener('click', async () => {
+  const id    = document.getElementById('reset-id').value;
+  const senha = document.getElementById('reset-senha').value;
+  if (!senha || senha.length < 6) { Notify.error('Senha deve ter pelo menos 6 caracteres'); return; }
+
+  const btn = document.getElementById('btn-reset-salvar');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch(`/api/usuarios/${id}/reset-senha`, { method: 'POST', body: JSON.stringify({ nova_senha: senha }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Senha resetada com sucesso');
+    modalResetEl.hide();
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// Init
+carregarUsuarios();
+</script>
+</body>
+</html>

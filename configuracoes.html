@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .cfg-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); overflow-x: auto; scrollbar-width: none; margin-bottom: 1.5rem; }
+    .cfg-tab { padding: .75rem 1.25rem; font-size: 13px; font-weight: 700; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .15s; }
+    .cfg-tab:hover { color: var(--text-heading); }
+    .cfg-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .cfg-section { display: none; }
+    .cfg-section.active { display: block; }
+    .card-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .section-title { font-size: 14px; font-weight: 800; letter-spacing: -.02em; color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+    .section-title i { font-size: 16px; color: var(--primary); }
+    .form-label { font-size: 12px; font-weight: 600; }
+    .integration-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: .75rem; }
+    .integration-icon { width: 42px; height: 42px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .integration-icon.green  { background: #dcfce7; color: #16a34a; }
+    .integration-icon.blue   { background: #dbeafe; color: #2563eb; }
+    .integration-icon.amber  { background: #fef3c7; color: #d97706; }
+    .status-chip { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
+    .status-chip.ok    { background: #dcfce7; color: #16a34a; }
+    .status-chip.warn  { background: #fef3c7; color: #d97706; }
+    .status-chip.off   { background: #f1f5f9; color: #94a3b8; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-percent"></i> Comissões</a>
+      <a href="lembretes.html" class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
+      <a href="usuarios.html"  class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
+      <a href="configuracoes.html" class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <!-- Main -->
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <h1 class="os-page-title">Configurações</h1>
+        <span class="os-page-subtitle">Ajustes do sistema</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content" style="max-width:800px">
+
+      <!-- Tabs -->
+      <div class="cfg-tabs">
+        <button class="cfg-tab active" data-cfg-tab="loja"><i class="bi bi-building me-1"></i> Dados da Loja</button>
+        <button class="cfg-tab" data-cfg-tab="email"><i class="bi bi-envelope me-1"></i> Email (SMTP)</button>
+        <button class="cfg-tab" data-cfg-tab="integracoes"><i class="bi bi-plug me-1"></i> Integrações</button>
+        <button class="cfg-tab" data-cfg-tab="sistema"><i class="bi bi-sliders me-1"></i> Sistema</button>
+      </div>
+
+      <!-- Tab: Dados da Loja -->
+      <div class="cfg-section active" id="cfg-loja">
+        <div class="card-section">
+          <div class="section-title"><i class="bi bi-building"></i> Informações da Agência</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nome fantasia</label>
+              <input type="text" class="form-control" id="loja-nome">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Razão social</label>
+              <input type="text" class="form-control" id="loja-razao">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CNPJ</label>
+              <input type="text" class="form-control" id="loja-cnpj" placeholder="00.000.000/0001-00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Telefone</label>
+              <input type="tel" class="form-control" id="loja-telefone">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="loja-email">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Endereço</label>
+              <input type="text" class="form-control" id="loja-endereco">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Site</label>
+              <input type="url" class="form-control" id="loja-site" placeholder="https://...">
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary" id="btn-salvar-loja"><i class="bi bi-check-lg me-1"></i> Salvar Dados da Loja</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: SMTP -->
+      <div class="cfg-section" id="cfg-email">
+        <div class="card-section">
+          <div class="section-title"><i class="bi bi-envelope-at"></i> Configuração SMTP</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem">
+            Configure um servidor SMTP para enviar emails reais (lembretes, propostas, recibos).
+            Sem configuração, o sistema opera em modo mock (sem envio).
+          </p>
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Servidor SMTP (host)</label>
+              <input type="text" class="form-control" id="smtp-host" placeholder="smtp.gmail.com">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Porta</label>
+              <input type="number" class="form-control" id="smtp-port" placeholder="587">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Usuário</label>
+              <input type="text" class="form-control" id="smtp-user" placeholder="email@dominio.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Senha</label>
+              <input type="password" class="form-control" id="smtp-pass" placeholder="••••••••">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Email remetente (From)</label>
+              <input type="email" class="form-control" id="smtp-from" placeholder="agencia@dominio.com">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="smtp-secure">
+                <label class="form-check-label" for="smtp-secure" style="font-size:12px">TLS/SSL</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary" id="btn-salvar-smtp"><i class="bi bi-check-lg me-1"></i> Salvar SMTP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Integrações -->
+      <div class="cfg-section" id="cfg-integracoes">
+        <div class="card-section">
+          <div class="section-title"><i class="bi bi-plug"></i> Status das Integrações</div>
+
+          <div class="integration-card">
+            <div class="integration-icon green"><i class="bi bi-whatsapp"></i></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">WhatsApp (Evolution API)</div>
+              <div style="font-size:11px;color:var(--text-muted)" id="wa-detail">Verificando...</div>
+            </div>
+            <span class="status-chip off" id="wa-chip">—</span>
+          </div>
+
+          <div class="integration-card">
+            <div class="integration-icon blue"><i class="bi bi-envelope"></i></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">Email (SMTP)</div>
+              <div style="font-size:11px;color:var(--text-muted)" id="smtp-detail">Verificando...</div>
+            </div>
+            <span class="status-chip off" id="smtp-chip">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Sistema -->
+      <div class="cfg-section" id="cfg-sistema">
+        <div class="card-section">
+          <div class="section-title"><i class="bi bi-sliders"></i> Preferências</div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Fuso horário</label>
+              <select class="form-select" id="cfg-timezone">
+                <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                <option value="America/Manaus">Manaus (AMT)</option>
+                <option value="America/Cuiaba">Cuiabá (AMT)</option>
+                <option value="America/Belem">Belém (BRT)</option>
+                <option value="America/Fortaleza">Fortaleza (BRT)</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Formato de data</label>
+              <select class="form-select" id="cfg-formato-data">
+                <option value="DD/MM/YYYY">DD/MM/AAAA</option>
+                <option value="MM/DD/YYYY">MM/DD/AAAA</option>
+                <option value="YYYY-MM-DD">AAAA-MM-DD</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Moeda padrão</label>
+              <select class="form-select" id="cfg-moeda">
+                <option value="BRL">BRL (R$)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary" id="btn-salvar-sistema"><i class="bi bi-check-lg me-1"></i> Salvar Preferências</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section" style="background: var(--bg-subtle)">
+          <div class="section-title"><i class="bi bi-info-circle"></i> Sobre o Sistema</div>
+          <div style="font-size:12px;color:var(--text-muted)">
+            <div><strong>TravelAgent OS</strong> v5.0 — Sprint 5</div>
+            <div>API: <code id="api-version">—</code></div>
+            <div>Backend: Node.js + Express + MySQL 8.0</div>
+            <div>Frontend: HTML5 + Bootstrap 5.3.3 + Vanilla JS</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+App.init();
+
+// Tab switching
+document.querySelectorAll('.cfg-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.cfg-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.cfg-section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`cfg-${tab.dataset.cfgTab}`).classList.add('active');
+  });
+});
+
+// ── Carregar dados da loja ──────────────────────────────────
+async function carregarLoja() {
+  try {
+    const user = Auth.getUser();
+    const res  = await Auth.apiFetch(`/api/lojas/${user.loja_id}`);
+    const body = await res.json();
+    if (!body.ok) return;
+    const l = body.data;
+    document.getElementById('loja-nome').value     = l.nome || '';
+    document.getElementById('loja-razao').value    = l.razao_social || '';
+    document.getElementById('loja-cnpj').value     = l.cnpj || '';
+    document.getElementById('loja-telefone').value = l.telefone || '';
+    document.getElementById('loja-email').value    = l.email || '';
+    document.getElementById('loja-endereco').value = l.endereco || '';
+    document.getElementById('loja-site').value     = l.site || '';
+  } catch (err) { Notify.error(err.message); }
+}
+
+// Salvar loja
+document.getElementById('btn-salvar-loja').addEventListener('click', async () => {
+  const user = Auth.getUser();
+  const payload = {
+    nome:         document.getElementById('loja-nome').value.trim(),
+    razao_social: document.getElementById('loja-razao').value.trim(),
+    cnpj:         document.getElementById('loja-cnpj').value.trim(),
+    telefone:     document.getElementById('loja-telefone').value.trim(),
+    email:        document.getElementById('loja-email').value.trim(),
+    endereco:     document.getElementById('loja-endereco').value.trim(),
+    site:         document.getElementById('loja-site').value.trim(),
+  };
+  const btn = document.getElementById('btn-salvar-loja');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch(`/api/lojas/${user.loja_id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Dados da loja salvos');
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// ── Carregar configurações ──────────────────────────────────
+async function carregarConfigs() {
+  try {
+    const res  = await Auth.apiFetch('/api/configuracoes');
+    const body = await res.json();
+    if (!body.ok) return;
+    const map = {};
+    (body.data || []).forEach(c => { map[c.chave] = c.valor; });
+
+    // SMTP
+    document.getElementById('smtp-host').value   = map.smtp_host || '';
+    document.getElementById('smtp-port').value   = map.smtp_port || '587';
+    document.getElementById('smtp-user').value   = map.smtp_user || '';
+    document.getElementById('smtp-pass').value   = '';
+    document.getElementById('smtp-pass').placeholder = map.smtp_pass || 'Não configurado';
+    document.getElementById('smtp-from').value   = map.smtp_from || '';
+    document.getElementById('smtp-secure').checked = map.smtp_secure === 'true';
+
+    // Sistema
+    document.getElementById('cfg-timezone').value     = map.timezone || 'America/Sao_Paulo';
+    document.getElementById('cfg-formato-data').value = map.formato_data || 'DD/MM/YYYY';
+    document.getElementById('cfg-moeda').value        = map.moeda_padrao || 'BRL';
+
+    // SMTP status chip
+    const smtpChip   = document.getElementById('smtp-chip');
+    const smtpDetail = document.getElementById('smtp-detail');
+    if (map.smtp_host && map.smtp_host !== '••••••••') {
+      smtpChip.textContent = 'Configurado';
+      smtpChip.className = 'status-chip ok';
+      smtpDetail.textContent = `${map.smtp_host}:${map.smtp_port || 587}`;
+    } else {
+      smtpChip.textContent = 'Não configurado';
+      smtpChip.className = 'status-chip warn';
+      smtpDetail.textContent = 'Modo mock — emails não serão enviados';
+    }
+  } catch (err) { console.error(err); }
+}
+
+// Salvar SMTP
+document.getElementById('btn-salvar-smtp').addEventListener('click', async () => {
+  const configs = [
+    { chave: 'smtp_host',   valor: document.getElementById('smtp-host').value.trim() },
+    { chave: 'smtp_port',   valor: document.getElementById('smtp-port').value.trim() },
+    { chave: 'smtp_user',   valor: document.getElementById('smtp-user').value.trim() },
+    { chave: 'smtp_from',   valor: document.getElementById('smtp-from').value.trim() },
+    { chave: 'smtp_secure', valor: document.getElementById('smtp-secure').checked ? 'true' : 'false' },
+  ];
+  const pass = document.getElementById('smtp-pass').value.trim();
+  if (pass) configs.push({ chave: 'smtp_pass', valor: pass });
+
+  const btn = document.getElementById('btn-salvar-smtp');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch('/api/configuracoes', { method: 'PUT', body: JSON.stringify({ configs }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Configurações SMTP salvas');
+    carregarConfigs();
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// Salvar Sistema
+document.getElementById('btn-salvar-sistema').addEventListener('click', async () => {
+  const configs = [
+    { chave: 'timezone',      valor: document.getElementById('cfg-timezone').value },
+    { chave: 'formato_data',  valor: document.getElementById('cfg-formato-data').value },
+    { chave: 'moeda_padrao',  valor: document.getElementById('cfg-moeda').value },
+  ];
+  const btn = document.getElementById('btn-salvar-sistema');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch('/api/configuracoes', { method: 'PUT', body: JSON.stringify({ configs }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Preferências salvas');
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// ── WhatsApp status ─────────────────────────────────────────
+async function checkWaStatus() {
+  try {
+    const res  = await Auth.apiFetch('/api/lembretes/evolution/status');
+    const body = await res.json();
+    const chip   = document.getElementById('wa-chip');
+    const detail = document.getElementById('wa-detail');
+    if (!body.configurado) {
+      chip.textContent = 'Não configurado';
+      chip.className = 'status-chip off';
+      detail.textContent = 'Evolution API não encontrada';
+    } else if (body.status === 'open' || body.status === 'connected') {
+      chip.textContent = 'Conectado';
+      chip.className = 'status-chip ok';
+      detail.textContent = `Instância: ${body.instance} — pronto para enviar`;
+    } else {
+      chip.textContent = 'Desconectado';
+      chip.className = 'status-chip warn';
+      detail.textContent = `Status: ${body.status}`;
+    }
+  } catch { }
+}
+
+// ── API Version ─────────────────────────────────────────────
+async function checkApiVersion() {
+  try {
+    const res  = await Auth.apiFetch('/api/health');
+    const body = await res.json();
+    document.getElementById('api-version').textContent = body.version || '?';
+  } catch { }
+}
+
+// Init
+carregarLoja();
+carregarConfigs();
+checkWaStatus();
+checkApiVersion();
+</script>
+</body>
+</html>

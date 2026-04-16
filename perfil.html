@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: white; background: linear-gradient(135deg, #6d28d9, #4f46e5); flex-shrink: 0; }
+    .profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+    .profile-meta { font-size: 12px; color: var(--text-muted); }
+    .section-title { font-size: 14px; font-weight: 800; letter-spacing: -.02em; color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+    .section-title i { font-size: 16px; color: var(--primary); }
+    .form-label { font-size: 12px; font-weight: 600; }
+    .card-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .role-pill { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: .08em; }
+    .role-pill.admin      { background: #ede9fe; color: #6d28d9; }
+    .role-pill.financeiro  { background: #dbeafe; color: #2563eb; }
+    .role-pill.agente     { background: #dcfce7; color: #16a34a; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-percent"></i> Comissões</a>
+      <a href="lembretes.html" class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
+      <a href="usuarios.html"  class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
+      <a href="configuracoes.html" class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <!-- Main -->
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <h1 class="os-page-title">Meu Perfil</h1>
+        <span class="os-page-subtitle">Dados pessoais e segurança</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content" style="max-width:720px">
+
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">AD</div>
+        <div>
+          <h2 style="font-size:22px;font-weight:900;letter-spacing:-.03em;margin:0" id="profile-name">—</h2>
+          <div class="profile-meta mt-1">
+            <span id="profile-email">—</span>
+            <span class="mx-2">|</span>
+            <span class="role-pill" id="profile-role">—</span>
+            <span class="ms-2" id="profile-cargo" style="font-size:11px;color:var(--text-muted)"></span>
+          </div>
+          <div class="profile-meta mt-1" id="profile-loja"></div>
+        </div>
+      </div>
+
+      <!-- Dados Pessoais -->
+      <div class="card-section">
+        <div class="section-title"><i class="bi bi-person-fill"></i> Dados Pessoais</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nome completo</label>
+            <input type="text" class="form-control" id="p-nome">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="p-email">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone</label>
+            <input type="tel" class="form-control" id="p-telefone" placeholder="(65) 99999-9999">
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary" id="btn-salvar-perfil"><i class="bi bi-check-lg me-1"></i> Salvar Alterações</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alterar Senha -->
+      <div class="card-section">
+        <div class="section-title"><i class="bi bi-shield-lock-fill"></i> Alterar Senha</div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Senha atual</label>
+            <input type="password" class="form-control" id="s-atual">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Nova senha</label>
+            <input type="password" class="form-control" id="s-nova" minlength="6">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Confirmar nova</label>
+            <input type="password" class="form-control" id="s-confirma" minlength="6">
+          </div>
+          <div class="col-12">
+            <button class="btn btn-warning" id="btn-alterar-senha"><i class="bi bi-key me-1"></i> Alterar Senha</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="card-section" style="background:var(--bg-subtle)">
+        <div class="d-flex align-items-center gap-2" style="font-size:12px;color:var(--text-muted)">
+          <i class="bi bi-info-circle"></i>
+          <span>Role e cargo são definidos pelo administrador. Entre em contato se precisar alterar.</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+App.init();
+
+const ROLE_CLASSES = { admin: 'admin', financeiro: 'financeiro', agente: 'agente' };
+const ROLE_LABELS  = { admin: 'Admin', financeiro: 'Financeiro', agente: 'Agente' };
+const CARGO_LABELS = { consultor: 'Consultor', gerente: 'Gerente', diretor: 'Diretor', financeiro: 'Financeiro', operacional: 'Operacional' };
+
+function initials(name) {
+  return (name || '??').split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+async function carregarPerfil() {
+  try {
+    const user = Auth.getUser();
+    if (!user) return;
+
+    // Buscar dados completos
+    const res  = await Auth.apiFetch(`/api/usuarios/${user.id}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    const u = body.data;
+
+    document.getElementById('profile-avatar').textContent = initials(u.nome);
+    document.getElementById('profile-name').textContent = u.nome;
+    document.getElementById('profile-email').textContent = u.email;
+
+    const roleEl = document.getElementById('profile-role');
+    roleEl.textContent = ROLE_LABELS[u.role] || u.role;
+    roleEl.className = `role-pill ${ROLE_CLASSES[u.role] || ''}`;
+
+    document.getElementById('profile-cargo').textContent = CARGO_LABELS[u.cargo] || u.cargo || '';
+    document.getElementById('profile-loja').textContent = u.loja_nome ? `Loja: ${u.loja_nome}` : '';
+
+    document.getElementById('p-nome').value = u.nome;
+    document.getElementById('p-email').value = u.email;
+    document.getElementById('p-telefone').value = u.telefone || '';
+  } catch (err) { Notify.error(err.message); }
+}
+
+// Salvar perfil
+document.getElementById('btn-salvar-perfil').addEventListener('click', async () => {
+  const nome     = document.getElementById('p-nome').value.trim();
+  const email    = document.getElementById('p-email').value.trim();
+  const telefone = document.getElementById('p-telefone').value.trim();
+  if (!nome || !email) { Notify.error('Nome e email são obrigatórios'); return; }
+
+  const btn = document.getElementById('btn-salvar-perfil');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch('/api/usuarios/perfil', {
+      method: 'PUT',
+      body: JSON.stringify({ nome, email, telefone })
+    });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Perfil atualizado');
+    // Atualizar header
+    document.getElementById('profile-name').textContent = nome;
+    document.getElementById('profile-avatar').textContent = initials(nome);
+    document.getElementById('profile-email').textContent = email;
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// Alterar senha
+document.getElementById('btn-alterar-senha').addEventListener('click', async () => {
+  const atual    = document.getElementById('s-atual').value;
+  const nova     = document.getElementById('s-nova').value;
+  const confirma = document.getElementById('s-confirma').value;
+
+  if (!atual || !nova) { Notify.error('Preencha senha atual e nova'); return; }
+  if (nova.length < 6) { Notify.error('Nova senha deve ter pelo menos 6 caracteres'); return; }
+  if (nova !== confirma) { Notify.error('Nova senha e confirmação não coincidem'); return; }
+
+  const btn = document.getElementById('btn-alterar-senha');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch('/api/usuarios/senha', {
+      method: 'PUT',
+      body: JSON.stringify({ senha_atual: atual, nova_senha: nova })
+    });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Senha alterada com sucesso');
+    document.getElementById('s-atual').value = '';
+    document.getElementById('s-nova').value = '';
+    document.getElementById('s-confirma').value = '';
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+carregarPerfil();
+</script>
+</body>
+</html>
