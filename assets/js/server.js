@@ -92,7 +92,7 @@ async function calcularComissao(reserva_id, agente_id, origem_lead, valor_venda,
 
 // ── Health ────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, version: '4.0.0-sprint4', ts: new Date().toISOString() });
+  res.json({ ok: true, version: '5.0.0-sprint5', ts: new Date().toISOString() });
 });
 
 // ── Auth ──────────────────────────────────────────────────────
@@ -1922,4 +1922,238 @@ app.patch('/api/lembretes/:id/cancelar', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.listen(PORT, () => console.log(`TravelAgent OS API v4.0-sprint4 — porta ${PORT}`));
+// ══════════════════════════════════════════════════════════════
+// ██  SPRINT 5 — Gestão de Usuários & Configurações
+// ══════════════════════════════════════════════════════════════
+
+// ── Usuários CRUD (admin only para criar/editar outros) ──────
+app.get('/api/usuarios/lista', auth, async (req, res) => {
+  try {
+    if (!['admin', 'financeiro'].includes(req.user.role) && !['diretor', 'gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const { role, cargo, ativo, q, page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+    let where = 'WHERE u.loja_id = ?', params = [req.user.loja_id];
+
+    if (role)  { where += ' AND u.role = ?';  params.push(role); }
+    if (cargo) { where += ' AND u.cargo = ?'; params.push(cargo); }
+    if (ativo !== undefined) { where += ' AND u.ativo = ?'; params.push(+ativo); }
+    if (q) {
+      where += ' AND (u.nome LIKE ? OR u.email LIKE ?)';
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    const [rows] = await pool.query(
+      `SELECT u.id, u.nome, u.email, u.role, u.cargo, u.telefone, u.ativo, u.criado_em, u.atualizado_em,
+              l.nome AS loja_nome
+         FROM usuarios u
+         LEFT JOIN lojas l ON u.loja_id = l.id
+         ${where} ORDER BY u.nome LIMIT ? OFFSET ?`,
+      [...params, +limit, +offset]
+    );
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM usuarios u ${where}`, params
+    );
+    res.json({ ok: true, data: rows, total, page: +page });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/usuarios/:id — detalhe de um usuário
+app.get('/api/usuarios/:id', auth, async (req, res) => {
+  try {
+    const [[user]] = await pool.query(
+      `SELECT u.id, u.nome, u.email, u.role, u.cargo, u.telefone, u.ativo, u.loja_id, u.criado_em,
+              l.nome AS loja_nome
+         FROM usuarios u LEFT JOIN lojas l ON u.loja_id = l.id
+        WHERE u.id = ?`, [req.params.id]
+    );
+    if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado' });
+    // Agente só pode ver a si mesmo
+    if (req.user.role === 'agente' && user.id !== req.user.id)
+      return res.status(403).json({ ok: false, error: 'Acesso negado' });
+    res.json({ ok: true, data: user });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// POST /api/usuarios — criar novo usuário (admin/gestor only)
+app.post('/api/usuarios', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor', 'gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Apenas admin ou gestores podem criar usuários' });
+
+    const { nome, email, senha, role, cargo, telefone } = req.body;
+    if (!nome || !email || !senha) return res.status(400).json({ ok: false, error: 'Nome, email e senha obrigatórios' });
+
+    // Verificar email duplicado
+    const [[exists]] = await pool.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+    if (exists) return res.status(409).json({ ok: false, error: 'Email já cadastrado' });
+
+    const senha_hash = await bcrypt.hash(senha, 10);
+    const [result] = await pool.query(
+      `INSERT INTO usuarios (nome, email, senha, role, cargo, telefone, loja_id, ativo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+      [nome, email, senha_hash, role || 'agente', cargo || 'consultor', telefone || null, req.user.loja_id]
+    );
+
+    await audit('usuarios', result.insertId, 'criacao', null, null, nome, req.user.id, req.user.loja_id);
+    broadcast('usuario_criado', { id: result.insertId, loja_id: req.user.loja_id });
+    res.status(201).json({ ok: true, id: result.insertId });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// PUT /api/usuarios/:id — editar usuário (admin/gestor ou o próprio)
+app.put('/api/usuarios/:id', auth, async (req, res) => {
+  try {
+    const targetId = +req.params.id;
+    const isAdmin = req.user.role === 'admin' || ['diretor', 'gerente'].includes(req.user.cargo);
+    if (!isAdmin && targetId !== req.user.id)
+      return res.status(403).json({ ok: false, error: 'Sem permissão' });
+
+    const { nome, email, role, cargo, telefone } = req.body;
+    const sets = [], params = [];
+
+    if (nome)     { sets.push('nome = ?');     params.push(nome); }
+    if (email)    { sets.push('email = ?');    params.push(email); }
+    if (telefone !== undefined) { sets.push('telefone = ?'); params.push(telefone || null); }
+
+    // Só admin/gestor pode mudar role e cargo
+    if (isAdmin) {
+      if (role)  { sets.push('role = ?');  params.push(role); }
+      if (cargo) { sets.push('cargo = ?'); params.push(cargo); }
+    }
+
+    if (!sets.length) return res.status(400).json({ ok: false, error: 'Nenhum campo para atualizar' });
+
+    params.push(targetId);
+    await pool.query(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = ?`, params);
+    await audit('usuarios', targetId, 'edicao', null, null, null, req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// PATCH /api/usuarios/:id/status — ativar/desativar (admin/gestor only)
+app.patch('/api/usuarios/:id/status', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor', 'gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const targetId = +req.params.id;
+    if (targetId === req.user.id) return res.status(400).json({ ok: false, error: 'Não pode desativar a si mesmo' });
+
+    const { ativo } = req.body;
+    await pool.query('UPDATE usuarios SET ativo = ? WHERE id = ?', [ativo ? 1 : 0, targetId]);
+    await audit('usuarios', targetId, 'status', 'ativo', null, ativo ? '1' : '0', req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// PUT /api/usuarios/perfil — editar próprio perfil
+app.put('/api/usuarios/perfil', auth, async (req, res) => {
+  try {
+    const { nome, email, telefone } = req.body;
+    const sets = [], params = [];
+    if (nome)     { sets.push('nome = ?');     params.push(nome); }
+    if (email)    { sets.push('email = ?');    params.push(email); }
+    if (telefone !== undefined) { sets.push('telefone = ?'); params.push(telefone || null); }
+
+    if (!sets.length) return res.status(400).json({ ok: false, error: 'Nenhum campo' });
+    params.push(req.user.id);
+    await pool.query(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = ?`, params);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// PUT /api/usuarios/senha — alterar própria senha
+app.put('/api/usuarios/senha', auth, async (req, res) => {
+  try {
+    const { senha_atual, nova_senha } = req.body;
+    if (!senha_atual || !nova_senha) return res.status(400).json({ ok: false, error: 'Preencha senha atual e nova senha' });
+    if (nova_senha.length < 6) return res.status(400).json({ ok: false, error: 'Nova senha deve ter pelo menos 6 caracteres' });
+
+    const [[user]] = await pool.query('SELECT senha FROM usuarios WHERE id = ?', [req.user.id]);
+    const match = await bcrypt.compare(senha_atual, user.senha);
+    if (!match) return res.status(401).json({ ok: false, error: 'Senha atual incorreta' });
+
+    const hash = await bcrypt.hash(nova_senha, 10);
+    await pool.query('UPDATE usuarios SET senha = ? WHERE id = ?', [hash, req.user.id]);
+    await audit('usuarios', req.user.id, 'edicao', 'senha', null, '[alterada]', req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// POST /api/usuarios/:id/reset-senha — admin reseta senha de outro usuário
+app.post('/api/usuarios/:id/reset-senha', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor', 'gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const { nova_senha } = req.body;
+    if (!nova_senha || nova_senha.length < 6) return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres' });
+
+    const hash = await bcrypt.hash(nova_senha, 10);
+    await pool.query('UPDATE usuarios SET senha = ? WHERE id = ?', [hash, req.params.id]);
+    await audit('usuarios', +req.params.id, 'edicao', 'senha', null, '[resetada por admin]', req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ── Lojas (editar dados — gestor only) ───────────────────────
+app.put('/api/lojas/:id', auth, gestorOnly, async (req, res) => {
+  try {
+    const { nome, razao_social, cnpj, endereco, telefone, email, logo_url, site } = req.body;
+    await pool.query(
+      `UPDATE lojas SET nome=?, razao_social=?, cnpj=?, endereco=?, telefone=?, email=?, logo_url=?, site=?
+       WHERE id = ?`,
+      [nome, razao_social, cnpj, endereco, telefone, email, logo_url || null, site || null, req.params.id]
+    );
+    await audit('lojas', +req.params.id, 'edicao', null, null, null, req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ── Configurações do sistema (key-value por loja) ────────────
+app.get('/api/configuracoes', auth, async (req, res) => {
+  try {
+    const { grupo } = req.query;
+    let where = 'WHERE loja_id = ?', params = [req.user.loja_id];
+    if (grupo) { where += ' AND grupo = ?'; params.push(grupo); }
+
+    const [rows] = await pool.query(
+      `SELECT id, chave, valor, tipo, grupo, descricao FROM configuracoes ${where} ORDER BY grupo, chave`, params
+    );
+    // Mascarar senhas
+    const data = rows.map(r => ({ ...r, valor: r.tipo === 'password' && r.valor ? '••••••••' : r.valor }));
+    res.json({ ok: true, data });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+app.put('/api/configuracoes', auth, gestorOnly, async (req, res) => {
+  try {
+    const { configs } = req.body; // Array de { chave, valor }
+    if (!Array.isArray(configs)) return res.status(400).json({ ok: false, error: 'Envie um array de configs' });
+
+    for (const { chave, valor } of configs) {
+      await pool.query(
+        `UPDATE configuracoes SET valor = ? WHERE loja_id = ? AND chave = ?`,
+        [valor, req.user.loja_id, chave]
+      );
+    }
+    await audit('configuracoes', 0, 'edicao', 'bulk', null, `${configs.length} configs`, req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/lojas/:id — detalhe da loja
+app.get('/api/lojas/:id', auth, async (req, res) => {
+  try {
+    const [[loja]] = await pool.query(
+      'SELECT id, codigo, nome, razao_social, cnpj, endereco, telefone, email, logo_url, site, ativo FROM lojas WHERE id = ?',
+      [req.params.id]
+    );
+    if (!loja) return res.status(404).json({ ok: false, error: 'Loja não encontrada' });
+    res.json({ ok: true, data: loja });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+app.listen(PORT, () => console.log(`TravelAgent OS API v5.0-sprint5 — porta ${PORT}`));
