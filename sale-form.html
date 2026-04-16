@@ -1219,6 +1219,69 @@ document.addEventListener('click', e => {
   if (clienteDropdown && !clienteDropdown.contains(e.target) && e.target !== clienteInput) {
     clienteDropdown.remove(); clienteDropdown = null;
   }
+  if (consultorDropdown && !consultorDropdown.contains(e.target) && e.target !== document.getElementById('sale-consultant')) {
+    consultorDropdown.remove(); consultorDropdown = null;
+  }
+});
+
+/* ── Auto-cálculo Início / Fim da Viagem ────────────────────── */
+function recalcTripDates() {
+  const dates = [];
+  document.querySelectorAll('#items-container input[type="datetime-local"]').forEach(inp => {
+    if (inp.value) dates.push(new Date(inp.value));
+  });
+  if (!dates.length) { document.getElementById('sale-start').value = ''; document.getElementById('sale-end').value = ''; return; }
+  const minD = new Date(Math.min(...dates));
+  const maxD = new Date(Math.max(...dates));
+  document.getElementById('sale-start').value = minD.toISOString().slice(0, 10);
+  document.getElementById('sale-end').value   = maxD.toISOString().slice(0, 10);
+}
+document.getElementById('items-container').addEventListener('change', e => {
+  if (e.target.type === 'datetime-local') recalcTripDates();
+});
+
+/* ── Autocomplete Consultor ─────────────────────────────────── */
+let consultorDropdown = null;
+let consultorId = null;
+let consultorDebounce = null;
+const consultorInput = document.getElementById('sale-consultant');
+
+function renderConsultorDropdown(usuarios) {
+  if (consultorDropdown) consultorDropdown.remove();
+  if (!usuarios.length) return;
+  consultorDropdown = document.createElement('div');
+  consultorDropdown.style.cssText =
+    'position:absolute;top:100%;left:0;right:0;z-index:9999;background:#fff;' +
+    'border:1px solid #e2e8f0;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden;max-height:200px;overflow-y:auto';
+  usuarios.forEach(u => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:.5rem 1rem;cursor:pointer;font-size:13px;font-weight:600;border-bottom:1px solid #f1f5f9';
+    row.innerHTML = `<strong>${u.nome}</strong> <small class="text-muted">${u.cargo || u.perfil || ''}</small>`;
+    row.addEventListener('click', () => {
+      consultorId = u.id;
+      consultorInput.value = u.nome;
+      consultorDropdown.remove(); consultorDropdown = null;
+    });
+    row.addEventListener('mouseenter', () => row.style.background = '#f8fafc');
+    row.addEventListener('mouseleave', () => row.style.background = '');
+    consultorDropdown.appendChild(row);
+  });
+  const wrap = consultorInput.closest('.search-lupa');
+  wrap.style.position = 'relative';
+  wrap.appendChild(consultorDropdown);
+}
+
+consultorInput.addEventListener('input', () => {
+  clearTimeout(consultorDebounce);
+  const q = consultorInput.value.trim();
+  if (!q) { consultorId = null; if (consultorDropdown) consultorDropdown.remove(); return; }
+  consultorDebounce = setTimeout(async () => {
+    try {
+      const res  = await Auth.apiFetch(`/api/usuarios?q=${encodeURIComponent(q)}&limit=8`);
+      const body = await res.json();
+      if (body.ok) renderConsultorDropdown(body.data);
+    } catch {}
+  }, 280);
 });
 
 /* ── Coleta dados da venda do DOM ───────────────────────────── */
@@ -1267,8 +1330,12 @@ function coletarVenda() {
   });
 
   return {
-    cliente_id: clienteId || null,
-    origem_lead: 'agencia',
+    cliente_id:        clienteId || null,
+    agente_id:         consultorId || null,
+    grupo:             document.getElementById('sale-group')?.value || null,
+    responsavel_compra:document.getElementById('sale-buyer')?.value || null,
+    voucher_status:    document.getElementById('sale-voucher')?.value || null,
+    origem_lead:       'agencia',
     moeda_base,
     data_abertura,
     observacoes,
@@ -1351,6 +1418,15 @@ async function carregarVenda(id) {
     if (v.observacoes) {
       const ta = document.querySelector('#body-obs textarea');
       if (ta) ta.value = v.observacoes;
+    }
+
+    // Campos de cabeçalho opcionais
+    if (v.grupo)              document.getElementById('sale-group').value   = v.grupo;
+    if (v.responsavel_compra) document.getElementById('sale-buyer').value   = v.responsavel_compra;
+    if (v.voucher_status)     document.getElementById('sale-voucher').value = v.voucher_status;
+    if (v.agente_nome) {
+      consultorInput.value = v.agente_nome;
+      consultorId = v.agente_id;
     }
 
     // Atualiza moeda base
