@@ -234,6 +234,33 @@
     .audit-item-action { font-weight: 600; font-size: 12px; color: var(--text-heading); }
     .audit-item-meta { font-size: 11px; color: var(--text-muted); }
 
+    /* ── Item card ────────────────────────────────────────────── */
+    .item-card-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .75rem 1.25rem; background: #0d9488; color: #fff;
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: .1em; cursor: pointer; user-select: none;
+    }
+    .item-card-header:hover { background: #0f766e; }
+    .item-card-header .item-type-select {
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+      color: #fff; border-radius: var(--radius-sm); padding: .3rem .6rem;
+      font-size: 12px; font-weight: 700; cursor: pointer; outline: none;
+    }
+    .item-card-header .item-type-select option { background: #0d9488; color: #fff; }
+    .item-card-header .item-num {
+      background: rgba(255,255,255,.25); border-radius: .35rem;
+      padding: .1rem .5rem; font-size: 11px; font-weight: 800;
+    }
+    .item-card-actions { display: flex; gap: 4px; margin-left: auto; }
+    .item-card-actions button {
+      background: rgba(255,255,255,.2); border: none; color: #fff;
+      border-radius: .35rem; width: 28px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; transition: background .15s;
+    }
+    .item-card-actions button:hover { background: rgba(255,255,255,.35); }
+
     /* ── Add button ──────────────────────────────────────────── */
     .btn-add-pax {
       display: flex; align-items: center; justify-content: center; gap: .5rem;
@@ -405,84 +432,13 @@
           </div>
         </div>
 
-        <!-- ════════════════ 2. VOO ════════════════ -->
-        <div class="sf-card" id="secVoo">
-          <div class="sf-card-header sf-card-header-teal">
-            <i class="bi bi-airplane-fill"></i>
-            <span>Voo</span>
-          </div>
-          <div class="sf-card-body">
-            <!-- Fornecedor row -->
-            <div class="row g-3 mb-3">
-              <div class="col-12 col-md-4">
-                <label class="os-label">Fornecedor / Consolidador <span style="color:var(--danger)">*</span></label>
-                <div class="ac-wrap">
-                  <input type="text" class="input-os" id="fornecedorInput" placeholder="Ex: TREND VIAGENS" autocomplete="off">
-                </div>
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="os-label">Cia Aerea</label>
-                <input type="text" class="input-os" id="ciaAerea" placeholder="Ex: LATAM, GOL...">
-              </div>
-              <div class="col-6 col-md-3">
-                <label class="os-label">Localizador / PNR</label>
-                <input type="text" class="input-os" id="localizador" placeholder="ABC123">
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="os-label">Data Emissao</label>
-                <input type="date" class="input-os" id="dataEmissao">
-              </div>
-            </div>
-
-            <!-- Nacional / Internacional -->
-            <div class="d-flex gap-3 mb-3">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="destTipo" id="destNacional" value="nacional" checked>
-                <label class="form-check-label" for="destNacional" style="font-size:13px;font-weight:600">Nacional</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="destTipo" id="destInternacional" value="internacional">
-                <label class="form-check-label" for="destInternacional" style="font-size:13px;font-weight:600">Internacional</label>
-              </div>
-            </div>
-
-            <!-- Trechos -->
-            <div class="sf-section-label"><i class="bi bi-signpost-split"></i> Trechos</div>
-            <div style="overflow-x:auto">
-              <table class="trecho-table" id="trechoTable">
-                <thead>
-                  <tr>
-                    <th>Origem</th>
-                    <th>Destino</th>
-                    <th>Saida</th>
-                    <th>Chegada</th>
-                    <th>Voo</th>
-                    <th style="width:70px"></th>
-                  </tr>
-                </thead>
-                <tbody id="trechoBody">
-                  <!-- rendered by JS -->
-                </tbody>
-              </table>
-            </div>
-            <button class="btn-add-trecho" id="btnAddTrecho">
-              <i class="bi bi-plus-circle"></i> Adicionar Trecho
-            </button>
-          </div>
+        <!-- ════════════════ 2. ITENS DE VENDA ════════════════ -->
+        <div id="itemsContainer">
+          <!-- rendered by JS — each item is a sf-card -->
         </div>
-
-        <!-- ════════════════ 3. PASSAGEIROS ════════════════ -->
-        <div class="sf-card sf-card-accent-teal" id="secPassageiros">
-          <div class="sf-card-flat">
-            <div class="sf-section-label"><i class="bi bi-people-fill"></i> Passageiros</div>
-            <div id="paxContainer">
-              <!-- rendered by JS -->
-            </div>
-            <button class="btn-add-pax mt-2" id="btnAddPax">
-              <i class="bi bi-plus-circle"></i> Adicionar Passageiro
-            </button>
-          </div>
-        </div>
+        <button class="btn-add-pax mt-0 mb-4" id="btnAddItem" style="border-color:#0d9488;color:#0d9488">
+          <i class="bi bi-plus-circle-fill"></i> Novo Item de Venda
+        </button>
 
         <!-- ════════════════ 4. FINANCEIRO ════════════════ -->
         <div class="sf-card" id="secFinanceiro">
@@ -652,16 +608,28 @@ let clienteId   = null;
 let vendaStatus = 'cotacao';
 let consultorId = null;
 
-/* ── Pax state ─────────────────────────────────────────────── */
-let paxList = []; // [{uid, nome, sobrenome, tipo, ...}]
-let paxCounter = 0;
+/* ── Items state ───────────────────────────────────────────── */
+let itemsList = [];   // [{uid, tipo, fornecedor:{id,nome}, dados:{...}, trechos:[], pax:[]}]
+let itemCounter = 0;
 
-/* ── Trecho state ──────────────────────────────────────────── */
-let trechoList = []; // [{uid, origem, destino, saida, chegada, voo}]
-let trechoCounter = 0;
-
-/* ── Fornecedor state ──────────────────────────────────────── */
+/* ── Fornecedor state (per-item, set dynamically) ─────────── */
 const fornecedorState = { id: null, nome: null };
+
+/* ── Type config: icon + label + which fields to show ─────── */
+const TYPE_CONFIG = {
+  AIRFARE:     { icon:'bi-airplane-fill',     label:'Passagem Aerea',      hasTrechos:true,  hasPax:true,  fields:['ciaAerea','localizador','dataEmissao','destTipo'] },
+  HOSTING:     { icon:'bi-building',           label:'Hospedagem',          hasTrechos:false, hasPax:false, fields:['nomeHotel','checkin','checkout','localizador','dataEmissao','tipoQuarto','regime'] },
+  INSURANCE:   { icon:'bi-shield-check',       label:'Seguro Viagem',       hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','dataInicio','dataFim','descricao'] },
+  PACKAGE:     { icon:'bi-box-seam-fill',      label:'Pacote Turistico',    hasTrechos:false, hasPax:true,  fields:['localizador','dataEmissao','dataInicio','dataFim','descricao','destTipo'] },
+  CAR:         { icon:'bi-car-front-fill',     label:'Aluguel de Veiculo',  hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','dataInicio','dataFim','descricao'] },
+  BUS:         { icon:'bi-bus-front-fill',     label:'Rodoviario',          hasTrechos:true,  hasPax:true,  fields:['localizador','dataEmissao'] },
+  TRAIN:       { icon:'bi-train-front-fill',   label:'Trem',                hasTrechos:true,  hasPax:true,  fields:['localizador','dataEmissao'] },
+  CRUISE:      { icon:'bi-water',              label:'Cruzeiro',            hasTrechos:false, hasPax:true,  fields:['localizador','dataEmissao','dataInicio','dataFim','descricao','nomeNavio'] },
+  TOUR:        { icon:'bi-geo-alt-fill',       label:'Passeio',             hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','dataInicio','dataFim','descricao'] },
+  TICKET:      { icon:'bi-ticket-perforated',  label:'Ingresso',            hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','descricao'] },
+  EDUCATIONAL: { icon:'bi-mortarboard-fill',   label:'Educacional',         hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','dataInicio','dataFim','descricao'] },
+  OTHER:       { icon:'bi-three-dots',         label:'Outros',              hasTrechos:false, hasPax:false, fields:['localizador','dataEmissao','dataInicio','dataFim','descricao'] },
+};
 
 /* ══════════════════════════════════════════════════════════════
    TOGGLES
@@ -680,205 +648,309 @@ setupToggle('toggleObs', 'obsBody');
 setupToggle('toggleAudit', 'auditBody');
 
 /* ══════════════════════════════════════════════════════════════
-   TRECHOS
+   ITEMS — Multi-type product system
    ══════════════════════════════════════════════════════════════ */
-function addTrecho(data = {}) {
-  trechoCounter++;
-  const uid = trechoCounter;
-  trechoList.push({
-    uid,
-    origem:  data.origem || '',
-    destino: data.destino || '',
-    saida:   data.saida || '',
-    chegada: data.chegada || '',
-    voo:     data.voo || '',
-  });
-  renderTrechos();
+function addItem(tipo = 'AIRFARE') {
+  itemCounter++;
+  const uid = itemCounter;
+  const cfg = TYPE_CONFIG[tipo];
+  const item = {
+    uid, tipo,
+    fornecedor: { id: null, nome: '' },
+    dados: {},
+    trechos: cfg.hasTrechos ? [{ uid: Date.now(), origem:'', destino:'', saida:'', chegada:'', voo:'' }] : [],
+    pax: cfg.hasPax ? [newPax()] : [],
+  };
+  itemsList.push(item);
+  renderAllItems();
+  return item;
 }
 
-function removeTrecho(uid) {
-  if (trechoList.length <= 1) return;
-  trechoList = trechoList.filter(t => t.uid !== uid);
-  renderTrechos();
-}
-
-function renderTrechos() {
-  const tbody = document.getElementById('trechoBody');
-  tbody.innerHTML = trechoList.map(t => `
-    <tr data-trecho-uid="${t.uid}">
-      <td><input type="text" class="input-os" value="${t.origem}" placeholder="GRU" data-field="origem" onchange="syncTrecho(${t.uid},'origem',this.value)"></td>
-      <td><input type="text" class="input-os" value="${t.destino}" placeholder="GIG" data-field="destino" onchange="syncTrecho(${t.uid},'destino',this.value)"></td>
-      <td><input type="datetime-local" class="input-os" value="${t.saida}" data-field="saida" onchange="syncTrecho(${t.uid},'saida',this.value);recalcTripDates()"></td>
-      <td><input type="datetime-local" class="input-os" value="${t.chegada}" data-field="chegada" onchange="syncTrecho(${t.uid},'chegada',this.value);recalcTripDates()"></td>
-      <td><input type="text" class="input-os" value="${t.voo}" placeholder="LA3045" data-field="voo" onchange="syncTrecho(${t.uid},'voo',this.value)" style="width:90px"></td>
-      <td>
-        <div class="trecho-actions">
-          <button class="trecho-btn trecho-btn-add" onclick="addTrecho()" title="Adicionar trecho"><i class="bi bi-plus-lg"></i></button>
-          <button class="trecho-btn trecho-btn-del" onclick="removeTrecho(${t.uid})" title="Remover trecho"><i class="bi bi-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function syncTrecho(uid, field, value) {
-  const t = trechoList.find(x => x.uid === uid);
-  if (t) t[field] = value;
-}
-
-document.getElementById('btnAddTrecho').addEventListener('click', () => addTrecho());
-
-/* ══════════════════════════════════════════════════════════════
-   PASSAGEIROS
-   ══════════════════════════════════════════════════════════════ */
-function addPax(data = {}) {
-  paxCounter++;
-  const uid = paxCounter;
-  paxList.push({
-    uid,
-    nome:       data.nome || '',
-    sobrenome:  data.sobrenome || '',
-    tipo:       data.tipo || 'ADT',
-    cpf: '', rg: '', nascimento: '', genero: 'M',
-    passaporte_num: '', passaporte_validade: '', nacionalidade: '',
-    email: '', telefone: '',
-    tarifa: 0, taxas_embarque: 0, bagagem: 0, rav_du: 0,
-    ...data,
-  });
-  renderPax();
-}
-
-function removePax(uid) {
-  if (paxList.length <= 1) return;
-  paxList = paxList.filter(p => p.uid !== uid);
-  renderPax();
+function removeItem(uid) {
+  if (itemsList.length <= 1) return;
+  itemsList = itemsList.filter(i => i.uid !== uid);
+  renderAllItems();
   recalcAllPax();
 }
 
-function renderPax() {
-  const container = document.getElementById('paxContainer');
-  container.innerHTML = paxList.map((p, i) => {
-    const n = i + 1;
-    const totalPax = p.tarifa + p.taxas_embarque + p.bagagem + p.rav_du;
-    return `
-    <div class="pax-card" data-pax-uid="${p.uid}">
-      <div class="pax-card-header">
-        <span class="pax-badge">PAX ${n}</span>
-        <div style="flex:1;min-width:100px">
-          <input type="text" class="input-os" value="${p.nome}" placeholder="Nome"
-            onchange="syncPax(${p.uid},'nome',this.value)">
-        </div>
-        <div style="flex:1;min-width:100px">
-          <input type="text" class="input-os" value="${p.sobrenome}" placeholder="Sobrenome"
-            onchange="syncPax(${p.uid},'sobrenome',this.value)">
-        </div>
-        <div style="width:100px;flex-shrink:0">
-          <select class="input-os" onchange="syncPax(${p.uid},'tipo',this.value)">
-            <option value="ADT" ${p.tipo==='ADT'?'selected':''}>ADT</option>
-            <option value="CHD" ${p.tipo==='CHD'?'selected':''}>CHD</option>
-            <option value="INF" ${p.tipo==='INF'?'selected':''}>INF</option>
-          </select>
-        </div>
-        <button class="pax-remove-btn" onclick="removePax(${p.uid})" title="Remover passageiro"><i class="bi bi-x-lg"></i></button>
-      </div>
+function changeItemType(uid, newTipo) {
+  const item = itemsList.find(i => i.uid === uid);
+  if (!item) return;
+  item.tipo = newTipo;
+  const cfg = TYPE_CONFIG[newTipo];
+  if (cfg.hasTrechos && !item.trechos.length) item.trechos.push({ uid: Date.now(), origem:'', destino:'', saida:'', chegada:'', voo:'' });
+  if (cfg.hasPax && !item.pax.length) item.pax.push(newPax());
+  renderAllItems();
+}
 
-      <!-- Documentos & Contato (collapsed) -->
-      <div class="pax-docs-section">
-        <button class="sf-toggle-link" onclick="togglePaxDocs(${p.uid}, this)">
-          <i class="bi bi-chevron-down"></i> Documentos & Contato
-        </button>
-        <div class="sf-collapse" id="paxDocs${p.uid}">
-          <div class="row g-2 mt-1">
-            <div class="col-6 col-md-3"><label class="os-label">CPF</label>
-              <input type="text" class="input-os" value="${p.cpf}" placeholder="000.000.000-00" onchange="syncPax(${p.uid},'cpf',this.value)"></div>
-            <div class="col-6 col-md-3"><label class="os-label">RG</label>
-              <input type="text" class="input-os" value="${p.rg}" placeholder="RG" onchange="syncPax(${p.uid},'rg',this.value)"></div>
-            <div class="col-6 col-md-3"><label class="os-label">Nascimento</label>
-              <input type="date" class="input-os" value="${p.nascimento}" onchange="syncPax(${p.uid},'nascimento',this.value)"></div>
-            <div class="col-6 col-md-3"><label class="os-label">Genero</label>
-              <select class="input-os" onchange="syncPax(${p.uid},'genero',this.value)">
-                <option value="M" ${p.genero==='M'?'selected':''}>Masculino</option>
-                <option value="F" ${p.genero==='F'?'selected':''}>Feminino</option>
-              </select></div>
-            <div class="col-6 col-md-4"><label class="os-label">Passaporte No.</label>
-              <input type="text" class="input-os" value="${p.passaporte_num}" placeholder="BR123456" onchange="syncPax(${p.uid},'passaporte_num',this.value)"></div>
-            <div class="col-6 col-md-4"><label class="os-label">Validade</label>
-              <input type="date" class="input-os" value="${p.passaporte_validade}" onchange="syncPax(${p.uid},'passaporte_validade',this.value)"></div>
-            <div class="col-6 col-md-4"><label class="os-label">Nacionalidade</label>
-              <input type="text" class="input-os" value="${p.nacionalidade}" placeholder="Brasileira" onchange="syncPax(${p.uid},'nacionalidade',this.value)"></div>
-            <div class="col-6 col-md-4"><label class="os-label">E-mail</label>
-              <input type="email" class="input-os" value="${p.email}" placeholder="email@exemplo.com" onchange="syncPax(${p.uid},'email',this.value)"></div>
-            <div class="col-6 col-md-4"><label class="os-label">Telefone</label>
-              <input type="tel" class="input-os" value="${p.telefone}" placeholder="(11) 99999-9999" onchange="syncPax(${p.uid},'telefone',this.value)"></div>
+function newPax(data = {}) {
+  return {
+    uid: Date.now() + Math.random(),
+    nome:'', sobrenome:'', tipo:'ADT', cpf:'', rg:'', nascimento:'', genero:'M',
+    passaporte_num:'', passaporte_validade:'', nacionalidade:'',
+    email:'', telefone:'',
+    tarifa:0, taxas_embarque:0, bagagem:0, rav_du:0,
+    ...data,
+  };
+}
+
+function addPaxToItem(itemUid) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item) return;
+  item.pax.push(newPax());
+  renderAllItems();
+}
+
+function removePaxFromItem(itemUid, paxUid) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item || item.pax.length <= 1) return;
+  item.pax = item.pax.filter(p => p.uid !== paxUid);
+  renderAllItems();
+  recalcAllPax();
+}
+
+function addTrechoToItem(itemUid) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item) return;
+  item.trechos.push({ uid: Date.now(), origem:'', destino:'', saida:'', chegada:'', voo:'' });
+  renderAllItems();
+}
+
+function removeTrechoFromItem(itemUid, trechoUid) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item || item.trechos.length <= 1) return;
+  item.trechos = item.trechos.filter(t => t.uid !== trechoUid);
+  renderAllItems();
+}
+
+/* ── Build dynamic fields HTML per type ───────────────────── */
+function buildTypeFields(item) {
+  const cfg = TYPE_CONFIG[item.tipo];
+  const d = item.dados;
+  let html = '<div class="row g-3 mb-3">';
+
+  if (cfg.fields.includes('ciaAerea'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Cia Aerea</label>
+      <input type="text" class="input-os" value="${d.ciaAerea||''}" placeholder="LATAM, GOL..." onchange="syncItemDados(${item.uid},'ciaAerea',this.value)"></div>`;
+
+  if (cfg.fields.includes('nomeHotel'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Nome do Hotel</label>
+      <input type="text" class="input-os" value="${d.nomeHotel||''}" placeholder="Ex: Ibis Paulista" onchange="syncItemDados(${item.uid},'nomeHotel',this.value)"></div>`;
+
+  if (cfg.fields.includes('nomeNavio'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Nome do Navio</label>
+      <input type="text" class="input-os" value="${d.nomeNavio||''}" placeholder="MSC Fantasia" onchange="syncItemDados(${item.uid},'nomeNavio',this.value)"></div>`;
+
+  if (cfg.fields.includes('localizador'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Localizador / Reserva</label>
+      <input type="text" class="input-os" value="${d.localizador||''}" placeholder="ABC123" onchange="syncItemDados(${item.uid},'localizador',this.value)"></div>`;
+
+  if (cfg.fields.includes('dataEmissao'))
+    html += `<div class="col-6 col-md-2"><label class="os-label">Data Emissao</label>
+      <input type="date" class="input-os" value="${d.dataEmissao||''}" onchange="syncItemDados(${item.uid},'dataEmissao',this.value)"></div>`;
+
+  if (cfg.fields.includes('checkin'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Check-in</label>
+      <input type="datetime-local" class="input-os" value="${d.checkin||''}" onchange="syncItemDados(${item.uid},'checkin',this.value);recalcTripDates()"></div>`;
+
+  if (cfg.fields.includes('checkout'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Check-out</label>
+      <input type="datetime-local" class="input-os" value="${d.checkout||''}" onchange="syncItemDados(${item.uid},'checkout',this.value);recalcTripDates()"></div>`;
+
+  if (cfg.fields.includes('dataInicio'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Data Inicio</label>
+      <input type="date" class="input-os" value="${d.dataInicio||''}" onchange="syncItemDados(${item.uid},'dataInicio',this.value);recalcTripDates()"></div>`;
+
+  if (cfg.fields.includes('dataFim'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Data Fim</label>
+      <input type="date" class="input-os" value="${d.dataFim||''}" onchange="syncItemDados(${item.uid},'dataFim',this.value);recalcTripDates()"></div>`;
+
+  if (cfg.fields.includes('tipoQuarto'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Tipo Quarto</label>
+      <select class="input-os" onchange="syncItemDados(${item.uid},'tipoQuarto',this.value)">
+        <option value="single" ${d.tipoQuarto==='single'?'selected':''}>Single</option>
+        <option value="double" ${d.tipoQuarto==='double'?'selected':''}>Double</option>
+        <option value="triple" ${d.tipoQuarto==='triple'?'selected':''}>Triple</option>
+        <option value="suite" ${d.tipoQuarto==='suite'?'selected':''}>Suite</option>
+      </select></div>`;
+
+  if (cfg.fields.includes('regime'))
+    html += `<div class="col-6 col-md-3"><label class="os-label">Regime</label>
+      <select class="input-os" onchange="syncItemDados(${item.uid},'regime',this.value)">
+        <option value="">Selecione...</option>
+        <option value="sem_refeicao" ${d.regime==='sem_refeicao'?'selected':''}>Sem refeicao</option>
+        <option value="cafe" ${d.regime==='cafe'?'selected':''}>Cafe da manha</option>
+        <option value="meia_pensao" ${d.regime==='meia_pensao'?'selected':''}>Meia pensao</option>
+        <option value="pensao_completa" ${d.regime==='pensao_completa'?'selected':''}>Pensao completa</option>
+        <option value="all_inclusive" ${d.regime==='all_inclusive'?'selected':''}>All Inclusive</option>
+      </select></div>`;
+
+  if (cfg.fields.includes('descricao'))
+    html += `<div class="col-12"><label class="os-label">Descricao</label>
+      <input type="text" class="input-os" value="${d.descricao||''}" placeholder="Detalhes do servico..." onchange="syncItemDados(${item.uid},'descricao',this.value)"></div>`;
+
+  if (cfg.fields.includes('destTipo'))
+    html += `<div class="col-12"><div class="d-flex gap-3 mt-1">
+      <div class="form-check"><input class="form-check-input" type="radio" name="destTipo${item.uid}" value="nacional" ${(d.destTipo||'nacional')==='nacional'?'checked':''} onchange="syncItemDados(${item.uid},'destTipo',this.value)">
+        <label class="form-check-label" style="font-size:13px;font-weight:600">Nacional</label></div>
+      <div class="form-check"><input class="form-check-input" type="radio" name="destTipo${item.uid}" value="internacional" ${d.destTipo==='internacional'?'checked':''} onchange="syncItemDados(${item.uid},'destTipo',this.value)">
+        <label class="form-check-label" style="font-size:13px;font-weight:600">Internacional</label></div>
+    </div></div>`;
+
+  html += '</div>';
+  return html;
+}
+
+/* ── Render trechos for an item ───────────────────────────── */
+function buildTrechosHTML(item) {
+  return `
+    <div class="sf-section-label mt-2"><i class="bi bi-signpost-split"></i> Trechos</div>
+    <div style="overflow-x:auto">
+      <table class="trecho-table">
+        <thead><tr><th>Origem</th><th>Destino</th><th>Saida</th><th>Chegada</th><th>Voo</th><th style="width:70px"></th></tr></thead>
+        <tbody>${item.trechos.map(t => `
+          <tr>
+            <td><input type="text" class="input-os" value="${t.origem}" placeholder="GRU" onchange="syncTrecho(${item.uid},${t.uid},'origem',this.value)"></td>
+            <td><input type="text" class="input-os" value="${t.destino}" placeholder="GIG" onchange="syncTrecho(${item.uid},${t.uid},'destino',this.value)"></td>
+            <td><input type="datetime-local" class="input-os" value="${t.saida}" onchange="syncTrecho(${item.uid},${t.uid},'saida',this.value);recalcTripDates()"></td>
+            <td><input type="datetime-local" class="input-os" value="${t.chegada}" onchange="syncTrecho(${item.uid},${t.uid},'chegada',this.value);recalcTripDates()"></td>
+            <td><input type="text" class="input-os" value="${t.voo}" placeholder="LA3045" onchange="syncTrecho(${item.uid},${t.uid},'voo',this.value)" style="width:90px"></td>
+            <td><div class="trecho-actions">
+              <button class="trecho-btn trecho-btn-add" onclick="addTrechoToItem(${item.uid})"><i class="bi bi-plus-lg"></i></button>
+              <button class="trecho-btn trecho-btn-del" onclick="removeTrechoFromItem(${item.uid},${t.uid})"><i class="bi bi-trash"></i></button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ── Render pax for an item ───────────────────────────────── */
+function buildPaxHTML(item) {
+  return `
+    <div class="sf-section-label mt-3"><i class="bi bi-people-fill"></i> Passageiros</div>
+    ${item.pax.map((p, i) => {
+      const n = i + 1;
+      const totalPax = (parseFloat(p.tarifa)||0) + (parseFloat(p.taxas_embarque)||0) + (parseFloat(p.bagagem)||0) + (parseFloat(p.rav_du)||0);
+      return `
+      <div class="pax-card" data-pax-uid="${p.uid}">
+        <div class="pax-card-header">
+          <span class="pax-badge">PAX ${n}</span>
+          <div style="flex:1;min-width:100px"><input type="text" class="input-os" value="${p.nome}" placeholder="Nome" onchange="syncPaxInItem(${item.uid},${p.uid},'nome',this.value)"></div>
+          <div style="flex:1;min-width:100px"><input type="text" class="input-os" value="${p.sobrenome}" placeholder="Sobrenome" onchange="syncPaxInItem(${item.uid},${p.uid},'sobrenome',this.value)"></div>
+          <div style="width:100px;flex-shrink:0">
+            <select class="input-os" onchange="syncPaxInItem(${item.uid},${p.uid},'tipo',this.value)">
+              <option value="ADT" ${p.tipo==='ADT'?'selected':''}>ADT</option>
+              <option value="CHD" ${p.tipo==='CHD'?'selected':''}>CHD</option>
+              <option value="INF" ${p.tipo==='INF'?'selected':''}>INF</option>
+            </select>
+          </div>
+          <button class="pax-remove-btn" onclick="removePaxFromItem(${item.uid},${p.uid})"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="pax-docs-section">
+          <button class="sf-toggle-link" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <i class="bi bi-chevron-down"></i> Documentos & Contato
+          </button>
+          <div class="sf-collapse">
+            <div class="row g-2 mt-1">
+              <div class="col-6 col-md-3"><label class="os-label">CPF</label><input type="text" class="input-os" value="${p.cpf}" placeholder="000.000.000-00" onchange="syncPaxInItem(${item.uid},${p.uid},'cpf',this.value)"></div>
+              <div class="col-6 col-md-3"><label class="os-label">Nascimento</label><input type="date" class="input-os" value="${p.nascimento}" onchange="syncPaxInItem(${item.uid},${p.uid},'nascimento',this.value)"></div>
+              <div class="col-6 col-md-3"><label class="os-label">Genero</label><select class="input-os" onchange="syncPaxInItem(${item.uid},${p.uid},'genero',this.value)">
+                <option value="M" ${p.genero==='M'?'selected':''}>Masculino</option><option value="F" ${p.genero==='F'?'selected':''}>Feminino</option></select></div>
+              <div class="col-6 col-md-3"><label class="os-label">Passaporte</label><input type="text" class="input-os" value="${p.passaporte_num}" placeholder="No." onchange="syncPaxInItem(${item.uid},${p.uid},'passaporte_num',this.value)"></div>
+              <div class="col-6 col-md-3"><label class="os-label">E-mail</label><input type="email" class="input-os" value="${p.email}" onchange="syncPaxInItem(${item.uid},${p.uid},'email',this.value)"></div>
+              <div class="col-6 col-md-3"><label class="os-label">Telefone</label><input type="tel" class="input-os" value="${p.telefone}" onchange="syncPaxInItem(${item.uid},${p.uid},'telefone',this.value)"></div>
+            </div>
           </div>
         </div>
-      </div>
+        <div class="pax-pricing-row">
+          <div class="pax-pricing-field"><label>Tarifa</label><input type="number" class="input-os" value="${p.tarifa}" step="0.01" onchange="syncPaxInItem(${item.uid},${p.uid},'tarifa',this.value);recalcAllPax()"></div>
+          <div class="pax-pricing-field"><label>Taxas Embarque</label><input type="number" class="input-os" value="${p.taxas_embarque}" step="0.01" onchange="syncPaxInItem(${item.uid},${p.uid},'taxas_embarque',this.value);recalcAllPax()"></div>
+          <div class="pax-pricing-field"><label>Bagagem</label><input type="number" class="input-os" value="${p.bagagem}" step="0.01" onchange="syncPaxInItem(${item.uid},${p.uid},'bagagem',this.value);recalcAllPax()"></div>
+          <div class="pax-pricing-field"><label>RAV/DU</label><input type="number" class="input-os" value="${p.rav_du}" step="0.01" onchange="syncPaxInItem(${item.uid},${p.uid},'rav_du',this.value);recalcAllPax()"></div>
+          <div class="pax-pricing-field pax-total-field"><label>Total PAX</label><input type="text" class="input-os" value="${fmtMoney(totalPax)}" readonly></div>
+        </div>
+      </div>`;
+    }).join('')}
+    <button class="btn-add-pax mt-2" onclick="addPaxToItem(${item.uid})">
+      <i class="bi bi-plus-circle"></i> Adicionar Passageiro
+    </button>`;
+}
 
-      <!-- Pricing (always visible) -->
-      <div class="pax-pricing-row">
-        <div class="pax-pricing-field">
-          <label>Tarifa</label>
-          <input type="number" class="input-os" value="${p.tarifa}" step="0.01"
-            onchange="syncPax(${p.uid},'tarifa',+this.value);recalcAllPax()"
-            oninput="syncPax(${p.uid},'tarifa',+this.value);recalcAllPax()">
+/* ── Render ALL items ─────────────────────────────────────── */
+function renderAllItems() {
+  const container = document.getElementById('itemsContainer');
+  container.innerHTML = itemsList.map((item, idx) => {
+    const cfg = TYPE_CONFIG[item.tipo];
+    const typeOpts = Object.entries(TYPE_CONFIG).map(([k,v]) =>
+      `<option value="${k}" ${k===item.tipo?'selected':''}>${v.label}</option>`
+    ).join('');
+
+    return `
+    <div class="sf-card" data-item-uid="${item.uid}">
+      <div class="item-card-header">
+        <span class="item-num">${idx+1}</span>
+        <i class="bi ${cfg.icon}"></i>
+        <select class="item-type-select" onchange="changeItemType(${item.uid},this.value)">${typeOpts}</select>
+        <div class="item-card-actions">
+          <button onclick="removeItem(${item.uid})" title="Remover item"><i class="bi bi-trash"></i></button>
         </div>
-        <div class="pax-pricing-field">
-          <label>Taxas Embarque</label>
-          <input type="number" class="input-os" value="${p.taxas_embarque}" step="0.01"
-            onchange="syncPax(${p.uid},'taxas_embarque',+this.value);recalcAllPax()"
-            oninput="syncPax(${p.uid},'taxas_embarque',+this.value);recalcAllPax()">
+      </div>
+      <div class="sf-card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-5">
+            <label class="os-label">Fornecedor <span style="color:var(--danger)">*</span></label>
+            <div class="ac-wrap">
+              <input type="text" class="input-os" value="${item.fornecedor.nome}" placeholder="Buscar fornecedor..."
+                oninput="onFornInputItem(${item.uid},this)" autocomplete="off" data-forn-item="${item.uid}">
+            </div>
+          </div>
         </div>
-        <div class="pax-pricing-field">
-          <label>Bagagem</label>
-          <input type="number" class="input-os" value="${p.bagagem}" step="0.01"
-            onchange="syncPax(${p.uid},'bagagem',+this.value);recalcAllPax()"
-            oninput="syncPax(${p.uid},'bagagem',+this.value);recalcAllPax()">
-        </div>
-        <div class="pax-pricing-field">
-          <label>RAV / DU</label>
-          <input type="number" class="input-os" value="${p.rav_du}" step="0.01"
-            onchange="syncPax(${p.uid},'rav_du',+this.value);recalcAllPax()"
-            oninput="syncPax(${p.uid},'rav_du',+this.value);recalcAllPax()">
-        </div>
-        <div class="pax-pricing-field pax-total-field">
-          <label style="color:#fff">Total PAX</label>
-          <input type="number" class="input-os" value="${totalPax.toFixed(2)}" readonly id="paxTotal${p.uid}">
-        </div>
+        ${buildTypeFields(item)}
+        ${cfg.hasTrechos ? buildTrechosHTML(item) : ''}
+        ${cfg.hasPax ? buildPaxHTML(item) : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-function syncPax(uid, field, value) {
-  const p = paxList.find(x => x.uid === uid);
+/* ── Sync helpers ─────────────────────────────────────────── */
+function syncItemDados(itemUid, field, value) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (item) item.dados[field] = value;
+}
+
+function syncTrecho(itemUid, trechoUid, field, value) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item) return;
+  const t = item.trechos.find(x => x.uid === trechoUid);
+  if (t) t[field] = value;
+}
+
+function syncPaxInItem(itemUid, paxUid, field, value) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item) return;
+  const p = item.pax.find(x => x.uid === paxUid);
   if (p) p[field] = value;
 }
 
-function togglePaxDocs(uid, btn) {
-  const body = document.getElementById(`paxDocs${uid}`);
-  if (!body) return;
-  body.classList.toggle('open');
-  btn.classList.toggle('open');
-}
+document.getElementById('btnAddItem').addEventListener('click', () => addItem());
 
 function recalcAllPax() {
   let totalTarifa = 0;
   let totalTaxas  = 0;
   let totalGross  = 0;
 
-  paxList.forEach(p => {
-    const t = (parseFloat(p.tarifa) || 0);
-    const tx = (parseFloat(p.taxas_embarque) || 0);
-    const b = (parseFloat(p.bagagem) || 0);
-    const r = (parseFloat(p.rav_du) || 0);
-    const total = t + tx + b + r;
-
-    totalTarifa += t;
-    totalTaxas  += tx;
-    totalGross  += total;
-
-    const el = document.getElementById(`paxTotal${p.uid}`);
-    if (el) el.value = total.toFixed(2);
+  itemsList.forEach(item => {
+    item.pax.forEach(p => {
+      const t  = parseFloat(p.tarifa) || 0;
+      const tx = parseFloat(p.taxas_embarque) || 0;
+      const b  = parseFloat(p.bagagem) || 0;
+      const r  = parseFloat(p.rav_du) || 0;
+      totalTarifa += t;
+      totalTaxas  += tx;
+      totalGross  += t + tx + b + r;
+    });
   });
 
   // Update financeiro readonly fields
@@ -930,11 +1002,16 @@ function calcFinanceiro() {
    ══════════════════════════════════════════════════════════════ */
 function recalcTripDates() {
   const dates = [];
-  trechoList.forEach(t => {
-    if (t.saida) dates.push(new Date(t.saida));
-    if (t.chegada) dates.push(new Date(t.chegada));
+  itemsList.forEach(item => {
+    item.trechos.forEach(t => {
+      if (t.saida) dates.push(new Date(t.saida));
+      if (t.chegada) dates.push(new Date(t.chegada));
+    });
+    if (item.dados.checkin) dates.push(new Date(item.dados.checkin));
+    if (item.dados.checkout) dates.push(new Date(item.dados.checkout));
+    if (item.dados.dataInicio) dates.push(new Date(item.dados.dataInicio));
+    if (item.dados.dataFim) dates.push(new Date(item.dados.dataFim));
   });
-  // No visible date fields in the new layout, but keep for API
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1017,52 +1094,55 @@ consultorInput.addEventListener('input', () => {
 });
 
 /* ══════════════════════════════════════════════════════════════
-   AUTOCOMPLETE — Fornecedor
+   AUTOCOMPLETE — Fornecedor (per-item)
    ══════════════════════════════════════════════════════════════ */
 let fornDebounce  = null;
-let fornDropdown  = null;
-const fornInput   = document.getElementById('fornecedorInput');
+let activeFornDropdown = null;
 
-function renderFornDropdown(fornecedores) {
-  if (fornDropdown) fornDropdown.remove();
+function onFornInputItem(itemUid, inputEl) {
+  clearTimeout(fornDebounce);
+  const item = itemsList.find(i => i.uid === itemUid);
+  const q = inputEl.value.trim();
+  if (!q) { if (item) { item.fornecedor.id = null; item.fornecedor.nome = ''; } closeFornDropdown(); return; }
+  fornDebounce = setTimeout(async () => {
+    try {
+      const res  = await Auth.apiFetch(`/api/fornecedores?q=${encodeURIComponent(q)}&limit=8`);
+      const body = await res.json();
+      if (body.ok) renderFornDropdownItem(itemUid, inputEl, body.data || []);
+    } catch {}
+  }, 280);
+}
+
+function renderFornDropdownItem(itemUid, inputEl, fornecedores) {
+  closeFornDropdown();
   if (!fornecedores.length) return;
-  fornDropdown = document.createElement('div');
-  fornDropdown.className = 'ac-dropdown';
+  const item = itemsList.find(i => i.uid === itemUid);
+  activeFornDropdown = document.createElement('div');
+  activeFornDropdown.className = 'ac-dropdown';
   fornecedores.forEach(f => {
     const row = document.createElement('div');
     row.className = 'ac-dropdown-item';
     row.textContent = f.nome || f.razao_social;
     row.addEventListener('click', () => {
-      fornecedorState.id   = f.id;
-      fornecedorState.nome = f.nome || f.razao_social;
-      fornInput.value = f.nome || f.razao_social;
-      fornDropdown.remove(); fornDropdown = null;
-      lookupComissao();
+      if (item) { item.fornecedor.id = f.id; item.fornecedor.nome = f.nome || f.razao_social; }
+      inputEl.value = f.nome || f.razao_social;
+      closeFornDropdown();
+      lookupComissaoForItem(itemUid);
     });
-    fornDropdown.appendChild(row);
+    activeFornDropdown.appendChild(row);
   });
-  fornInput.closest('.ac-wrap').appendChild(fornDropdown);
+  inputEl.closest('.ac-wrap').appendChild(activeFornDropdown);
 }
 
-function onFornInput(inputEl) {
-  clearTimeout(fornDebounce);
-  const q = inputEl.value.trim();
-  if (!q) { fornecedorState.id = null; fornecedorState.nome = null; if (fornDropdown) { fornDropdown.remove(); fornDropdown = null; } return; }
-  fornDebounce = setTimeout(async () => {
-    try {
-      const res  = await Auth.apiFetch(`/api/fornecedores?q=${encodeURIComponent(q)}&limit=8`);
-      const body = await res.json();
-      if (body.ok) renderFornDropdown(body.data || []);
-    } catch {}
-  }, 280);
+function closeFornDropdown() {
+  if (activeFornDropdown) { activeFornDropdown.remove(); activeFornDropdown = null; }
 }
 
-fornInput.addEventListener('input', () => onFornInput(fornInput));
-
-async function lookupComissao() {
-  if (!fornecedorState.id) return;
+async function lookupComissaoForItem(itemUid) {
+  const item = itemsList.find(i => i.uid === itemUid);
+  if (!item?.fornecedor?.id) return;
   try {
-    const res  = await Auth.apiFetch(`/api/comissoes/lookup?fornecedor_id=${fornecedorState.id}&tipo_produto=AIRFARE`);
+    const res  = await Auth.apiFetch(`/api/comissoes/lookup?fornecedor_id=${item.fornecedor.id}&tipo_produto=${item.tipo}`);
     const body = await res.json();
     if (!body.ok) return;
     const d = body.data;
@@ -1071,9 +1151,7 @@ async function lookupComissao() {
     if (comEl    && d.comissao_forn_pct  != null) comEl.value    = d.comissao_forn_pct;
     if (markupEl && d.comissao_agente_pct != null) markupEl.value = d.comissao_agente_pct;
     calcFinanceiro();
-    if (typeof Notify !== 'undefined') {
-      Notify.info(`Comissoes preenchidas: Cia ${d.comissao_forn_pct ?? 0}% / Agente ${d.comissao_agente_pct ?? 0}%`);
-    }
+    Notify.info(`Comissoes: Forn ${d.comissao_forn_pct ?? 0}% / Agente ${d.comissao_agente_pct ?? 0}%`);
   } catch {}
 }
 
@@ -1087,8 +1165,8 @@ document.addEventListener('click', e => {
   if (consultorDropdown && !consultorDropdown.contains(e.target) && e.target !== consultorInput) {
     consultorDropdown.remove(); consultorDropdown = null;
   }
-  if (fornDropdown && !fornDropdown.contains(e.target) && e.target !== fornInput) {
-    fornDropdown.remove(); fornDropdown = null;
+  if (activeFornDropdown && !activeFornDropdown.contains(e.target) && !e.target.hasAttribute('data-forn-item')) {
+    closeFornDropdown();
   }
 });
 
@@ -1098,56 +1176,51 @@ document.addEventListener('click', e => {
 function coletarVenda() {
   const observacoes   = document.getElementById('obsTextarea')?.value || null;
   const data_abertura = document.getElementById('saleDate')?.value || null;
+  const taxa_cambio   = numVal('finCambio') || 1;
+  const com_pct       = numVal('finComCiaPct');
+  const markup_val    = numVal('finMarkupPct');
 
-  // Build single AIRFARE item
-  const destTipo   = document.querySelector('input[name="destTipo"]:checked')?.value || 'nacional';
-  const pfx        = 'fin';
-  const tarifa     = numVal('finTarifaTotal');
-  const taxas      = numVal('finTaxasTotal');
-  const taxa_cambio = numVal('finCambio') || 1;
-  const com_pct    = numVal('finComCiaPct');
-  const markup_val = numVal('finMarkupPct');
-
-  const itens = [{
-    tipo_produto:       'AIRFARE',
-    localizador:        document.getElementById('localizador')?.value || null,
-    cia_aerea:          document.getElementById('ciaAerea')?.value || null,
-    data_emissao:       document.getElementById('dataEmissao')?.value || null,
-    destino_tipo:       destTipo,
+  // Build items array from state
+  const itens = itemsList.map(item => ({
+    tipo_produto:       item.tipo,
+    localizador:        item.dados.localizador || null,
+    cia_aerea:          item.dados.ciaAerea || null,
+    data_emissao:       item.dados.dataEmissao || null,
+    destino_tipo:       item.dados.destTipo || 'nacional',
+    descricao:          item.dados.descricao || null,
     moeda_fornecedor:   'BRL',
     taxa_cambio,
-    tarifa,
-    taxas,
+    tarifa:             numVal('finTarifaTotal'),
+    taxas:              numVal('finTaxasTotal'),
     outros_custos:      numVal('finOutrasTaxas'),
     comissao_forn_pct:  com_pct,
     comissao_agente_pct: markup_val,
     markup_tipo:        'percentual',
     markup_valor:       markup_val,
-    trechos:            trechoList.map(t => ({
+    fornecedor_id:      item.fornecedor.id || null,
+    trechos:            item.trechos.map(t => ({
       origem: t.origem, destino: t.destino,
       saida: t.saida, chegada: t.chegada, voo: t.voo,
     })),
-  }];
-
-  // Build pax array
-  const pax = paxList.map(p => ({
-    nome:       p.nome,
-    sobrenome:  p.sobrenome,
-    tipo:       p.tipo,
-    cpf:        p.cpf,
-    rg:         p.rg,
-    nascimento: p.nascimento,
-    genero:     p.genero,
-    passaporte_num:      p.passaporte_num,
-    passaporte_validade: p.passaporte_validade,
-    nacionalidade:       p.nacionalidade,
-    email:      p.email,
-    telefone:   p.telefone,
-    tarifa:     parseFloat(p.tarifa) || 0,
-    taxas_embarque: parseFloat(p.taxas_embarque) || 0,
-    bagagem:    parseFloat(p.bagagem) || 0,
-    rav_du:     parseFloat(p.rav_du) || 0,
+    dados_extra:        item.dados,
   }));
+
+  // Collect all pax across all items
+  const pax = [];
+  itemsList.forEach(item => {
+    item.pax.forEach(p => {
+      pax.push({
+        nome: p.nome, sobrenome: p.sobrenome, tipo: p.tipo,
+        cpf: p.cpf, rg: p.rg, nascimento: p.nascimento, genero: p.genero,
+        passaporte_num: p.passaporte_num, passaporte_validade: p.passaporte_validade,
+        nacionalidade: p.nacionalidade, email: p.email, telefone: p.telefone,
+        tarifa: parseFloat(p.tarifa) || 0,
+        taxas_embarque: parseFloat(p.taxas_embarque) || 0,
+        bagagem: parseFloat(p.bagagem) || 0,
+        rav_du: parseFloat(p.rav_du) || 0,
+      });
+    });
+  });
 
   return {
     cliente_id:         clienteId || null,
@@ -1253,41 +1326,37 @@ async function carregarVenda(id) {
     if (v.voucher_status) document.getElementById('saleVoucher').value = v.voucher_status;
     if (v.observacoes) document.getElementById('obsTextarea').value = v.observacoes;
 
-    // Load first AIRFARE item data
+    // Load items
+    itemsList = [];
+    itemCounter = 0;
     if (v.itens?.length) {
-      const it = v.itens[0];
-      if (it.localizador) document.getElementById('localizador').value = it.localizador;
-      if (it.cia_aerea) document.getElementById('ciaAerea').value = it.cia_aerea;
-      if (it.data_emissao) document.getElementById('dataEmissao').value = it.data_emissao.slice(0, 10);
-      if (it.destino_tipo === 'internacional') document.getElementById('destInternacional').checked = true;
+      v.itens.forEach(it => {
+        const item = addItem(it.tipo_produto || 'AIRFARE');
+        item.fornecedor.id   = it.fornecedor_id;
+        item.fornecedor.nome = it.fornecedor_nome || '';
+        item.dados = {
+          localizador: it.localizador, ciaAerea: it.cia_aerea,
+          dataEmissao: it.data_emissao?.slice(0,10), destTipo: it.destino_tipo,
+          descricao: it.descricao, ...(it.dados_extra || {}),
+        };
+        if (it.trechos?.length) item.trechos = it.trechos.map(t => ({ uid: Date.now()+Math.random(), ...t }));
 
-      // Fornecedor
-      if (it.fornecedor_nome) {
-        fornInput.value = it.fornecedor_nome;
-        fornecedorState.id = it.fornecedor_id;
-        fornecedorState.nome = it.fornecedor_nome;
-      }
-
-      // Financial from item
-      if (it.comissao_forn_pct != null)  document.getElementById('finComCiaPct').value  = it.comissao_forn_pct;
-      if (it.comissao_agente_pct != null) document.getElementById('finMarkupPct').value = it.comissao_agente_pct;
-      if (it.taxa_cambio != null) document.getElementById('finCambio').value = it.taxa_cambio;
-
-      // Trechos
-      if (it.trechos?.length) {
-        trechoList = [];
-        trechoCounter = 0;
-        it.trechos.forEach(t => addTrecho(t));
-      }
+        // Financial from first item
+        if (it.comissao_forn_pct != null)  document.getElementById('finComCiaPct').value  = it.comissao_forn_pct;
+        if (it.comissao_agente_pct != null) document.getElementById('finMarkupPct').value = it.comissao_agente_pct;
+        if (it.taxa_cambio != null) document.getElementById('finCambio').value = it.taxa_cambio;
+      });
     }
 
-    // Load pax
+    // Load pax into first item that supports pax
     if (v.pax?.length) {
-      paxList = [];
-      paxCounter = 0;
-      v.pax.forEach(p => addPax(p));
+      const paxItem = itemsList.find(i => TYPE_CONFIG[i.tipo]?.hasPax);
+      if (paxItem) {
+        paxItem.pax = v.pax.map(p => newPax(p));
+      }
     }
 
+    renderAllItems();
     recalcAllPax();
 
     // Footer totals
@@ -1377,9 +1446,8 @@ document.getElementById('os-overlay')?.addEventListener('click', () => {
   // Set today's date
   document.getElementById('saleDate').value = new Date().toISOString().slice(0, 10);
 
-  // Init first trecho and first pax
-  addTrecho();
-  addPax();
+  // Init first item (AIRFARE by default, with 1 trecho + 1 pax)
+  addItem('AIRFARE');
 
   // Load existing sale or new
   if (saleId) {
