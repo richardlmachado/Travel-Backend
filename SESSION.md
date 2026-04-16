@@ -7,42 +7,45 @@
 ---
 
 ## Última Sessão
-- **ID**: d269b536-49b2-4527-b46a-5e5f96b77eee
+- **ID**: d269b536-49b2-4527-b46a-5e5f96b77eee (continuação)
 - **Data**: 2026-04-15
 - **Transcript**: `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\d269b536-49b2-4527-b46a-5e5f96b77eee.jsonl`
 
-## Status: Sprint 3 completa ✅
+## Status: Sprint 3 completa ✅ — Pronto para Sprint 4
 
-### Sprint 3 — Fase 3: Comissões 2 Níveis ✅ (esta sessão)
-1. **`migrate_sprint3_fase3.sql`** — Aplicado na VPS MySQL
-   - Tabelas: `fornecedor_comissoes_config`, `agente_comissoes_config`, `venda_comissoes`
-   - Seed: 6 regras padrão agente para loja 1
+### Sprint 3 — Complemento (esta continuação) ✅
+1. **`comissoes-agente.html`** — Extrato mensal de comissões por agente
+   - KPIs: total do mês, pendente, aprovado, pago
+   - Barra de progressão de faixa (20% → 30% conforme acumulado mensal)
+   - Filtros: mês, status, nível, busca por venda
+   - Gestor/Diretor pode alterar status (pendente→aprovado→pago→estornado)
 
-2. **`server.js` v3.3.0-fase3** — Deployado
-   - 12 endpoints de comissão + auto-trigger ao confirmar/concluir venda
-   - `GET /api/comissoes/lookup?fornecedor_id=X&tipo_produto=Y`
+2. **`financeiro.html`** — Visão consolidada de títulos/pagamentos
+   - KPIs: A Receber (cliente), Total Recebido, A Pagar (fornecedor), Em Atraso
+   - Tabs por tipo: Todos | Cliente↔Agência | Cliente↔Fornecedor | Fornecedor↔Agência
+   - Filtros: status, mês, busca por venda/cliente
+   - Mini barra de progresso de parcelas por título
+   - Modal de parcelas com indicador visual de atraso
+   - Links diretos para edição de pagamento
 
-3. **`comissoes-config.html`** — Criado (gestão de regras de comissão)
-4. **`sale-form.html`** — Atualizado (autocomplete fornecedor + auto-fill comissões)
+3. **Backend**: endpoints `GET /api/financeiro/titulos` e `GET /api/financeiro/titulos/:id/parcelas`
 
-### Sprint 3 — Fase 2: Pagamentos ✅ (sessão anterior)
-- Tabelas: `pagamentos`, `pagamento_parcelas`
-- 3 endpoints de pagamento (GET, POST/sync, PATCH parcela)
-- 3 páginas: `sale-finalize.html`, `sale-supplier-customer-payment.html`, `sale-supplier-agency-payment.html`
+### Sprint 3 — Fase 3: Comissões 2 Níveis ✅ (sessão anterior)
+- Tabelas: `fornecedor_comissoes_config`, `agente_comissoes_config`, `venda_comissoes`
+- 12 endpoints de comissão + auto-trigger ao confirmar/concluir venda
+- `comissoes-config.html` + `sale-form.html` (autocomplete fornecedor + auto-fill %)
 
-### Sprint 3 — Fase 1: Schema de Vendas ✅ (sessão anterior)
-- Tabelas: `vendas`, `venda_itens`, `comissoes` + endpoints CRUD
-
-### Skills instaladas ✅
-- 17 skills em `.claude/commands/` (local only, nunca sobem para VPS/GitHub)
+### Sprint 3 — Fases 1 e 2 ✅ (sessões anteriores)
+- Schema de vendas (tabelas `vendas`, `venda_itens`, `venda_pax`, `pagamentos`, `pagamento_parcelas`)
+- 3 páginas de pagamento (`sale-finalize`, `sale-supplier-customer-payment`, `sale-supplier-agency-payment`)
 
 ## Estado do Banco (VPS)
-- Sprint 3 completa: `pagamentos`, `pagamento_parcelas`, `fornecedor_comissoes_config`, `agente_comissoes_config`, `venda_comissoes`
-- 6 regras de agente (agente/gerente/diretor × agente/agencia) para loja 1
-- 1 regra fornecedor AIRFARE global 12.5% (criada no teste de validação)
+- 3 títulos de pagamento cadastrados (de vendas de teste)
+- KPIs reais: A Receber R$ 1.000, A Pagar R$ 800, Atrasado R$ 0
+- 6 regras de agente (cargo × origem_lead) + 1 regra fornecedor AIRFARE global 12.5%
 
-## Próximas etapas sugeridas (Sprint 4)
-- Página relatório de comissões por agente (`comissoes-agente.html`)
-- Dashboard financeiro com gráficos reais
-- Módulo clientes/fornecedores completo
-- Gerador de PDF para documentos de venda
+## Próximo: Sprint 4 — Lembretes & Automação
+- Engine de lembretes: agendamento 48h antes do embarque
+- Disparo via e-mail (SendGrid) ou WhatsApp (n8n)
+- Dashboard de lembretes com status de envio
+- Log de auditoria nas reservas
