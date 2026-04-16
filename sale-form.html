@@ -748,7 +748,7 @@ function buildAirfareFields(itemIdx) {
   return `<div id="airfare-fields-${itemIdx}">
     <div class="row g-3 mb-3">
       <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
-        <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: TREND VIAGENS" required><i class="bi bi-search"></i></div></div>
+        <div class="search-lupa" style="position:relative"><input type="text" class="input-os" id="forn-input-${itemIdx}" placeholder="Ex: TREND VIAGENS" oninput="onFornInput(${itemIdx},this)" autocomplete="off"><i class="bi bi-search"></i></div></div>
       <div class="col-12 col-md-4"><label class="os-label">Companhia Aérea / Fornecedor de Serviço</label>
         <div class="search-lupa"><input type="text" class="input-os" placeholder="Ex: LATAM, GOL..."><i class="bi bi-search"></i></div></div>
       <div class="col-6 col-md-2"><label class="os-label">Localizador</label>
@@ -799,7 +799,7 @@ function buildHostingFields(itemIdx) {
   return `<div id="hosting-fields-${itemIdx}">
     <div class="row g-3 mb-3">
       <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
-        <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor do hotel"><i class="bi bi-search"></i></div></div>
+        <div class="search-lupa" style="position:relative"><input type="text" class="input-os" id="forn-input-${itemIdx}" placeholder="Fornecedor do hotel" oninput="onFornInput(${itemIdx},this)" autocomplete="off"><i class="bi bi-search"></i></div></div>
       <div class="col-12 col-md-4"><label class="os-label">Hotel / Fornecedor de Serviço</label>
         <div class="search-lupa"><input type="text" class="input-os" placeholder="Nome do hotel"><i class="bi bi-search"></i></div></div>
       <div class="col-6 col-md-2"><label class="os-label">Check-in</label><input type="datetime-local" class="input-os"></div>
@@ -830,7 +830,7 @@ function buildGenericFields(itemIdx, typeLabel) {
   return `<div id="generic-fields-${itemIdx}">
     <div class="row g-3 mb-3">
       <div class="col-12 col-md-4"><label class="os-label">Fornecedor <span class="text-danger">*</span></label>
-        <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor"><i class="bi bi-search"></i></div></div>
+        <div class="search-lupa" style="position:relative"><input type="text" class="input-os" id="forn-input-${itemIdx}" placeholder="Fornecedor" oninput="onFornInput(${itemIdx},this)" autocomplete="off"><i class="bi bi-search"></i></div></div>
       <div class="col-12 col-md-4"><label class="os-label">Fornecedor de Serviço</label>
         <div class="search-lupa"><input type="text" class="input-os" placeholder="Fornecedor de serviço"><i class="bi bi-search"></i></div></div>
       <div class="col-6 col-md-2"><label class="os-label">Reserva / Referência</label>
@@ -971,6 +971,7 @@ function onItemTypeChange(itemIdx) {
     fields.innerHTML = buildGenericFields(itemIdx, LABELS[type]);
   }
   populateCurrencySelects();
+  lookupComissao(itemIdx); // auto-fill se fornecedor já selecionado
 }
 
 function toggleItemAcc(itemIdx, e) {
@@ -1068,9 +1069,14 @@ function onSupplierCurrencyChange(sel, pfx) {
   if (excEl) excEl.value = sel.value === 'BRL' ? '1' : '';
 }
 
-function applyDefaultComm(pfx) {
-  const el = document.getElementById(`${pfx}-cons-pct`);
-  if (el) { el.value = '10'; calcSupplierResult(pfx); }
+async function applyDefaultComm(pfx) {
+  const itemIdx = pfx.replace('s-', '');
+  await lookupComissao(itemIdx);
+  // fallback para 10% se lookup não retornar dados
+  const consEl = document.getElementById(`${pfx}-cons-pct`);
+  if (consEl && (parseFloat(consEl.value) || 0) === 0) {
+    consEl.value = '10'; calcSupplierResult(pfx);
+  }
 }
 
 function updateFooterTotals() {
@@ -1081,6 +1087,76 @@ function updateFooterTotals() {
   document.getElementById('footer-gross').textContent  = fmtMoney(gross);
   document.getElementById('footer-net').textContent    = fmtMoney(gross);
   document.getElementById('footer-result').textContent = fmtMoney(gross * 0.086);
+}
+
+/* ── Fornecedor Autocomplete + Comissão Lookup ──────────────── */
+const fornecedorState = {}; // itemIdx → {id, nome}
+const fornDebounce    = {};
+const fornDropdowns   = {};
+
+function renderFornDropdown(itemIdx, fornecedores) {
+  if (fornDropdowns[itemIdx]) fornDropdowns[itemIdx].remove();
+  if (!fornecedores.length) return;
+  const input = document.getElementById(`forn-input-${itemIdx}`);
+  if (!input) return;
+  const dd = document.createElement('div');
+  dd.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:9999;background:#fff;' +
+    'border:1px solid #e2e8f0;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden;max-height:220px;overflow-y:auto';
+  fornecedores.forEach(f => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:.5rem 1rem;cursor:pointer;font-size:12px;font-weight:600;border-bottom:1px solid #f1f5f9';
+    row.textContent = f.nome || f.razao_social;
+    row.addEventListener('click', () => {
+      fornecedorState[itemIdx] = { id: f.id, nome: f.nome || f.razao_social };
+      input.value = f.nome || f.razao_social;
+      dd.remove();
+      delete fornDropdowns[itemIdx];
+      lookupComissao(itemIdx);
+    });
+    row.addEventListener('mouseenter', () => row.style.background = '#f8fafc');
+    row.addEventListener('mouseleave', () => row.style.background = '');
+    dd.appendChild(row);
+  });
+  input.parentElement.appendChild(dd);
+  fornDropdowns[itemIdx] = dd;
+}
+
+function onFornInput(itemIdx, inputEl) {
+  clearTimeout(fornDebounce[itemIdx]);
+  const q = inputEl.value.trim();
+  if (!q) {
+    fornecedorState[itemIdx] = null;
+    if (fornDropdowns[itemIdx]) { fornDropdowns[itemIdx].remove(); delete fornDropdowns[itemIdx]; }
+    return;
+  }
+  fornDebounce[itemIdx] = setTimeout(async () => {
+    try {
+      const res  = await Auth.apiFetch(`/api/fornecedores?q=${encodeURIComponent(q)}&limit=8`);
+      const body = await res.json();
+      if (body.ok) renderFornDropdown(itemIdx, body.data || []);
+    } catch {}
+  }, 280);
+}
+
+async function lookupComissao(itemIdx) {
+  const forn = fornecedorState[itemIdx];
+  const tipo = document.getElementById(`item-type-${itemIdx}`)?.value;
+  const pfx  = `s-${itemIdx}`;
+  if (!forn?.id || !tipo) return;
+  try {
+    const res  = await Auth.apiFetch(`/api/comissoes/lookup?fornecedor_id=${forn.id}&tipo_produto=${tipo}`);
+    const body = await res.json();
+    if (!body.ok) return;
+    const d = body.data;
+    const comEl  = document.getElementById(`${pfx}-com-pct`);
+    const consEl = document.getElementById(`${pfx}-cons-pct`);
+    if (comEl  && d.comissao_forn_pct  != null) comEl.value  = d.comissao_forn_pct;
+    if (consEl && d.comissao_agente_pct != null) consEl.value = d.comissao_agente_pct;
+    if (d.comissao_forn_pct != null || d.comissao_agente_pct != null) {
+      calcSupplierResult(pfx);
+      Notify.info(`Comissões preenchidas: Forn ${d.comissao_forn_pct ?? 0}% / Agente ${d.comissao_agente_pct ?? 0}%`);
+    }
+  } catch {}
 }
 
 /* ── Cliente Autocomplete ───────────────────────────────────── */
@@ -1171,6 +1247,7 @@ function coletarVenda() {
       taxas,
       outros_custos: outros,
       comissao_forn_pct: com_pct,
+      comissao_agente_pct: markup_val,
       markup_tipo: 'percentual',
       markup_valor: markup_val,
     });
