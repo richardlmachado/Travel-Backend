@@ -1,0 +1,144 @@
+services:
+
+  travelos-web:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - /var/www/travelos:/usr/share/nginx/html:ro
+      - /docker/travelos/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - n8n_default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.travelos.rule=Host(`app.srv1589437.hstgr.cloud`)
+      - traefik.http.routers.travelos.tls=true
+      - traefik.http.routers.travelos.entrypoints=web,websecure
+      - traefik.http.routers.travelos.tls.certresolver=mytlschallenge
+      - traefik.http.services.travelos.loadbalancer.server.port=80
+
+  travelos-api:
+    build: /docker/travelos/api
+    restart: always
+    environment:
+      - DB_HOST=travelos-db
+      - DB_USER=travelos
+      - DB_PASS=***REDACTED-DB***
+      - DB_NAME=travelos
+      - PORT=3000
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=***REDACTED-EVO***
+      - EVOLUTION_INSTANCE=travelos
+    depends_on:
+      travelos-db:
+        condition: service_healthy
+    networks:
+      - n8n_default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.travelos-api.rule=Host(`app.srv1589437.hstgr.cloud`) && PathPrefix(`/api`)
+      - traefik.http.routers.travelos-api.tls=true
+      - traefik.http.routers.travelos-api.entrypoints=web,websecure
+      - traefik.http.routers.travelos-api.tls.certresolver=mytlschallenge
+      - traefik.http.services.travelos-api.loadbalancer.server.port=3000
+
+  travelos-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=***REDACTED-DBROOT***
+      - MYSQL_DATABASE=travelos
+      - MYSQL_USER=travelos
+      - MYSQL_PASSWORD=***REDACTED-DB***
+    volumes:
+      - travelos_db:/var/lib/mysql
+      - /docker/travelos/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - n8n_default
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p***REDACTED-DBROOT***"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evolution-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=evolution
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=Evolution@2025!
+    volumes:
+      - evolution_pg:/var/lib/postgresql/data
+    networks:
+      - n8n_default
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evolution-redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    networks:
+      - n8n_default
+
+  evolution-api:
+    image: atendai/evolution-api:latest
+    restart: always
+    volumes:
+      - evolution_instances:/evolution/instances
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=https://evolution.srv1589437.hstgr.cloud
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=***REDACTED-EVO***
+      - LOG_LEVEL=ERROR,WARN,INFO,LOG
+      - LOG_COLOR=false
+      - LOG_BAILEYS=warn
+      - DEL_INSTANCE=false
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#0d9488
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://evolution-redis:6379
+      - CACHE_REDIS_URI=redis://evolution-redis:6379
+      - CACHE_REDIS_TTL=604800
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_LOCAL_ENABLED=false
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:Evolution@2025!@evolution-db:5432/evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_OLD_MESSAGE=false
+      - DATABASE_SAVE_MESSAGE_UPDATE=false
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=false
+      - DATABASE_SAVE_DATA_CONTACTS=false
+      - DATABASE_SAVE_DATA_CHATS=false
+      - WEBHOOK_GLOBAL_ENABLED=false
+      - CHATWOOT_ENABLED=false
+      - TYPEBOT_ENABLED=false
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1035194821
+    depends_on:
+      evolution-db:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
+    networks:
+      - n8n_default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.evolution.rule=Host(`evolution.srv1589437.hstgr.cloud`)
+      - traefik.http.routers.evolution.tls=true
+      - traefik.http.routers.evolution.entrypoints=web,websecure
+      - traefik.http.routers.evolution.tls.certresolver=mytlschallenge
+      - traefik.http.services.evolution.loadbalancer.server.port=8080
+
+networks:
+  n8n_default:
+    external: true
+
+volumes:
+  travelos_db:
+  evolution_pg:
+  evolution_instances:
