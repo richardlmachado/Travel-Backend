@@ -7,45 +7,51 @@
 ---
 
 ## Última Sessão
-- **ID**: d269b536-49b2-4527-b46a-5e5f96b77eee (continuação)
+- **ID**: d269b536-49b2-4527-b46a-5e5f96b77eee (continuação compactada)
 - **Data**: 2026-04-15
 - **Transcript**: `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\d269b536-49b2-4527-b46a-5e5f96b77eee.jsonl`
 
-## Status: Sprint 3 completa ✅ — Pronto para Sprint 4
+## Status: Sprint 4 completa ✅ — Pronto para Sprint 5
 
-### Sprint 3 — Complemento (esta continuação) ✅
-1. **`comissoes-agente.html`** — Extrato mensal de comissões por agente
-   - KPIs: total do mês, pendente, aprovado, pago
-   - Barra de progressão de faixa (20% → 30% conforme acumulado mensal)
-   - Filtros: mês, status, nível, busca por venda
-   - Gestor/Diretor pode alterar status (pendente→aprovado→pago→estornado)
+### Sprint 4 — Lembretes & Automação ✅
 
-2. **`financeiro.html`** — Visão consolidada de títulos/pagamentos
-   - KPIs: A Receber (cliente), Total Recebido, A Pagar (fornecedor), Em Atraso
-   - Tabs por tipo: Todos | Cliente↔Agência | Cliente↔Fornecedor | Fornecedor↔Agência
-   - Filtros: status, mês, busca por venda/cliente
-   - Mini barra de progresso de parcelas por título
-   - Modal de parcelas com indicador visual de atraso
-   - Links diretos para edição de pagamento
+1. **Migration `migrate_sprint4_fase1.sql`** — tabela `venda_lembretes` criada na VPS
+   - Campos: tipo (checkin_48h/manual/personalizado), canal (email/whatsapp/sistema), status, agendado_para, destinatario_email/nome, mensagem, tentativas, erro
 
-3. **Backend**: endpoints `GET /api/financeiro/titulos` e `GET /api/financeiro/titulos/:id/parcelas`
+2. **Backend `server.js` v4.0.0-sprint4** (1921+ linhas)
+   - `nodemailer` integrado (mock quando SMTP não configurado)
+   - `enviarEmailLembrete()` — template HTML com header teal
+   - `enviarWhatsAppLembrete()` — chama Evolution API `/message/sendText/travelos`
+   - `checkAndDispararLembretes()` — cron a cada 1h, detecção automática embarques 48h
+   - 6 endpoints: GET/POST `/api/lembretes`, POST `/:id/disparar`, PATCH `/:id/cancelar`, GET `/evolution/status`, POST `/evolution/connect`
 
-### Sprint 3 — Fase 3: Comissões 2 Níveis ✅ (sessão anterior)
-- Tabelas: `fornecedor_comissoes_config`, `agente_comissoes_config`, `venda_comissoes`
-- 12 endpoints de comissão + auto-trigger ao confirmar/concluir venda
-- `comissoes-config.html` + `sale-form.html` (autocomplete fornecedor + auto-fill %)
+3. **Evolution API v2.2.3** — instalada como serviço Docker na VPS
+   - URL externa: `https://evolution.srv1589437.hstgr.cloud`
+   - URL interna (Docker): `http://evolution-api:8080`
+   - Auth: `apikey: ***REDACTED-EVO***`, instance: `travelos`
+   - Banco: MySQL database `evolution` (mesmo container travelos-db)
+   - Config: `DATABASE_PROVIDER=mysql`, `DATABASE_CONNECTION_URI=mysql://travelos:***REDACTED-DB***@travelos-db:3306/evolution`
+   - Status atual: rodando, sem WhatsApp conectado (precisa escanear QR)
 
-### Sprint 3 — Fases 1 e 2 ✅ (sessões anteriores)
-- Schema de vendas (tabelas `vendas`, `venda_itens`, `venda_pax`, `pagamentos`, `pagamento_parcelas`)
-- 3 páginas de pagamento (`sale-finalize`, `sale-supplier-customer-payment`, `sale-supplier-agency-payment`)
+4. **`lembretes.html`** — Dashboard de lembretes
+   - Banner de status WhatsApp (verde=conectado, amarelo=desconectado, cinza=não configurado)
+   - 5 KPIs: Agendados, Enviados, Falharam, Cancelados, Manuais
+   - Tabela com filtros: status, tipo, canal
+   - Ações: disparar, cancelar
+   - Modal QR Code para conectar WhatsApp (POST /api/lembretes/evolution/connect)
+   - Modal Novo Lembrete com autocomplete de venda
+
+5. **`sale-form.html`** — Log de auditoria colapsável adicionado
+   - Seção "Log de Auditoria" ao final do formulário (oculta em novas vendas)
+   - Mostra histórico de criação, edição, mudança de status, comissões
+   - Dados de `audit_log` retornados pelo GET /api/vendas/:id
 
 ## Estado do Banco (VPS)
-- 3 títulos de pagamento cadastrados (de vendas de teste)
-- KPIs reais: A Receber R$ 1.000, A Pagar R$ 800, Atrasado R$ 0
-- 6 regras de agente (cargo × origem_lead) + 1 regra fornecedor AIRFARE global 12.5%
+- Tabela `venda_lembretes` criada (vazia)
+- Banco `evolution` criado (schema Evolution API aplicado via Prisma)
+- Dados de vendas de teste existentes (Sprint 3)
 
-## Próximo: Sprint 4 — Lembretes & Automação
-- Engine de lembretes: agendamento 48h antes do embarque
-- Disparo via e-mail (SendGrid) ou WhatsApp (n8n)
-- Dashboard de lembretes com status de envio
-- Log de auditoria nas reservas
+## Pendências para próximas sessões
+- Configurar SMTP na VPS (env vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM) para envio real de e-mail
+- Conectar WhatsApp: acessar `lembretes.html` → botão "Conectar WhatsApp" → escanear QR code
+- Sprint 5 (a definir): relatórios, dashboard executivo, exportação PDF, etc.

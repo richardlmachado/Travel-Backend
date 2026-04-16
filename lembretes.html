@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lembretes de Check-in — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+      background: var(--card-bg); gap: 1rem; flex-wrap: wrap;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 0.875rem; }
+    .page-header-icon {
+      width: 44px; height: 44px; background: #fef3c7; color: #d97706;
+      border-radius: var(--radius); display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .page-title    { font-size: 20px; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); margin: 0; }
+    .page-subtitle { font-size: 12px; color: var(--text-muted); margin: 0; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media(max-width:1100px) { .kpi-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(max-width:600px)  { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    .kpi-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 1rem;
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .kpi-icon { width: 36px; height: 36px; border-radius: var(--radius); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .kpi-icon.amber  { background: #fef3c7; color: #d97706; }
+    .kpi-icon.green  { background: #dcfce7; color: #16a34a; }
+    .kpi-icon.red    { background: #fee2e2; color: #dc2626; }
+    .kpi-icon.gray   { background: #f1f5f9; color: #64748b; }
+    .kpi-icon.purple { background: #ede9fe; color: #7c3aed; }
+    .kpi-icon.wa     { background: #dcfce7; color: #16a34a; }
+    .kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 0.2rem; }
+    .kpi-value { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); }
+
+    /* WhatsApp Status Banner */
+    .wa-banner {
+      border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+      border: 1px solid var(--border-color);
+    }
+    .wa-banner.connected    { background: #f0fdf4; border-color: #86efac; }
+    .wa-banner.disconnected { background: #fef3c7; border-color: #fcd34d; }
+    .wa-banner.unconfigured { background: var(--bg-page); border-color: var(--border-color); }
+    .wa-banner.error        { background: #fef2f2; border-color: #fca5a5; }
+    .wa-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .wa-status-dot.green  { background: #16a34a; }
+    .wa-status-dot.yellow { background: #d97706; }
+    .wa-status-dot.gray   { background: #94a3b8; }
+    .wa-status-dot.red    { background: #dc2626; }
+    .wa-qr-wrap { background: white; border-radius: var(--radius); padding: 0.75rem; display: inline-block; }
+
+    /* Filter bar */
+    .filter-bar {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+      display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .filter-group label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-block; border-radius: 0.35rem; padding: 0.15rem 0.5rem;
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .status-badge.agendado  { background: #fef3c7; color: #92400e; }
+    .status-badge.enviado   { background: #dcfce7; color: #166534; }
+    .status-badge.falhou    { background: #fee2e2; color: #991b1b; }
+    .status-badge.cancelado { background: #f1f5f9; color: #64748b; }
+
+    .canal-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      border-radius: 0.35rem; padding: 0.15rem 0.5rem;
+      font-size: 10px; font-weight: 800;
+    }
+    .canal-badge.email     { background: #dbeafe; color: #1e40af; }
+    .canal-badge.whatsapp  { background: #dcfce7; color: #15803d; }
+    .canal-badge.sistema   { background: #ede9fe; color: #5b21b6; }
+
+    .tipo-badge {
+      display: inline-block; border-radius: 0.35rem; padding: 0.15rem 0.5rem;
+      font-size: 10px; font-weight: 700; color: var(--text-muted); background: var(--bg-page);
+    }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="lembretes.html"          class="os-nav-item active" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes Check-in</a>
+      <a href="comissoes-config.html"   class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-sliders"></i> Config. Comissões</a>
+      <a href="comissoes-agente.html"   class="os-nav-item" data-page="comissoes-agente.html"><i class="bi bi-wallet2"></i> Extrato Comissões</a>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title"><span class="os-page-subtitle">TravelAgent OS</span></div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content p-0">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon"><i class="bi bi-bell-fill"></i></div>
+          <div>
+            <h1 class="page-title">Lembretes de Check-in</h1>
+            <p class="page-subtitle">Disparos automáticos 48h antes do embarque — e-mail e WhatsApp</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-os-ghost" id="btn-connect-wa"><i class="bi bi-whatsapp me-1"></i>Conectar WhatsApp</button>
+          <button class="btn-os" id="btn-novo-lembrete"><i class="bi bi-plus-lg me-1"></i>Novo Lembrete</button>
+        </div>
+      </div>
+
+      <div class="p-4">
+
+        <!-- WhatsApp Status Banner -->
+        <div class="wa-banner unconfigured" id="wa-banner">
+          <div class="wa-status-dot gray" id="wa-dot"></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700" id="wa-status-label">Verificando status do WhatsApp...</div>
+            <div style="font-size:11px;color:var(--text-muted)" id="wa-status-sub"></div>
+          </div>
+          <button class="btn-os-ghost" id="btn-wa-refresh" style="font-size:11px"><i class="bi bi-arrow-clockwise me-1"></i>Atualizar</button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon amber"><i class="bi bi-clock"></i></div>
+            <div><div class="kpi-label">Agendados</div><div class="kpi-value" id="kpi-agendados">—</div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="bi bi-check-circle-fill"></i></div>
+            <div><div class="kpi-label">Enviados</div><div class="kpi-value" id="kpi-enviados">—</div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon red"><i class="bi bi-exclamation-circle-fill"></i></div>
+            <div><div class="kpi-label">Falharam</div><div class="kpi-value" id="kpi-falhos">—</div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon gray"><i class="bi bi-x-circle"></i></div>
+            <div><div class="kpi-label">Cancelados</div><div class="kpi-value" id="kpi-cancelados">—</div></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="bi bi-hand-index-thumb"></i></div>
+            <div><div class="kpi-label">Manuais</div><div class="kpi-value" id="kpi-manuais">—</div></div>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>Status</label>
+            <select class="input-os" id="filter-status">
+              <option value="">Todos</option>
+              <option value="agendado">Agendado</option>
+              <option value="enviado">Enviado</option>
+              <option value="falhou">Falhou</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Tipo</label>
+            <select class="input-os" id="filter-tipo">
+              <option value="">Todos</option>
+              <option value="checkin_48h">Check-in 48h (Auto)</option>
+              <option value="manual">Manual</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Canal</label>
+            <select class="input-os" id="filter-canal">
+              <option value="">Todos</option>
+              <option value="email">E-mail</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
+          </div>
+          <button class="btn-os" id="btn-buscar" style="margin-top:auto"><i class="bi bi-search me-1"></i>Buscar</button>
+          <button class="btn-os-ghost" id="btn-limpar" style="margin-top:auto"><i class="bi bi-x-lg me-1"></i>Limpar</button>
+        </div>
+
+        <!-- Table -->
+        <div class="card-os p-0">
+          <div class="table-os-wrap">
+            <table class="table-os">
+              <thead>
+                <tr>
+                  <th>Venda</th>
+                  <th>Cliente</th>
+                  <th>Embarque</th>
+                  <th>Tipo</th>
+                  <th>Canal</th>
+                  <th>Destinatário</th>
+                  <th>Agendado Para</th>
+                  <th>Enviado Em</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="lembretes-tbody">
+                <tr><td colspan="10" class="text-center py-5">
+                  <div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex align-items-center justify-content-between p-3 border-top" id="pagination-wrap" style="display:none!important">
+            <span class="text-muted" style="font-size:12px" id="pagination-info"></span>
+            <div class="d-flex gap-1" id="pagination-btns"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Modal Novo Lembrete -->
+<div class="modal fade" id="modalNovoLembrete" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title">Novo Lembrete Manual</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="os-label">Venda <span class="text-danger">*</span></label>
+            <div style="position:relative">
+              <input type="text" class="input-os" id="modal-venda-q" placeholder="Buscar por código da venda..." autocomplete="off">
+              <input type="hidden" id="modal-venda-id">
+              <div id="modal-venda-dropdown" style="position:absolute;top:100%;left:0;right:0;z-index:9999;display:none;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:180px;overflow-y:auto"></div>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="os-label">Canal</label>
+            <select class="input-os" id="modal-canal">
+              <option value="email">E-mail</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="os-label">Agendado Para <span class="text-muted">(vazio = enviar agora)</span></label>
+            <input type="datetime-local" class="input-os" id="modal-agendado">
+          </div>
+          <div class="col-12">
+            <label class="os-label">Destinatário — Nome</label>
+            <input type="text" class="input-os" id="modal-dest-nome" placeholder="Nome do cliente">
+          </div>
+          <div class="col-12">
+            <label class="os-label" id="modal-dest-label">E-mail do Destinatário</label>
+            <input type="text" class="input-os" id="modal-dest-contact" placeholder="email@exemplo.com">
+          </div>
+          <div class="col-12">
+            <label class="os-label">Assunto</label>
+            <input type="text" class="input-os" id="modal-assunto" placeholder="Lembrete de embarque...">
+          </div>
+          <div class="col-12">
+            <label class="os-label">Mensagem personalizada</label>
+            <textarea class="input-os" rows="3" id="modal-msg" placeholder="Deixe em branco para usar o template padrão..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-os" id="btn-salvar-lembrete"><i class="bi bi-send me-1"></i>Enviar / Agendar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR Code WhatsApp -->
+<div class="modal fade" id="modalQR" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title"><i class="bi bi-whatsapp me-2" style="color:#16a34a"></i>Conectar WhatsApp</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-3">
+        <p style="font-size:13px;color:var(--text-muted)">Abra o WhatsApp no celular, vá em <strong>Dispositivos Conectados</strong> e escaneie o QR abaixo.</p>
+        <div id="qr-loading" style="padding:2rem;color:var(--text-muted)"><i class="bi bi-hourglass-split" style="font-size:2rem"></i><br>Gerando QR...</div>
+        <div id="qr-container" style="display:none"></div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:.75rem" id="qr-hint"></p>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" id="btn-refresh-qr"><i class="bi bi-arrow-clockwise me-1"></i>Novo QR</button>
+        <button class="btn-os" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ── Helpers ─────────────────────────────────────────────────── */
+const fmtDate = s => s ? new Date(s).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+const fmtDateShort = s => s ? new Date(s).toLocaleDateString('pt-BR') : '—';
+
+const TIPO_LABELS = { checkin_48h:'Check-in Auto', manual:'Manual', personalizado:'Personalizado' };
+
+/* ── Estado ─────────────────────────────────────────────────── */
+let currentPage  = 1;
+const pageSize   = 20;
+let totalRecords = 0;
+
+/* ── WhatsApp Status ─────────────────────────────────────────── */
+async function checkWaStatus() {
+  try {
+    const res  = await Auth.apiFetch('/api/lembretes/evolution/status');
+    const body = await res.json();
+    const banner = document.getElementById('wa-banner');
+    const dot    = document.getElementById('wa-dot');
+    const label  = document.getElementById('wa-status-label');
+    const sub    = document.getElementById('wa-status-sub');
+    if (!body.configurado) {
+      banner.className = 'wa-banner unconfigured';
+      dot.className = 'wa-status-dot gray';
+      label.textContent = 'Evolution API não configurada';
+      sub.textContent   = 'Instale e configure a Evolution API para habilitar WhatsApp';
+    } else if (body.status === 'open' || body.status === 'connected') {
+      banner.className = 'wa-banner connected';
+      dot.className = 'wa-status-dot green';
+      label.textContent = 'WhatsApp Conectado';
+      sub.textContent   = `Instância: ${body.instance} — pronto para enviar mensagens`;
+    } else if (body.status === 'erro') {
+      banner.className = 'wa-banner error';
+      dot.className = 'wa-status-dot red';
+      label.textContent = 'Erro ao conectar à Evolution API';
+      sub.textContent   = body.error || '';
+    } else {
+      banner.className = 'wa-banner disconnected';
+      dot.className = 'wa-status-dot yellow';
+      label.textContent = `WhatsApp Desconectado (${body.status})`;
+      sub.textContent   = 'Clique em "Conectar WhatsApp" para escanear o QR Code';
+    }
+  } catch { }
+}
+
+document.getElementById('btn-wa-refresh').addEventListener('click', checkWaStatus);
+
+/* ── Conectar WhatsApp QR ────────────────────────────────────── */
+const modalQREl = new bootstrap.Modal(document.getElementById('modalQR'));
+async function gerarQR() {
+  document.getElementById('qr-loading').style.display = 'block';
+  document.getElementById('qr-container').style.display = 'none';
+  document.getElementById('qr-hint').textContent = '';
+  try {
+    const res  = await Auth.apiFetch('/api/lembretes/evolution/connect', { method: 'POST' });
+    const body = await res.json();
+    document.getElementById('qr-loading').style.display = 'none';
+    const cont = document.getElementById('qr-container');
+    cont.style.display = 'block';
+    const qrBase64 = body.data?.base64 || body.data?.qrcode?.base64 || body.data?.qr;
+    if (qrBase64) {
+      cont.innerHTML = `<div class="wa-qr-wrap"><img src="${qrBase64.startsWith('data:') ? qrBase64 : 'data:image/png;base64,'+qrBase64}" style="width:220px;height:220px"></div>`;
+      document.getElementById('qr-hint').textContent = 'O QR expira em 30 segundos. Escaneie rapidamente.';
+    } else {
+      cont.innerHTML = `<div class="alert alert-info" style="font-size:12px">${JSON.stringify(body.data, null, 2)}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('qr-loading').innerHTML = `<span class="text-danger">${e.message}</span>`;
+  }
+}
+
+document.getElementById('btn-connect-wa').addEventListener('click', () => { modalQREl.show(); gerarQR(); });
+document.getElementById('btn-refresh-qr').addEventListener('click', gerarQR);
+
+/* ── Buscar lembretes ────────────────────────────────────────── */
+async function buscarLembretes(page = 1) {
+  currentPage = page;
+  const params = new URLSearchParams({
+    page, limit: pageSize,
+    status: document.getElementById('filter-status').value || '',
+    tipo:   document.getElementById('filter-tipo').value   || '',
+    canal:  document.getElementById('filter-canal').value  || '',
+  });
+  document.getElementById('lembretes-tbody').innerHTML =
+    `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div></td></tr>`;
+  try {
+    const res  = await Auth.apiFetch(`/api/lembretes?${params}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    totalRecords = body.total;
+    renderKpis(body.kpis);
+    renderTabela(body.data);
+    renderPaginacao();
+  } catch (err) {
+    document.getElementById('lembretes-tbody').innerHTML =
+      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${err.message}</div></td></tr>`;
+  }
+}
+
+function renderKpis(k) {
+  if (!k) return;
+  document.getElementById('kpi-agendados').textContent  = k.agendados  || 0;
+  document.getElementById('kpi-enviados').textContent   = k.enviados   || 0;
+  document.getElementById('kpi-falhos').textContent     = k.falhos     || 0;
+  document.getElementById('kpi-cancelados').textContent = k.cancelados || 0;
+  document.getElementById('kpi-manuais').textContent    = k.manuais    || 0;
+}
+
+function renderTabela(rows) {
+  const tbody = document.getElementById('lembretes-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5">
+      <div class="empty-state"><i class="bi bi-bell-slash"></i>Nenhum lembrete encontrado.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const canalCls  = r.canal === 'whatsapp' ? 'whatsapp' : r.canal === 'sistema' ? 'sistema' : 'email';
+    const canalIcon = r.canal === 'whatsapp' ? 'bi-whatsapp' : r.canal === 'sistema' ? 'bi-bell' : 'bi-envelope';
+    const isFalhou  = r.status === 'falhou';
+    return `<tr>
+      <td><a href="sale-form.html?id=${r.venda_id}" style="color:var(--primary);text-decoration:none;font-weight:700">${r.venda_codigo||'—'}</a></td>
+      <td style="font-size:12px;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.cliente_nome||'—'}</td>
+      <td style="font-size:12px">${r.data_embarque ? fmtDateShort(r.data_embarque) : '—'}</td>
+      <td><span class="tipo-badge">${TIPO_LABELS[r.tipo]||r.tipo}</span></td>
+      <td><span class="canal-badge ${canalCls}"><i class="bi ${canalIcon}"></i>${r.canal}</span></td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.destinatario_email||r.destinatario_nome||'—'}</td>
+      <td style="font-size:11px">${fmtDate(r.agendado_para)}</td>
+      <td style="font-size:11px">${r.enviado_em ? fmtDate(r.enviado_em) : '—'}</td>
+      <td>
+        <span class="status-badge ${r.status}">${r.status}</span>
+        ${isFalhou && r.erro ? `<br><span style="font-size:9px;color:#dc2626" title="${r.erro}"><i class="bi bi-info-circle"></i> ver erro</span>` : ''}
+      </td>
+      <td>
+        <div class="d-flex gap-1">
+          ${r.status !== 'cancelado' ? `<button class="acc-teal-btn" style="width:28px;height:28px;background:#0d9488"
+            title="Disparar agora" onclick="disparar(${r.id})">
+            <i class="bi bi-send" style="font-size:11px"></i></button>` : ''}
+          ${r.status === 'agendado' ? `<button class="acc-teal-btn" style="width:28px;height:28px;background:#dc2626"
+            title="Cancelar" onclick="cancelar(${r.id})">
+            <i class="bi bi-x-lg" style="font-size:11px"></i></button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function disparar(id) {
+  if (!confirm('Disparar este lembrete agora?')) return;
+  try {
+    const res  = await Auth.apiFetch(`/api/lembretes/${id}/disparar`, { method: 'POST' });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Lembrete disparado!');
+    buscarLembretes(currentPage);
+    checkWaStatus();
+  } catch (err) { Notify.error(err.message); }
+}
+
+async function cancelar(id) {
+  if (!confirm('Cancelar este lembrete agendado?')) return;
+  try {
+    const res  = await Auth.apiFetch(`/api/lembretes/${id}/cancelar`, { method: 'PATCH' });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Lembrete cancelado.');
+    buscarLembretes(currentPage);
+  } catch (err) { Notify.error(err.message); }
+}
+
+/* ── Paginação ──────────────────────────────────────────────── */
+function renderPaginacao() {
+  const totalPages = Math.ceil(totalRecords / pageSize);
+  const wrap = document.getElementById('pagination-wrap');
+  if (totalPages <= 1) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  document.getElementById('pagination-info').textContent = `${totalRecords} lembretes`;
+  const btns = document.getElementById('pagination-btns');
+  btns.innerHTML = '';
+  const addBtn = (label, page, disabled) => {
+    const b = document.createElement('button');
+    b.className = `btn-os-ghost${page === currentPage ? ' active' : ''}`;
+    b.style.cssText = 'padding:.3rem .65rem;font-size:12px;min-width:32px';
+    b.textContent = label; b.disabled = disabled;
+    b.addEventListener('click', () => buscarLembretes(page));
+    btns.appendChild(b);
+  };
+  addBtn('‹', currentPage - 1, currentPage === 1);
+  const start = Math.max(1, currentPage - 2), end = Math.min(totalPages, currentPage + 2);
+  for (let p = start; p <= end; p++) addBtn(p, p, false);
+  addBtn('›', currentPage + 1, currentPage === totalPages);
+}
+
+/* ── Modal Novo Lembrete ─────────────────────────────────────── */
+const modalNovoEl = new bootstrap.Modal(document.getElementById('modalNovoLembrete'));
+document.getElementById('btn-novo-lembrete').addEventListener('click', () => {
+  document.getElementById('modal-venda-q').value = '';
+  document.getElementById('modal-venda-id').value = '';
+  document.getElementById('modal-canal').value = 'email';
+  document.getElementById('modal-agendado').value = '';
+  document.getElementById('modal-dest-nome').value = '';
+  document.getElementById('modal-dest-contact').value = '';
+  document.getElementById('modal-assunto').value = '';
+  document.getElementById('modal-msg').value = '';
+  modalNovoEl.show();
+});
+
+// Autocomplete venda
+let vendaDebounce = null;
+document.getElementById('modal-venda-q').addEventListener('input', e => {
+  clearTimeout(vendaDebounce);
+  const q = e.target.value.trim();
+  if (!q) { document.getElementById('modal-venda-dropdown').style.display = 'none'; return; }
+  vendaDebounce = setTimeout(async () => {
+    const res  = await Auth.apiFetch(`/api/vendas?q=${encodeURIComponent(q)}&limit=8`);
+    const body = await res.json();
+    if (!body.ok) return;
+    const dd = document.getElementById('modal-venda-dropdown');
+    dd.innerHTML = '';
+    (body.data || []).forEach(v => {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:.5rem 1rem;cursor:pointer;font-size:12px;font-weight:600;border-bottom:1px solid #f1f5f9';
+      row.textContent = `${v.codigo} — ${v.cliente_nome || 'sem cliente'}`;
+      row.addEventListener('click', () => {
+        document.getElementById('modal-venda-q').value = v.codigo;
+        document.getElementById('modal-venda-id').value = v.id;
+        if (v.cliente_nome) document.getElementById('modal-dest-nome').value = v.cliente_nome;
+        dd.style.display = 'none';
+      });
+      dd.appendChild(row);
+    });
+    dd.style.display = body.data?.length ? 'block' : 'none';
+  }, 280);
+});
+
+// Atualizar label do campo de contato por canal
+document.getElementById('modal-canal').addEventListener('change', e => {
+  document.getElementById('modal-dest-label').textContent =
+    e.target.value === 'whatsapp' ? 'Telefone (WhatsApp)' : 'E-mail do Destinatário';
+  document.getElementById('modal-dest-contact').placeholder =
+    e.target.value === 'whatsapp' ? '(11) 99999-9999' : 'email@exemplo.com';
+});
+
+document.getElementById('btn-salvar-lembrete').addEventListener('click', async () => {
+  const venda_id = document.getElementById('modal-venda-id').value;
+  if (!venda_id) { Notify.error('Selecione uma venda.'); return; }
+  const canal    = document.getElementById('modal-canal').value;
+  const contact  = document.getElementById('modal-dest-contact').value.trim();
+  const payload  = {
+    venda_id: +venda_id, canal,
+    destinatario_nome:  document.getElementById('modal-dest-nome').value.trim() || null,
+    destinatario_email: canal === 'email'     ? contact : null,
+    assunto:    document.getElementById('modal-assunto').value.trim() || null,
+    mensagem:   document.getElementById('modal-msg').value.trim() || null,
+    agendado_para: document.getElementById('modal-agendado').value || null,
+  };
+  if (canal === 'whatsapp') payload.telefone = contact;
+  const btn = document.getElementById('btn-salvar-lembrete');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const res  = await Auth.apiFetch('/api/lembretes', { method: 'POST', body: JSON.stringify(payload) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    modalNovoEl.hide();
+    Notify.success('Lembrete criado!');
+    buscarLembretes(1);
+  } catch (err) { Notify.error(err.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send me-1"></i>Enviar / Agendar'; }
+});
+
+/* ── Eventos ─────────────────────────────────────────────────── */
+document.getElementById('btn-buscar').addEventListener('click', () => buscarLembretes(1));
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-tipo').value   = '';
+  document.getElementById('filter-canal').value  = '';
+  buscarLembretes(1);
+});
+
+/* ── Init ────────────────────────────────────────────────────── */
+(async () => {
+  await App.init();
+  await Promise.all([buscarLembretes(1), checkWaStatus()]);
+})();
+</script>
+</body>
+</html>

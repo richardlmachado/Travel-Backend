@@ -347,6 +347,19 @@
         </div>
       </div>
 
+      <!-- Log de Auditoria (oculto em novas vendas) -->
+      <div class="acc-generic mb-3" id="audit-section" style="display:none">
+        <div class="acc-generic-header" data-acc="audit">
+          <i class="bi bi-clock-history text-primary"></i>
+          <span class="acc-generic-title">Log de Auditoria</span>
+          <span class="badge bg-secondary ms-2" id="audit-count" style="font-size:10px">0</span>
+          <i class="bi bi-chevron-down ms-auto" id="chevron-audit"></i>
+        </div>
+        <div class="acc-generic-body hidden" id="body-audit">
+          <div id="audit-list" style="font-size:12px"></div>
+        </div>
+      </div>
+
     </div><!-- os-content -->
   </main>
 </div><!-- os-wrapper -->
@@ -1368,7 +1381,47 @@ async function carregarVenda(id) {
     document.getElementById('footer-gross').textContent = fmtMoney(v.total_venda || 0);
     document.getElementById('footer-net').textContent   = fmtMoney(v.total_custo || 0);
 
+    // Log de auditoria
+    renderAuditLog(v.audit_log);
+
   } catch (err) { Notify.error(`Erro ao carregar venda: ${err.message}`); }
+}
+
+function renderAuditLog(auditLog) {
+  const section = document.getElementById('audit-section');
+  const list    = document.getElementById('audit-list');
+  const count   = document.getElementById('audit-count');
+  if (!auditLog?.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  count.textContent = auditLog.length;
+
+  const ACAO_LABELS = {
+    criacao: 'Criação', edicao: 'Edição', status: 'Mudança de status',
+    cancelamento: 'Cancelamento', comissoes_calculadas: 'Comissões calculadas',
+  };
+  const ACAO_ICONS = {
+    criacao: 'bi-plus-circle text-success', edicao: 'bi-pencil text-primary',
+    status: 'bi-arrow-left-right text-warning', cancelamento: 'bi-x-circle text-danger',
+    comissoes_calculadas: 'bi-percent text-info',
+  };
+
+  list.innerHTML = auditLog.map(a => {
+    const dt = new Date(a.criado_em);
+    const dataStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const iconCls = ACAO_ICONS[a.acao] || 'bi-info-circle text-muted';
+    const label   = ACAO_LABELS[a.acao] || a.acao;
+    const detail  = a.campo ? `<span class="text-muted"> · ${a.campo}` +
+      (a.valor_antes ? ` <span style="color:#ef4444">${a.valor_antes}</span> → ` : '') +
+      (a.valor_depois ? `<span style="color:#22c55e">${a.valor_depois}</span>` : '') +
+      '</span>' : '';
+    return `<div class="d-flex align-items-start gap-2 py-2 border-bottom" style="border-color:var(--border-color)!important">
+      <i class="bi ${iconCls}" style="font-size:14px;margin-top:2px;flex-shrink:0"></i>
+      <div class="flex-grow-1">
+        <span style="font-weight:600;color:var(--text-primary)">${label}</span>${detail}
+        <div class="text-muted" style="font-size:11px">${dataStr} · ${a.usuario_nome || 'Sistema'}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function goPayment(type) {

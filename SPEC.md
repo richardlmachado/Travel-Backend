@@ -1,4 +1,4 @@
-# TravelAgent OS — Especificação do Sistema
+ # TravelAgent OS — Especificação do Sistema
 
 > Documento vivo. Última atualização: 2026-04-15
 > Stack: HTML5 · CSS3 · Bootstrap 5 · Vanilla JS · Node.js · MySQL
