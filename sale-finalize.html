@@ -17,20 +17,19 @@
       display: flex; align-items: center; gap: 0.75rem;
       padding: 0 1.25rem; height: 56px; border-bottom: 2px solid #0d9488;
     }
-    .sale-topbar-title { font-size: 14px; font-weight: 900; color: white; }
-    .sale-topbar-badge { background: rgba(255,255,255,0.25); color: white; border-radius: 0.35rem; padding: 0.2rem 0.625rem; font-size: 11px; font-weight: 800; }
+    .sale-topbar-title  { font-size: 14px; font-weight: 900; color: white; }
+    .sale-topbar-badge  { background: rgba(255,255,255,0.25); color: white; border-radius: 0.35rem; padding: 0.2rem 0.625rem; font-size: 11px; font-weight: 800; }
 
     .summary-box { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; position: sticky; top: 72px; }
     .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); gap: 0.5rem; }
     .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .summary-row-label { font-size: 12px; color: var(--text-body); font-weight: 500; }
-    .summary-row-value { font-size: 13px; font-weight: 800; color: var(--text-heading); white-space: nowrap; }
-    .summary-row-value.ok      { color: #0d9488; }
-    .summary-row-value.danger  { color: var(--danger); }
-    .summary-row-value.big     { font-size: 1rem; }
+    .summary-row-label  { font-size: 12px; color: var(--text-body); font-weight: 500; }
+    .summary-row-value  { font-size: 13px; font-weight: 800; color: var(--text-heading); white-space: nowrap; }
+    .summary-row-value.ok     { color: #0d9488; }
+    .summary-row-value.danger { color: var(--danger); }
+    .summary-row-value.big    { font-size: 1rem; }
 
-    /* Title card */
-    .title-card { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; background: var(--card-bg); }
+    .title-card { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; }
     .title-card-header { background: #0d9488; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
     .title-card-number { font-size: 12px; font-weight: 900; color: white; letter-spacing: 0.06em; }
     .title-card-actions { display: flex; gap: 4px; }
@@ -38,12 +37,10 @@
     .title-card-action:hover { background: rgba(255,255,255,0.35); }
     .title-card-body { padding: 1rem; }
 
-    /* Installment row */
     .installment-row { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 0.875rem; margin-bottom: 0.5rem; }
     .installment-grid { display: grid; grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr auto auto auto; gap: 0.5rem; align-items: end; }
     @media(max-width:900px) { .installment-grid { grid-template-columns: 1fr 1fr; } }
 
-    /* Add title button */
     .btn-add-title {
       width: 100%; border: 2px dashed #0d9488; border-radius: var(--radius-lg);
       padding: 1rem; text-align: center; cursor: pointer; color: #0d9488;
@@ -52,7 +49,6 @@
     }
     .btn-add-title:hover { background: #f0fdf4; }
 
-    /* Sale footer */
     .sale-footer {
       position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; z-index: 150;
       background: #f1f5f9; border-top: 2px solid var(--border-color);
@@ -64,20 +60,24 @@
     .search-lupa { position: relative; }
     .search-lupa input { padding-right: 2.5rem; }
     .search-lupa .bi-search { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .autocomplete-dropdown { position: absolute; left: 0; right: 0; top: 100%; z-index: 500; background: var(--card-bg); border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 var(--radius) var(--radius); max-height: 200px; overflow-y: auto; }
+    .autocomplete-item { padding: 0.5rem 0.75rem; cursor: pointer; font-size: 12px; }
+    .autocomplete-item:hover { background: var(--bg-page); }
 
-    /* Accordion attach */
     .attach-acc { border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; margin-top: 0.75rem; }
     .attach-acc-header { background: var(--bg-page); padding: 0.5rem 0.875rem; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
     .attach-acc-body { padding: 0.75rem; display: none; }
     .attach-acc-body.open { display: block; }
 
     .required-border { border-color: var(--danger) !important; }
+    .pago-badge { font-size: 10px; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 0.25rem; }
+    .pago-badge.pago { background: #d1fae5; color: #065f46; }
+    .pago-badge.pendente { background: #fef3c7; color: #92400e; }
   </style>
 </head>
 <body>
 <div class="os-wrapper">
 
-  <!-- Sidebar -->
   <aside class="os-sidebar" id="sidebar">
     <div class="os-sidebar-header">
       <div class="os-brand">
@@ -109,7 +109,6 @@
   <div class="os-overlay" id="os-overlay"></div>
 
   <main class="os-main">
-    <!-- Sale Topbar -->
     <div class="sale-topbar">
       <button class="os-icon-btn" id="sidebar-open" style="color:rgba(255,255,255,0.7);border-color:transparent"><i class="bi bi-list"></i></button>
       <i class="bi bi-folder2-open" style="color:rgba(255,255,255,0.8);font-size:18px"></i>
@@ -123,23 +122,20 @@
     <div class="os-content">
       <div class="row g-4">
 
-        <!-- Left: Summary -->
         <div class="col-12 col-md-4">
-          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">
-            Sumário (BRL)
-          </h2>
+          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Sumário (BRL)</h2>
           <div class="summary-box">
             <div class="summary-row">
               <span class="summary-row-label">Total da Venda</span>
-              <span class="summary-row-value ok big" id="sum-total-venda">R$ 5.928,33</span>
+              <span class="summary-row-value ok big" id="sum-total-venda">—</span>
             </div>
             <div class="summary-row">
               <span class="summary-row-label">Dir. Fornecedor</span>
-              <span class="summary-row-value" id="sum-dir-forn">R$ 5.417,55</span>
+              <span class="summary-row-value" id="sum-dir-forn">—</span>
             </div>
             <div class="summary-row">
-              <span class="summary-row-label">Total Líquido</span>
-              <span class="summary-row-value ok" id="sum-liquido">R$ 510,78</span>
+              <span class="summary-row-label">Líquido Agência</span>
+              <span class="summary-row-value ok" id="sum-liquido">—</span>
             </div>
             <div class="summary-row" style="border-top:1px solid var(--border-color);padding-top:.75rem;margin-top:.5rem">
               <span class="summary-row-label">Total de Títulos</span>
@@ -150,28 +146,19 @@
               <span class="summary-row-value" id="sum-pct-titulos">0,00%</span>
             </div>
             <div class="summary-row">
-              <span class="summary-row-label">Valor Pago</span>
+              <span class="summary-row-label">Parcelas Pagas</span>
               <span class="summary-row-value ok" id="sum-pago">R$ 0,00</span>
             </div>
-            <div class="summary-row">
-              <span class="summary-row-label">% Restante</span>
-              <span class="summary-row-value danger" id="sum-pct-rest">100,00%</span>
-            </div>
             <div class="summary-row" style="border-top:2px solid var(--border-color);margin-top:.5rem;padding-top:.75rem">
-              <span class="summary-row-label" style="font-weight:700">Valor Restante</span>
-              <span class="summary-row-value danger big" id="sum-restante">R$ 5.928,33</span>
+              <span class="summary-row-label" style="font-weight:700">Restante</span>
+              <span class="summary-row-value danger big" id="sum-restante">—</span>
             </div>
           </div>
         </div>
 
-        <!-- Right: Titles -->
         <div class="col-12 col-md-8">
-          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">
-            Títulos
-          </h2>
-          <div id="titles-container">
-            <!-- Title cards rendered by JS -->
-          </div>
+          <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Títulos</h2>
+          <div id="titles-container"></div>
           <button class="btn-add-title" id="btn-add-title">
             <i class="bi bi-plus-circle-fill"></i> Adicionar Novo Título
           </button>
@@ -182,20 +169,18 @@
   </main>
 </div>
 
-<!-- Sticky Footer -->
 <div class="sale-footer">
   <button class="btn-os-ghost" id="btn-back-sale"><i class="bi bi-arrow-left me-1"></i>Voltar Venda</button>
-  <button class="btn-os-ghost" id="btn-save"><i class="bi bi-floppy me-1"></i>Salvar Venda</button>
-  <button class="btn-os" onclick="window.location.href='sale-supplier-customer-payment.html' + location.search">
+  <button class="btn-os-ghost" id="btn-save"><i class="bi bi-floppy me-1"></i>Salvar</button>
+  <button class="btn-os" onclick="goScreen('sale-supplier-customer-payment.html')">
     <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Fornecedor
   </button>
-  <button class="btn-os" onclick="window.location.href='sale-supplier-agency-payment.html' + location.search" style="background:#1e3a5f">
+  <button class="btn-os" onclick="goScreen('sale-supplier-agency-payment.html')" style="background:#1e3a5f">
     <i class="bi bi-arrow-left-right me-1"></i>Pgto Fornecedor ↔ Agência
   </button>
 </div>
 
 <div id="toast-container"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/notifications.js"></script>
 <script src="assets/js/auth.js"></script>
@@ -215,127 +200,235 @@ const PAYMENT_METHODS = [
 const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
 const fmtPct   = v => new Intl.NumberFormat('pt-BR',{style:'percent',minimumFractionDigits:2}).format(v||0);
 
-const TOTAL_VENDA = 5928.33;
-
 const params = new URLSearchParams(location.search);
-const saleId = params.get('n');
-if (saleId) {
-  document.getElementById('sale-topbar-title').textContent = `Venda #${saleId}`;
-  document.getElementById('sale-topbar-badge').textContent = `#${saleId}`;
-}
-
+const saleId = params.get('id');
+let vendaData = null;
 let titleCount = 0;
-const titles = {};
+const titlesState = {}; // titleId → { pagante_id, pagante_nome, pct, valor, moeda, forma, parcelas[] }
 
-function currencyOptions(selected='BRL') {
-  return CURRENCIES.map(c => `<option value="${c.code}" ${c.code===selected?'selected':''}>${c.code}</option>`).join('');
-}
-function methodOptions() {
-  return PAYMENT_METHODS.map(m => `<option>${m}</option>`).join('');
+function goScreen(page) { window.location.href = `${page}?id=${saleId}`; }
+
+// ── Topbar ────────────────────────────────────────────────────
+function setTopbar(venda) {
+  document.getElementById('sale-topbar-title').textContent = venda.codigo || `Venda #${venda.id}`;
+  document.getElementById('sale-topbar-badge').textContent = venda.codigo || `#${venda.id}`;
 }
 
-function buildInstallmentRow(titleId, instId, num, totalTitle) {
-  const parcVal = (totalTitle / (num || 1)).toFixed(2);
-  const today   = new Date().toISOString().slice(0,10);
-  return `<div class="installment-row" id="inst-${titleId}-${instId}">
+// ── Autocomplete pagante ──────────────────────────────────────
+let autocompleteTimer = null;
+function onPaganteInput(titleId) {
+  const inp = document.getElementById(`pagante-${titleId}`);
+  if (!inp) return;
+  inp.classList.remove('required-border');
+  clearTimeout(autocompleteTimer);
+  const q = inp.value.trim();
+  if (q.length < 2) { closeDropdown(titleId); return; }
+  autocompleteTimer = setTimeout(() => fetchPagante(titleId, q), 300);
+}
+
+async function fetchPagante(titleId, q) {
+  try {
+    const res = await Auth.apiFetch(`/api/clientes?q=${encodeURIComponent(q)}&limit=8`);
+    const json = await res.json();
+    if (!json.ok) return;
+    showDropdown(titleId, json.data);
+  } catch {}
+}
+
+function showDropdown(titleId, items) {
+  let dd = document.getElementById(`dd-${titleId}`);
+  if (!dd) {
+    const wrap = document.getElementById(`pagante-wrap-${titleId}`);
+    dd = document.createElement('div');
+    dd.id = `dd-${titleId}`;
+    dd.className = 'autocomplete-dropdown';
+    wrap.appendChild(dd);
+  }
+  dd.innerHTML = items.map(c =>
+    `<div class="autocomplete-item" onclick="selectPagante('${titleId}',${c.id},${JSON.stringify(c.nome).replace(/</g,'&lt;')})">
+       ${c.nome}${c.cpf ? ` — ${c.cpf}` : ''}${c.cnpj ? ` — ${c.cnpj}` : ''}
+     </div>`
+  ).join('') || '<div class="autocomplete-item text-muted">Nenhum resultado</div>';
+}
+
+function selectPagante(titleId, id, nome) {
+  document.getElementById(`pagante-${titleId}`).value = nome;
+  if (titlesState[titleId]) titlesState[titleId].pagante_id = id;
+  closeDropdown(titleId);
+}
+
+function closeDropdown(titleId) {
+  const dd = document.getElementById(`dd-${titleId}`);
+  if (dd) dd.remove();
+}
+
+// ── Parcelas ──────────────────────────────────────────────────
+function buildInstallmentRow(titleId, instNum, valor, dataDef, pago, dataPago, conta, multa) {
+  const today = new Date().toISOString().slice(0,10);
+  return `<div class="installment-row" id="inst-${titleId}-${instNum}">
     <div class="d-flex align-items-center gap-2 mb-2">
-      <span style="font-size:11px;font-weight:800;color:var(--text-muted);white-space:nowrap">Parcela ${num}</span>
+      <span style="font-size:11px;font-weight:800;color:var(--text-muted)">Parcela ${instNum}</span>
+      <span class="pago-badge ${pago ? 'pago' : 'pendente'}">${pago ? 'PAGO' : 'PENDENTE'}</span>
     </div>
     <div class="installment-grid">
-      <div><label class="os-label">Vl Parcela (BRL)</label>
-        <input type="number" class="input-os inst-valor" data-title="${titleId}" value="${parcVal}" step="0.01" oninput="recalcSummary()"></div>
-      <div><label class="os-label">Multa/Encargo</label>
-        <input type="number" class="input-os" value="0" step="0.01"></div>
-      <div><label class="os-label">Vlr Líquido</label>
-        <input type="number" class="input-os" value="${parcVal}" step="0.01" readonly style="opacity:.7"></div>
-      <div><label class="os-label">Vencimento <span class="text-danger">*</span></label>
-        <input type="date" class="input-os inst-due required-border" value="${today}"></div>
-      <div style="display:flex;align-items:flex-end;gap:.5rem">
-        <div class="form-check mb-1">
-          <input class="form-check-input" type="checkbox" id="paid-${titleId}-${instId}">
-          <label class="form-check-label" for="paid-${titleId}-${instId}" style="font-size:12px;font-weight:600">Pago</label>
+      <div>
+        <label class="os-label">Vl Parcela (BRL)</label>
+        <input type="number" class="input-os inst-valor" data-title="${titleId}" value="${(valor||0).toFixed(2)}" step="0.01" oninput="recalcSummary()">
+      </div>
+      <div>
+        <label class="os-label">Multa/Encargo</label>
+        <input type="number" class="input-os inst-multa" value="${(multa||0).toFixed(2)}" step="0.01">
+      </div>
+      <div>
+        <label class="os-label">Vencimento <span class="text-danger">*</span></label>
+        <input type="date" class="input-os inst-due required-border" value="${dataDef || today}">
+      </div>
+      <div>
+        <label class="os-label">Conta</label>
+        <div style="position:relative">
+          <input type="text" class="input-os inst-conta" placeholder="Conta..." value="${conta||''}" style="padding-right:2.2rem">
+          <i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i>
         </div>
       </div>
-      <div><label class="os-label">Conta</label>
-        <div style="position:relative"><input type="text" class="input-os" placeholder="Conta..." style="padding-right:2.2rem"><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div></div>
+      <div style="display:flex;align-items:flex-end;gap:.5rem">
+        <div class="form-check mb-1">
+          <input class="form-check-input inst-pago" type="checkbox" id="paid-${titleId}-${instNum}" ${pago ? 'checked' : ''} onchange="onPagoChange(this,'${titleId}','${instNum}')">
+          <label class="form-check-label" for="paid-${titleId}-${instNum}" style="font-size:12px;font-weight:600">Pago</label>
+        </div>
+      </div>
+      <div>
+        <label class="os-label">Data Pag.</label>
+        <input type="date" class="input-os inst-data-pag" value="${dataPago||''}" ${!pago?'disabled':''}>
+      </div>
       <div style="display:flex;align-items:flex-end">
-        <button class="os-icon-btn" style="color:var(--danger)" onclick="removeInstallment('${titleId}','${instId}')"><i class="bi bi-trash"></i></button>
+        <button class="os-icon-btn" style="color:var(--danger)" onclick="removeInstallment('${titleId}','${instNum}')"><i class="bi bi-trash"></i></button>
       </div>
     </div>
   </div>`;
 }
 
-function buildTitleCard(titleId) {
+function onPagoChange(cb, titleId, instNum) {
+  const row = document.getElementById(`inst-${titleId}-${instNum}`);
+  if (!row) return;
+  const badge = row.querySelector('.pago-badge');
+  const dataPagInp = row.querySelector('.inst-data-pag');
+  if (cb.checked) {
+    badge.className = 'pago-badge pago'; badge.textContent = 'PAGO';
+    dataPagInp.disabled = false;
+    if (!dataPagInp.value) dataPagInp.value = new Date().toISOString().slice(0,10);
+  } else {
+    badge.className = 'pago-badge pendente'; badge.textContent = 'PENDENTE';
+    dataPagInp.disabled = true; dataPagInp.value = '';
+  }
+  recalcSummary();
+}
+
+function renderInstallments(titleId) {
+  const nEl = document.querySelector(`.title-installments[data-title="${titleId}"]`);
+  const n = parseInt(nEl?.value || 1);
+  const amount = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
+  const container = document.getElementById(`installments-${titleId}`);
+  if (!container) return;
+  const parcVal = +(amount / (n || 1)).toFixed(2);
+  const today = new Date().toISOString().slice(0,10);
+  container.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, i, parcVal, today, false, '', '', 0));
+  }
+  recalcSummary();
+}
+
+function addExtraInstallment(titleId) {
+  const container = document.getElementById(`installments-${titleId}`);
+  const count = container.querySelectorAll('.installment-row').length + 1;
+  const amount = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
+  const today = new Date().toISOString().slice(0,10);
+  container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, count, amount/count, today, false, '', '', 0));
+}
+
+function removeInstallment(titleId, instNum) {
+  document.getElementById(`inst-${titleId}-${instNum}`)?.remove();
+  recalcSummary();
+}
+
+// ── Títulos ───────────────────────────────────────────────────
+function buildTitleCard(titleId, data) {
   titleCount++;
+  const totalVenda = vendaData?.total_venda || 0;
+  const totalCusto = vendaData?.total_custo || 0;
+  const valor = data ? data.valor : totalVenda;
+  const pct   = data ? (+(data.valor / (totalVenda || 1) * 100).toFixed(2)) : 100;
+  const forma = data?.forma_pagamento || 'Pix';
+
+  titlesState[titleId] = {
+    pagante_id: data?.pagante_id || null,
+    pagante_nome: data?.pagante_nome || '',
+  };
+
+  const parcelasHtml = data?.parcelas?.length
+    ? data.parcelas.map(pc =>
+        buildInstallmentRow(titleId, pc.numero, +pc.valor, pc.data_vencimento, !!pc.pago, pc.data_pagamento, pc.conta, +pc.multa_encargo)
+      ).join('')
+    : buildInstallmentRow(titleId, 1, valor, new Date().toISOString().slice(0,10), false, '', '', 0);
+
+  const nParc = data?.num_parcelas || 1;
+
   return `<div class="title-card" id="title-card-${titleId}">
     <div class="title-card-header">
       <span class="title-card-number">TÍTULO ${titleCount}</span>
       <div class="title-card-actions">
-        <button class="title-card-action" title="Duplicar" onclick="duplicateTitle('${titleId}')"><i class="bi bi-copy"></i></button>
-        <button class="title-card-action" style="background:rgba(239,68,68,0.4)" title="Remover" onclick="removeTitle('${titleId}')"><i class="bi bi-trash"></i></button>
+        <button class="title-card-action" style="background:rgba(239,68,68,0.4)" onclick="removeTitle('${titleId}')"><i class="bi bi-trash"></i></button>
       </div>
     </div>
     <div class="title-card-body">
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-5">
           <label class="os-label">Pagante <span class="text-danger">*</span></label>
-          <div style="position:relative"><input type="text" class="input-os required-border" placeholder="Buscar contato..." id="pagante-${titleId}" oninput="onPaganteInput('${titleId}')"><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div>
-        </div>
-        <div class="col-12 col-md-5">
-          <label class="os-label">Centro de Custo</label>
-          <div style="position:relative"><input type="text" class="input-os" placeholder="Centro de custo..."><i class="bi bi-search" style="position:absolute;right:.65rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i></div>
+          <div class="search-lupa" id="pagante-wrap-${titleId}" style="position:relative">
+            <input type="text" class="input-os required-border" placeholder="Buscar cliente..." id="pagante-${titleId}" value="${data?.pagante_nome||''}" oninput="onPaganteInput('${titleId}')">
+            <i class="bi bi-search"></i>
+          </div>
         </div>
         <div class="col-6 col-md-2">
           <label class="os-label">% do Total</label>
-          <input type="number" class="input-os title-pct" data-title="${titleId}" value="100" step="0.01" min="0" max="100" oninput="onPctChange('${titleId}')">
+          <input type="number" class="input-os title-pct" data-title="${titleId}" value="${pct}" step="0.01" min="0" max="100" oninput="onPctChange('${titleId}')">
         </div>
         <div class="col-6 col-md-2">
           <label class="os-label">Moeda</label>
-          <select class="input-os">${currencyOptions()}</select>
+          <select class="input-os title-moeda" data-title="${titleId}">
+            ${CURRENCIES.map(c=>`<option value="${c.code}" ${(data?.moeda||'BRL')===c.code?'selected':''}>${c.code}</option>`).join('')}
+          </select>
         </div>
         <div class="col-6 col-md-3">
           <label class="os-label">Valor Total (BRL)</label>
-          <input type="number" class="input-os title-amount" id="title-amount-${titleId}" value="${TOTAL_VENDA.toFixed(2)}" step="0.01" oninput="onAmountChange('${titleId}')">
+          <input type="number" class="input-os title-amount" id="title-amount-${titleId}" value="${valor.toFixed(2)}" step="0.01" oninput="onAmountChange('${titleId}')">
         </div>
         <div class="col-6 col-md-3">
           <label class="os-label">Forma de Pagamento</label>
-          <select class="input-os">${methodOptions()}</select>
-        </div>
-        <div class="col-12 col-md-4">
-          <label class="os-label">Produtos vinculados</label>
-          <select class="input-os">
-            <option value="">— Todos os produtos —</option>
-            <option value="prod1">Passagem Aérea - TREND VIAGENS</option>
-            <option value="prod2">Hospedagem - ATLANTICA HOTELS</option>
+          <select class="input-os title-forma" data-title="${titleId}">
+            ${PAYMENT_METHODS.map(m=>`<option ${m===forma?'selected':''}>${m}</option>`).join('')}
           </select>
         </div>
-      </div>
-      <div class="col-12 mb-3">
-        <label class="os-label">Observações</label>
-        <textarea class="input-os" rows="2" placeholder="Observações do título..."></textarea>
+        <div class="col-12 col-md-4">
+          <label class="os-label">Observações</label>
+          <textarea class="input-os title-obs" data-title="${titleId}" rows="2" placeholder="Observações...">${data?.observacoes||''}</textarea>
+        </div>
       </div>
       <div class="d-flex align-items-center gap-3 mb-3">
         <label class="os-label mb-0">N. Parcelas</label>
-        <input type="number" class="input-os title-installments" data-title="${titleId}" value="1" min="1" max="60" style="width:80px" oninput="renderInstallments('${titleId}')">
+        <input type="number" class="input-os title-installments" data-title="${titleId}" value="${nParc}" min="1" max="60" style="width:80px" oninput="renderInstallments('${titleId}')">
       </div>
-      <!-- Installments -->
-      <div id="installments-${titleId}">
-        ${buildInstallmentRow(titleId, 1, 1, TOTAL_VENDA)}
-      </div>
-      <!-- Add installment -->
+      <div id="installments-${titleId}">${parcelasHtml}</div>
       <button class="btn-os-ghost mt-2" style="font-size:11px" onclick="addExtraInstallment('${titleId}')">
         <i class="bi bi-plus-circle me-1"></i>Adicionar parcela extra
       </button>
-      <!-- Attach -->
       <div class="attach-acc mt-2">
-        <div class="attach-acc-header" onclick="toggleAttach('${titleId}')">
-          <i class="bi bi-paperclip"></i> Anexo (comprovantes)
-          <i class="bi bi-chevron-down ms-auto"></i>
+        <div class="attach-acc-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <i class="bi bi-paperclip"></i> Anexo (comprovantes) <i class="bi bi-chevron-down ms-auto"></i>
         </div>
-        <div class="attach-acc-body" id="attach-body-${titleId}">
+        <div class="attach-acc-body">
           <div class="border border-dashed rounded p-3 text-center text-muted" style="cursor:pointer;font-size:12px">
             <i class="bi bi-cloud-upload d-block fs-5 mb-1"></i> Anexar comprovante de pagamento
-            <input type="file" style="display:none">
           </div>
         </div>
       </div>
@@ -343,102 +436,136 @@ function buildTitleCard(titleId) {
   </div>`;
 }
 
-function addTitle() {
-  const titleId = `t-${Date.now()}`;
-  titles[titleId] = true;
-  document.getElementById('titles-container').insertAdjacentHTML('beforeend', buildTitleCard(titleId));
+function addTitle(data) {
+  const titleId = `t-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+  document.getElementById('titles-container').insertAdjacentHTML('beforeend', buildTitleCard(titleId, data));
   recalcSummary();
 }
 
 function removeTitle(titleId) {
-  const el = document.getElementById(`title-card-${titleId}`);
-  if (el) el.remove();
-  delete titles[titleId];
-  recalcSummary();
-}
-
-function duplicateTitle(titleId) {
-  addTitle();
-  if(typeof Notify !== 'undefined') Notify.info('Título duplicado.');
-}
-
-function renderInstallments(titleId) {
-  const n      = parseInt(document.getElementById(`.title-installments[data-title="${titleId}"]`)?.value || document.querySelector(`.title-installments[data-title="${titleId}"]`)?.value || 1);
-  const amount = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
-  const container = document.getElementById(`installments-${titleId}`);
-  if (!container) return;
-  container.innerHTML = '';
-  for (let i = 1; i <= n; i++) {
-    container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, i, i, amount));
-  }
-  recalcSummary();
-}
-
-function addExtraInstallment(titleId) {
-  const container  = document.getElementById(`installments-${titleId}`);
-  const count      = container.querySelectorAll('.installment-row').length + 1;
-  const amount     = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
-  container.insertAdjacentHTML('beforeend', buildInstallmentRow(titleId, Date.now(), count, amount/count));
-}
-
-function removeInstallment(titleId, instId) {
-  const el = document.getElementById(`inst-${titleId}-${instId}`);
-  if (el) el.remove();
+  document.getElementById(`title-card-${titleId}`)?.remove();
+  delete titlesState[titleId];
   recalcSummary();
 }
 
 function onPctChange(titleId) {
   const pct = parseFloat(document.querySelector(`.title-pct[data-title="${titleId}"]`)?.value || 100) / 100;
-  const val  = TOTAL_VENDA * pct;
-  const el   = document.getElementById(`title-amount-${titleId}`);
+  const val = (vendaData?.total_venda || 0) * pct;
+  const el  = document.getElementById(`title-amount-${titleId}`);
   if (el) el.value = val.toFixed(2);
   renderInstallments(titleId);
 }
 
-function onAmountChange(titleId) {
-  renderInstallments(titleId);
-}
+function onAmountChange(titleId) { renderInstallments(titleId); }
 
-function onPaganteInput(titleId) {
-  const el = document.getElementById(`pagante-${titleId}`);
-  if (el && el.value.trim()) el.classList.remove('required-border');
-}
-
-function toggleAttach(titleId) {
-  const body = document.getElementById(`attach-body-${titleId}`);
-  if (body) body.classList.toggle('open');
-}
-
+// ── Summary ───────────────────────────────────────────────────
 function recalcSummary() {
-  let totalTitles = 0;
-  let totalPaid   = 0;
-  document.querySelectorAll('.title-amount').forEach(inp => {
-    totalTitles += parseFloat(inp.value) || 0;
-  });
-  document.querySelectorAll('[id^="paid-"]:checked').forEach(cb => {
+  let totalTitles = 0, totalPaid = 0;
+  document.querySelectorAll('.title-amount').forEach(inp => { totalTitles += parseFloat(inp.value) || 0; });
+  document.querySelectorAll('.inst-pago:checked').forEach(cb => {
     const row = cb.closest('.installment-row');
-    if (row) {
-      const val = parseFloat(row.querySelector('.inst-valor')?.value || 0);
-      totalPaid += val;
-    }
+    if (row) totalPaid += parseFloat(row.querySelector('.inst-valor')?.value || 0);
   });
-  const rest   = Math.max(0, TOTAL_VENDA - totalTitles);
-  const pctTit = TOTAL_VENDA > 0 ? totalTitles / TOTAL_VENDA : 0;
-  const pctRest= 1 - Math.min(1, pctTit);
 
-  document.getElementById('sum-titulos').textContent    = fmtMoney(totalTitles);
-  document.getElementById('sum-pct-titulos').textContent= fmtPct(pctTit);
-  document.getElementById('sum-pago').textContent       = fmtMoney(totalPaid);
-  document.getElementById('sum-pct-rest').textContent   = fmtPct(pctRest);
-  document.getElementById('sum-restante').textContent   = fmtMoney(rest);
+  const totalVenda = vendaData?.total_venda || 0;
+  const rest = Math.max(0, totalVenda - totalTitles);
+  const pctTit = totalVenda > 0 ? totalTitles / totalVenda : 0;
+
+  document.getElementById('sum-titulos').textContent     = fmtMoney(totalTitles);
+  document.getElementById('sum-pct-titulos').textContent = fmtPct(pctTit);
+  document.getElementById('sum-pago').textContent        = fmtMoney(totalPaid);
+  document.getElementById('sum-restante').textContent    = fmtMoney(rest);
 
   const restEl = document.getElementById('sum-restante');
-  const pctEl  = document.getElementById('sum-pct-rest');
-  if (restEl) restEl.className = `summary-row-value ${rest > 0 ? 'danger' : 'ok'} big`;
-  if (pctEl)  pctEl.className  = `summary-row-value ${pctRest > 0 ? 'danger' : 'ok'}`;
+  restEl.className = `summary-row-value ${rest > 0 ? 'danger' : 'ok'} big`;
 }
 
-/* ── Paid checkbox listener ─────────────────────────────────── */
+// ── Salvar ────────────────────────────────────────────────────
+async function salvar() {
+  let valid = true;
+  document.querySelectorAll('.inst-due').forEach(inp => {
+    if (!inp.value) { inp.classList.add('required-border'); valid = false; }
+    else inp.classList.remove('required-border');
+  });
+  if (!valid) { Notify.error('Preencha todos os vencimentos obrigatórios.'); return; }
+
+  const pagamentos = [];
+  document.querySelectorAll('[id^="title-card-"]').forEach(card => {
+    const titleId = card.id.replace('title-card-', '');
+    const valor   = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
+    if (valor <= 0) return;
+
+    const paganteInp = document.getElementById(`pagante-${titleId}`);
+    const paganteId  = titlesState[titleId]?.pagante_id || null;
+    const forma      = document.querySelector(`.title-forma[data-title="${titleId}"]`)?.value || 'Pix';
+    const moeda      = document.querySelector(`.title-moeda[data-title="${titleId}"]`)?.value || 'BRL';
+    const obs        = document.querySelector(`.title-obs[data-title="${titleId}"]`)?.value || '';
+    const nParc      = parseInt(document.querySelector(`.title-installments[data-title="${titleId}"]`)?.value || 1);
+
+    const parcelas = [];
+    card.querySelectorAll('.installment-row').forEach((row, idx) => {
+      parcelas.push({
+        numero:          idx + 1,
+        valor:           parseFloat(row.querySelector('.inst-valor')?.value || 0),
+        multa_encargo:   parseFloat(row.querySelector('.inst-multa')?.value || 0),
+        data_vencimento: row.querySelector('.inst-due')?.value || '',
+        data_pagamento:  row.querySelector('.inst-data-pag')?.value || null,
+        pago:            row.querySelector('.inst-pago')?.checked ? 1 : 0,
+        conta:           row.querySelector('.inst-conta')?.value || '',
+      });
+    });
+
+    pagamentos.push({ pagante_id: paganteId, moeda, valor, forma_pagamento: forma, num_parcelas: nParc, observacoes: obs, parcelas });
+  });
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  try {
+    const res = await Auth.apiFetch(`/api/vendas/${saleId}/pagamentos/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: 'cliente_agencia', pagamentos }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    Notify.success('Títulos salvos com sucesso!');
+  } catch (err) {
+    Notify.error('Erro ao salvar: ' + err.message);
+  } finally { btn.disabled = false; }
+}
+
+// ── Carregar venda + pagamentos existentes ────────────────────
+async function carregar() {
+  if (!saleId) { Notify.error('ID da venda não informado.'); return; }
+  try {
+    const [rVenda, rPags] = await Promise.all([
+      Auth.apiFetch(`/api/vendas/${saleId}`).then(r => r.json()),
+      Auth.apiFetch(`/api/vendas/${saleId}/pagamentos?tipo=cliente_agencia`).then(r => r.json()),
+    ]);
+
+    if (!rVenda.ok) throw new Error(rVenda.error);
+    vendaData = rVenda.data;
+    setTopbar(vendaData);
+
+    // Preenche summary
+    document.getElementById('sum-total-venda').textContent = fmtMoney(vendaData.total_venda);
+    document.getElementById('sum-dir-forn').textContent    = fmtMoney(vendaData.total_custo);
+    document.getElementById('sum-liquido').textContent     = fmtMoney((vendaData.total_venda||0) - (vendaData.total_custo||0));
+    document.getElementById('sum-restante').textContent    = fmtMoney(vendaData.total_venda);
+
+    // Renderiza pagamentos existentes ou cria título vazio
+    if (rPags.ok && rPags.data.length) {
+      rPags.data.forEach(pag => addTitle(pag));
+    }
+
+  } catch (err) { Notify.error('Erro ao carregar: ' + err.message); }
+}
+
+// ── Eventos ───────────────────────────────────────────────────
+document.getElementById('btn-add-title').addEventListener('click', () => addTitle(null));
+document.getElementById('btn-save').addEventListener('click', salvar);
+document.getElementById('btn-back-sale').addEventListener('click', () => { window.location.href = `sale-form.html?id=${saleId}`; });
+
 document.getElementById('titles-container').addEventListener('change', e => {
   if (e.target.type === 'checkbox') recalcSummary();
 });
@@ -446,25 +573,6 @@ document.getElementById('titles-container').addEventListener('input', e => {
   if (e.target.classList.contains('inst-valor') || e.target.classList.contains('title-amount')) recalcSummary();
 });
 
-/* ── Buttons ─────────────────────────────────────────────────── */
-document.getElementById('btn-add-title').addEventListener('click', addTitle);
-document.getElementById('btn-back-sale').addEventListener('click', () => {
-  window.location.href = `sale-form.html${location.search}`;
-});
-document.getElementById('btn-save').addEventListener('click', () => {
-  let valid = true;
-  document.querySelectorAll('.inst-due').forEach(inp => {
-    if (!inp.value) { inp.classList.add('required-border'); valid = false; }
-    else inp.classList.remove('required-border');
-  });
-  if (!valid) {
-    if(typeof Notify !== 'undefined') Notify.error('Preencha todos os vencimentos obrigatórios.');
-    return;
-  }
-  if(typeof Notify !== 'undefined') Notify.success('Títulos salvos com sucesso!');
-});
-
-/* ── Sidebar fix ─────────────────────────────────────────────── */
 document.getElementById('sidebar-open').addEventListener('click', () => {
   document.getElementById('sidebar')?.classList.add('open');
   document.getElementById('os-overlay')?.classList.add('active');
@@ -474,9 +582,9 @@ document.getElementById('sidebar-close')?.addEventListener('click', () => {
   document.getElementById('os-overlay')?.classList.remove('active');
 });
 
-/* ── Init ────────────────────────────────────────────────────── */
 App.init();
 Theme.apply(localStorage.getItem('travelos-theme') || 'light');
+carregar();
 </script>
 </body>
 </html>

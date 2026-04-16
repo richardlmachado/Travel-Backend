@@ -18,11 +18,12 @@
     }
     .sale-topbar-title { font-size: 14px; font-weight: 900; color: white; }
     .sale-topbar-badge { background: rgba(255,255,255,0.2); color: white; border-radius: 0.35rem; padding: 0.2rem 0.625rem; font-size: 11px; font-weight: 800; }
+
     .summary-box { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; }
-    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); }
-    .summary-row:last-child { border-bottom: none; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); gap: 0.5rem; }
+    .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
     .summary-row-label { font-size: 12px; color: var(--text-body); font-weight: 500; }
-    .summary-row-value { font-size: 13px; font-weight: 800; color: var(--text-heading); }
+    .summary-row-value { font-size: 13px; font-weight: 800; color: var(--text-heading); white-space: nowrap; }
     .summary-row-value.ok { color: #0d9488; }
     .summary-row-value.big { font-size: 1rem; }
 
@@ -40,7 +41,7 @@
     .btn-add-payment:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 
     .payment-entry { background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.875rem; margin-bottom: 0.75rem; }
-    .payment-entry-grid { display: grid; grid-template-columns: auto 1fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+    .payment-entry-grid { display: grid; grid-template-columns: auto 1fr 1fr auto 1fr auto; gap: 0.75rem; align-items: end; }
     @media(max-width:900px) { .payment-entry-grid { grid-template-columns: 1fr 1fr; } }
 
     .sale-footer {
@@ -54,6 +55,7 @@
 </head>
 <body>
 <div class="os-wrapper">
+
   <aside class="os-sidebar" id="sidebar">
     <div class="os-sidebar-header">
       <div class="os-brand">
@@ -97,15 +99,16 @@
 
     <div class="os-content">
       <div class="row g-4">
+
         <div class="col-12 col-md-4">
           <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Resumo Fornecedor (BRL)</h2>
           <div class="summary-box">
             <div class="summary-row">
               <span class="summary-row-label">Total ao Fornecedor</span>
-              <span class="summary-row-value big ok" id="sum-total-forn">R$ 5.417,55</span>
+              <span class="summary-row-value big ok" id="sum-total-forn">—</span>
             </div>
             <div class="summary-row">
-              <span class="summary-row-label">Pagamentos Realizados</span>
+              <span class="summary-row-label">Pagamentos Registrados</span>
               <span class="summary-row-value" id="sum-pagamentos">R$ 0,00</span>
             </div>
             <div class="summary-row">
@@ -114,15 +117,18 @@
             </div>
             <div class="summary-row" style="border-top:2px solid var(--border-color);margin-top:.5rem;padding-top:.75rem">
               <span class="summary-row-label" style="font-weight:700">Restante</span>
-              <span class="summary-row-value big" style="color:var(--danger)" id="sum-restante">R$ 5.417,55</span>
+              <span class="summary-row-value big" style="color:var(--danger)" id="sum-restante">—</span>
             </div>
           </div>
         </div>
 
         <div class="col-12 col-md-8">
           <h2 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Pagamentos ao Fornecedor</h2>
-          <div id="products-container"></div>
+          <div id="products-container">
+            <div class="text-muted text-center py-4"><i class="bi bi-hourglass-split me-2"></i>Carregando...</div>
+          </div>
         </div>
+
       </div>
     </div>
   </main>
@@ -131,10 +137,10 @@
 <div class="sale-footer">
   <button class="btn-os-ghost" id="btn-back"><i class="bi bi-arrow-left me-1"></i>Voltar Venda</button>
   <button class="btn-os-ghost" id="btn-save"><i class="bi bi-floppy me-1"></i>Salvar</button>
-  <button class="btn-os" onclick="window.location.href='sale-supplier-customer-payment.html'+location.search">
+  <button class="btn-os" onclick="goScreen('sale-supplier-customer-payment.html')">
     <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Fornecedor
   </button>
-  <button class="btn-os" onclick="window.location.href='sale-finalize.html'+location.search" style="background:#0d9488">
+  <button class="btn-os" onclick="goScreen('sale-finalize.html')" style="background:#0d9488">
     <i class="bi bi-arrow-left-right me-1"></i>Pgto Cliente ↔ Agência
   </button>
 </div>
@@ -146,78 +152,234 @@
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-const PAYMENT_METHODS = ['Dinheiro','Pix','Cartão de Crédito','Cartão de Débito','Débito em Conta','Depósito','Cheque','Faturado','Boleto','Transferência','Pré Pagamento','Carta de Crédito'];
+const CURRENCIES = [
+  {code:'BRL',label:'REAL'},{code:'USD',label:'DÓLAR AMERICANO'},{code:'EUR',label:'EURO'},
+  {code:'GBP',label:'LIBRA ESTERLINA'},{code:'CAD',label:'DÓLAR CANADENSE'},{code:'AUD',label:'DÓLAR AUSTRALIANO'},
+  {code:'CHF',label:'FRANCO SUÍÇO'},{code:'JPY',label:'IENE JAPONÊS'},{code:'MXN',label:'PESO MEXICANO'},
+  {code:'ARS',label:'PESO ARGENTINO'},{code:'CLP',label:'PESO CHILENO'},{code:'TRY',label:'LIRA TURCA'},
+  {code:'INR',label:'RUPIA INDIANA'},{code:'ZAR',label:'RAND SUL-AFRICANO'},
+];
+const PAYMENT_METHODS = [
+  'Dinheiro','Pix','Cartão de Crédito','Cartão de Débito','Débito em Conta',
+  'Depósito','Cheque','Faturado','Boleto','Transferência','Pré Pagamento','Carta de Crédito'
+];
 const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
 const fmtPct   = v => new Intl.NumberFormat('pt-BR',{style:'percent',minimumFractionDigits:2}).format(v||0);
-const TOTAL_FORN = 5417.55;
 
 const params = new URLSearchParams(location.search);
-const saleId = params.get('n');
-if (saleId) {
-  document.getElementById('sale-topbar-title').textContent = `Venda #${saleId}`;
-  document.getElementById('sale-topbar-badge').textContent = `#${saleId}`;
+const saleId = params.get('id');
+let itens = [];
+
+function goScreen(page) { window.location.href = `${page}?id=${saleId}`; }
+
+function currencyOptions(sel) {
+  return CURRENCIES.map(c => `<option value="${c.code}" ${c.code===sel?'selected':''}>${c.code} — ${c.label}</option>`).join('');
+}
+function methodOptions(sel) {
+  return PAYMENT_METHODS.map(m => `<option ${m===sel?'selected':''}>${m}</option>`).join('');
 }
 
-const PRODUCTS = [
-  { id:'pforn1', name:'TREND VIAGENS - Passagem Aérea - Loc. 5009807', total: 3417.55 },
-  { id:'pforn2', name:'ATLANTICA HOTELS - Hospedagem - Res. 8881', total: 2000.00 },
-];
+// ── Entry HTML ────────────────────────────────────────────────
+function buildEntry(itemId, entryId, data) {
+  const today = new Date().toISOString().slice(0,10);
+  const valor = data?.valor || '';
+  const moeda = data?.moeda || 'BRL';
+  const forma = data?.forma_pagamento || 'Pix';
+  const nParc = data?.num_parcelas || 1;
+  const venc  = data?.parcelas?.[0]?.data_vencimento || '';
+  const pago  = data?.status === 'pago';
 
-function methodOptions() {
-  return PAYMENT_METHODS.map(m => `<option>${m}</option>`).join('');
-}
-
-function buildPaymentEntry(prodId, entryId) {
-  return `<div class="payment-entry" id="pe-${prodId}-${entryId}">
+  return `<div class="payment-entry" id="pe-${itemId}-${entryId}">
     <div class="payment-entry-grid">
-      <div><label class="os-label">Moeda</label><select class="input-os" style="width:90px"><option>BRL</option><option>USD</option><option>EUR</option></select></div>
-      <div><label class="os-label">Valor</label><input type="number" class="input-os pay-value" step="0.01" min="0" placeholder="0,00" oninput="recalc()"></div>
-      <div><label class="os-label">Forma de Pagamento</label><select class="input-os">${methodOptions()}</select></div>
-      <div><label class="os-label">N. Parcelas</label><input type="number" class="input-os" value="1" min="1" max="24" style="width:80px"></div>
-      <div><label class="os-label">Data</label><input type="date" class="input-os" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div>
+        <label class="os-label">Moeda</label>
+        <select class="input-os pe-moeda" style="width:130px" onchange="recalc()">${currencyOptions(moeda)}</select>
+      </div>
+      <div>
+        <label class="os-label">Valor</label>
+        <input type="number" class="input-os pe-valor" step="0.01" min="0" placeholder="0,00" value="${valor}" oninput="recalc()">
+      </div>
+      <div>
+        <label class="os-label">Forma de Pagamento</label>
+        <select class="input-os pe-forma">${methodOptions(forma)}</select>
+      </div>
+      <div>
+        <label class="os-label">N. Parcelas</label>
+        <input type="number" class="input-os pe-parcelas" value="${nParc}" min="1" max="24" style="width:80px">
+      </div>
+      <div>
+        <label class="os-label">Vencimento 1ª Parcela</label>
+        <input type="date" class="input-os pe-venc" value="${venc || today}">
+      </div>
+      <div>
+        <label class="os-label">Status</label>
+        <select class="input-os pe-status">
+          <option value="pendente" ${!pago?'selected':''}>Pendente</option>
+          <option value="pago" ${pago?'selected':''}>Pago</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:flex-end">
-        <button class="os-icon-btn" style="color:var(--danger)" onclick="document.getElementById('pe-${prodId}-${entryId}').remove();recalc()"><i class="bi bi-trash"></i></button>
+        <button class="os-icon-btn" style="color:var(--danger)" onclick="removeEntry('${itemId}','${entryId}')"><i class="bi bi-trash"></i></button>
       </div>
     </div>
   </div>`;
 }
 
-function renderProducts() {
-  document.getElementById('products-container').innerHTML = PRODUCTS.map(p => `
+function addEntry(itemId, data) {
+  const entryId = `e-${Date.now()}-${Math.random().toString(36).slice(2,5)}`;
+  document.getElementById(`pay-list-${itemId}`).insertAdjacentHTML('beforeend', buildEntry(itemId, entryId, data));
+  recalc();
+}
+
+function removeEntry(itemId, entryId) {
+  document.getElementById(`pe-${itemId}-${entryId}`)?.remove();
+  recalc();
+}
+
+// ── Produtos ──────────────────────────────────────────────────
+function renderProducts(existentes) {
+  const existMap = {};
+  (existentes || []).forEach(pag => {
+    const key = pag.venda_item_id;
+    if (!existMap[key]) existMap[key] = [];
+    existMap[key].push(pag);
+  });
+
+  const container = document.getElementById('products-container');
+  container.innerHTML = itens.map(item => `
     <div class="product-pay-card">
       <div class="product-pay-header">
-        <div class="product-pay-title">${p.name}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Total: ${fmtMoney(p.total)}</div>
+        <div class="product-pay-title">${item.fornecedor_nome ? item.fornecedor_nome + ' — ' : ''}${item.descricao || item.tipo_produto}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">
+          Custo: ${fmtMoney(item.total_custo_brl)}
+        </div>
       </div>
       <div class="product-pay-body">
-        <div id="pay-list-${p.id}"></div>
-        <button class="btn-add-payment" onclick="addPay('${p.id}')"><i class="bi bi-plus-circle"></i> Adicionar Pagamento</button>
+        <div id="pay-list-${item.id}"></div>
+        <button class="btn-add-payment" onclick="addEntry(${item.id})">
+          <i class="bi bi-plus-circle"></i> Adicionar Pagamento
+        </button>
       </div>
-    </div>`).join('');
+    </div>
+  `).join('');
+
+  itens.forEach(item => {
+    const pags = existMap[item.id] || [];
+    if (pags.length) pags.forEach(pag => addEntry(item.id, pag));
+  });
+
+  recalc();
 }
 
-function addPay(prodId) {
-  document.getElementById(`pay-list-${prodId}`).insertAdjacentHTML('beforeend', buildPaymentEntry(prodId, Date.now()));
-}
-
+// ── Recalc ────────────────────────────────────────────────────
 function recalc() {
   let paid = 0;
-  document.querySelectorAll('.pay-value').forEach(i => { paid += parseFloat(i.value)||0; });
-  const rest = Math.max(0, TOTAL_FORN - paid);
-  const pct  = TOTAL_FORN > 0 ? paid / TOTAL_FORN : 0;
+  document.querySelectorAll('.pe-valor').forEach(i => { paid += parseFloat(i.value) || 0; });
+  const totalForn = itens.reduce((a, it) => a + (+it.total_custo_brl || 0), 0);
+  const rest = Math.max(0, totalForn - paid);
+  const pct  = totalForn > 0 ? paid / totalForn : 0;
   document.getElementById('sum-pagamentos').textContent = fmtMoney(paid);
   document.getElementById('sum-pct').textContent        = fmtPct(pct);
   document.getElementById('sum-restante').textContent   = fmtMoney(rest);
 }
 
-document.getElementById('btn-back').addEventListener('click', () => { window.location.href = `sale-form.html${location.search}`; });
-document.getElementById('btn-save').addEventListener('click', () => { if(typeof Notify!=='undefined') Notify.success('Pagamentos salvos!'); });
-document.getElementById('sidebar-open').addEventListener('click', () => { document.getElementById('sidebar')?.classList.add('open'); document.getElementById('os-overlay')?.classList.add('active'); });
-document.getElementById('sidebar-close')?.addEventListener('click', () => { document.getElementById('sidebar')?.classList.remove('open'); document.getElementById('os-overlay')?.classList.remove('active'); });
+// ── Salvar ────────────────────────────────────────────────────
+async function salvar() {
+  const pagamentos = [];
+
+  itens.forEach(item => {
+    const list = document.getElementById(`pay-list-${item.id}`);
+    if (!list) return;
+    list.querySelectorAll('.payment-entry').forEach(entryEl => {
+      const valor = parseFloat(entryEl.querySelector('.pe-valor')?.value || 0);
+      if (valor <= 0) return;
+      const moeda  = entryEl.querySelector('.pe-moeda')?.value || 'BRL';
+      const forma  = entryEl.querySelector('.pe-forma')?.value || 'Pix';
+      const nParc  = parseInt(entryEl.querySelector('.pe-parcelas')?.value || 1);
+      const venc   = entryEl.querySelector('.pe-venc')?.value || '';
+      const status = entryEl.querySelector('.pe-status')?.value || 'pendente';
+
+      const parcelas = [];
+      const parcVal  = +(valor / nParc).toFixed(2);
+      const baseDate = venc ? new Date(venc + 'T00:00:00') : new Date();
+      for (let i = 0; i < nParc; i++) {
+        const d = new Date(baseDate);
+        d.setMonth(d.getMonth() + i);
+        parcelas.push({
+          numero: i + 1,
+          valor: parcVal,
+          multa_encargo: 0,
+          data_vencimento: d.toISOString().slice(0,10),
+          pago: status === 'pago' ? 1 : 0,
+          data_pagamento: status === 'pago' ? new Date().toISOString().slice(0,10) : null,
+        });
+      }
+
+      pagamentos.push({
+        venda_item_id: item.id,
+        moeda, valor, forma_pagamento: forma,
+        num_parcelas: nParc,
+        parcelas,
+      });
+    });
+  });
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${saleId}/pagamentos/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: 'fornecedor_agencia', pagamentos }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    Notify.success('Pagamentos salvos!');
+  } catch (err) {
+    Notify.error('Erro ao salvar: ' + err.message);
+  } finally { btn.disabled = false; }
+}
+
+// ── Carregar ──────────────────────────────────────────────────
+async function carregar() {
+  if (!saleId) { Notify.error('ID da venda não informado.'); return; }
+  try {
+    const [rVenda, rPags] = await Promise.all([
+      Auth.apiFetch(`/api/vendas/${saleId}`).then(r => r.json()),
+      Auth.apiFetch(`/api/vendas/${saleId}/pagamentos?tipo=fornecedor_agencia`).then(r => r.json()),
+    ]);
+
+    if (!rVenda.ok) throw new Error(rVenda.error);
+    const venda = rVenda.data;
+    itens = venda.itens || [];
+
+    document.getElementById('sale-topbar-title').textContent = venda.codigo || `Venda #${venda.id}`;
+    document.getElementById('sale-topbar-badge').textContent = venda.codigo || `#${venda.id}`;
+
+    const totalCusto = itens.reduce((a, it) => a + (+it.total_custo_brl || 0), 0);
+    document.getElementById('sum-total-forn').textContent  = fmtMoney(totalCusto);
+    document.getElementById('sum-restante').textContent    = fmtMoney(totalCusto);
+
+    renderProducts(rPags.ok ? rPags.data : []);
+
+  } catch (err) { Notify.error('Erro ao carregar: ' + err.message); }
+}
+
+// ── Eventos ───────────────────────────────────────────────────
+document.getElementById('btn-save').addEventListener('click', salvar);
+document.getElementById('btn-back').addEventListener('click', () => { window.location.href = `sale-form.html?id=${saleId}`; });
+document.getElementById('sidebar-open').addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.add('open');
+  document.getElementById('os-overlay')?.classList.add('active');
+});
+document.getElementById('sidebar-close')?.addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('os-overlay')?.classList.remove('active');
+});
 
 App.init();
-renderProducts();
 Theme.apply(localStorage.getItem('travelos-theme') || 'light');
+carregar();
 </script>
 </body>
 </html>
