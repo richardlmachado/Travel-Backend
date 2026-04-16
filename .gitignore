@@ -4,3 +4,4 @@ node_modules
 .firecrawl
 next-env.d.ts
 package-lock.json
+claude-skills/
