@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extrato de Comissões — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    /* ── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+      background: var(--card-bg); gap: 1rem; flex-wrap: wrap;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 0.875rem; }
+    .page-header-icon {
+      width: 44px; height: 44px; background: #ccfbf1; color: #0d9488;
+      border-radius: var(--radius); display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .page-title   { font-size: 20px; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); margin: 0; }
+    .page-subtitle { font-size: 12px; color: var(--text-muted); margin: 0; }
+
+    /* ── KPI Cards ──────────────────────────────────────────── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media(max-width:900px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:480px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kpi-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 1.25rem 1rem;
+      display: flex; align-items: flex-start; gap: 0.875rem;
+    }
+    .kpi-icon {
+      width: 40px; height: 40px; border-radius: var(--radius); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .kpi-icon.teal    { background: #ccfbf1; color: #0d9488; }
+    .kpi-icon.amber   { background: #fef3c7; color: #d97706; }
+    .kpi-icon.blue    { background: #dbeafe; color: #2563eb; }
+    .kpi-icon.green   { background: #dcfce7; color: #16a34a; }
+    .kpi-icon.red     { background: #fee2e2; color: #dc2626; }
+    .kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .kpi-value { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text-heading); line-height: 1.1; }
+    .kpi-value.sm { font-size: 1rem; }
+    .kpi-sub   { font-size: 11px; color: var(--text-muted); margin-top: 0.15rem; font-weight: 500; }
+
+    /* ── Filter Bar ─────────────────────────────────────────── */
+    .filter-bar {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+      display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 0.25rem; min-width: 130px; }
+    .filter-group label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+
+    /* ── Progress bar de faixa ──────────────────────────────── */
+    .faixa-bar-wrap {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem;
+    }
+    .faixa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .faixa-title  { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+    .faixa-badge  {
+      background: #0d9488; color: white; border-radius: 0.4rem;
+      padding: 0.2rem 0.6rem; font-size: 12px; font-weight: 800;
+    }
+    .faixa-progress { height: 10px; background: var(--bg-page); border-radius: 9999px; overflow: hidden; margin-bottom: 0.5rem; }
+    .faixa-progress-bar { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 9999px; transition: width 0.6s ease; }
+    .faixa-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: 600; }
+
+    /* ── Table ──────────────────────────────────────────────── */
+    .nivel-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      border-radius: 0.35rem; padding: 0.15rem 0.5rem;
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .nivel-badge.forn   { background: #dbeafe; color: #1d4ed8; }
+    .nivel-badge.agente { background: #ccfbf1; color: #0f766e; }
+
+    .status-badge {
+      display: inline-block; border-radius: 0.35rem; padding: 0.15rem 0.5rem;
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .status-badge.pendente  { background: #fef3c7; color: #92400e; }
+    .status-badge.aprovado  { background: #dbeafe; color: #1e40af; }
+    .status-badge.pago      { background: #dcfce7; color: #166534; }
+    .status-badge.estornado { background: #fee2e2; color: #991b1b; }
+
+    .summary-footer {
+      background: var(--primary); color: white; border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem; display: flex; gap: 2rem; flex-wrap: wrap;
+      align-items: center; margin-top: 1.25rem;
+    }
+    .summary-footer-item { display: flex; flex-direction: column; }
+    .summary-footer-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.75; }
+    .summary-footer-value { font-size: 1.15rem; font-weight: 900; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-sliders"></i> Config. Comissões</a>
+      <a href="comissoes-agente.html" class="os-nav-item active" data-page="comissoes-agente.html"><i class="bi bi-wallet2"></i> Extrato Comissões</a>
+      <a href="#" class="os-nav-item"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title"><span class="os-page-subtitle">TravelAgent OS</span></div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content p-0">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon"><i class="bi bi-wallet2"></i></div>
+          <div>
+            <h1 class="page-title">Extrato de Comissões</h1>
+            <p class="page-subtitle" id="page-subtitle">Acompanhe suas comissões do mês</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-os-ghost" id="btn-exportar"><i class="bi bi-download me-1"></i>Exportar</button>
+        </div>
+      </div>
+
+      <div class="p-4">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon teal"><i class="bi bi-wallet2"></i></div>
+            <div>
+              <div class="kpi-label">Total do Mês</div>
+              <div class="kpi-value" id="kpi-total">—</div>
+              <div class="kpi-sub" id="kpi-qtd">0 comissões</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon amber"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+              <div class="kpi-label">Pendente</div>
+              <div class="kpi-value sm" id="kpi-pendente">—</div>
+              <div class="kpi-sub" id="kpi-pendente-qtd">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="bi bi-check-circle"></i></div>
+            <div>
+              <div class="kpi-label">Aprovado</div>
+              <div class="kpi-value sm" id="kpi-aprovado">—</div>
+              <div class="kpi-sub" id="kpi-aprovado-qtd">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="bi bi-cash-coin"></i></div>
+            <div>
+              <div class="kpi-label">Pago</div>
+              <div class="kpi-value sm" id="kpi-pago">—</div>
+              <div class="kpi-sub" id="kpi-pago-qtd">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Progressão de Faixa (só para agente_agencia) -->
+        <div class="faixa-bar-wrap" id="faixa-wrap" style="display:none">
+          <div class="faixa-header">
+            <span class="faixa-title"><i class="bi bi-bar-chart-steps me-1"></i>Progressão de Faixa — Mês Atual</span>
+            <span class="faixa-badge" id="faixa-pct-badge">—%</span>
+          </div>
+          <div class="faixa-progress">
+            <div class="faixa-progress-bar" id="faixa-bar" style="width:0%"></div>
+          </div>
+          <div class="faixa-labels">
+            <span>R$ 0</span>
+            <span id="faixa-acumulado-label">R$ 0,00 acumulado</span>
+            <span>R$ 30.000 (teto)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:.5rem">
+            <i class="bi bi-info-circle me-1"></i>
+            Próxima faixa em <strong id="faixa-prox-label">—</strong>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>Mês de Referência</label>
+            <input type="month" class="input-os" id="filter-mes" style="min-width:140px">
+          </div>
+          <div class="filter-group">
+            <label>Status</label>
+            <select class="input-os" id="filter-status">
+              <option value="">Todos</option>
+              <option value="pendente">Pendente</option>
+              <option value="aprovado">Aprovado</option>
+              <option value="pago">Pago</option>
+              <option value="estornado">Estornado</option>
+            </select>
+          </div>
+          <div class="filter-group" id="filter-nivel-wrap">
+            <label>Nível</label>
+            <select class="input-os" id="filter-nivel">
+              <option value="">Todos</option>
+              <option value="agencia_agente">Agência → Agente</option>
+              <option value="forn_agencia">Fornecedor → Agência</option>
+            </select>
+          </div>
+          <div class="filter-group flex-grow-1">
+            <label>Buscar Venda</label>
+            <input type="text" class="input-os" id="filter-q" placeholder="Código da venda...">
+          </div>
+          <button class="btn-os" id="btn-buscar" style="margin-top:auto"><i class="bi bi-search me-1"></i>Buscar</button>
+          <button class="btn-os-ghost" id="btn-limpar" style="margin-top:auto"><i class="bi bi-x-lg me-1"></i>Limpar</button>
+        </div>
+
+        <!-- Table -->
+        <div class="card-os p-0">
+          <div class="table-os-wrap">
+            <table class="table-os">
+              <thead>
+                <tr>
+                  <th>Venda</th>
+                  <th>Produto</th>
+                  <th>Agente</th>
+                  <th>Nível</th>
+                  <th>Mês Ref.</th>
+                  <th class="text-end">Base Cálculo</th>
+                  <th class="text-end">%</th>
+                  <th class="text-end">Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="comissoes-tbody">
+                <tr><td colspan="10" class="text-center py-5">
+                  <div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="d-flex align-items-center justify-content-between p-3 border-top" id="pagination-wrap" style="display:none!important">
+            <span class="text-muted" style="font-size:12px" id="pagination-info"></span>
+            <div class="d-flex gap-1" id="pagination-btns"></div>
+          </div>
+        </div>
+
+        <!-- Summary Footer -->
+        <div class="summary-footer" id="summary-footer">
+          <div class="summary-footer-item">
+            <span class="summary-footer-label">Registros</span>
+            <span class="summary-footer-value" id="sum-total">—</span>
+          </div>
+          <div class="summary-footer-item">
+            <span class="summary-footer-label">Total Comissões (Agente)</span>
+            <span class="summary-footer-value" id="sum-valor">—</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Modal Aprovar/Pagar -->
+<div class="modal fade" id="modalStatus" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title" id="modalStatusTitle">Alterar Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3" style="font-size:13px" id="modalStatusDesc"></p>
+        <select class="input-os" id="modalStatusSel">
+          <option value="pendente">Pendente</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="pago">Pago</option>
+          <option value="estornado">Estornado</option>
+        </select>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-os" id="btn-modal-status-ok">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ── Constantes ─────────────────────────────────────────────── */
+const TIPO_LABELS = {
+  AIRFARE:'Passagem Aérea', HOSTING:'Hospedagem', INSURANCE:'Seguro Viagem',
+  PACKAGE:'Pacote Turístico', CAR:'Aluguel Veículo', BUS:'Rodoviário',
+  TRAIN:'Trem', CRUISE:'Cruzeiro', TOUR:'Passeio', TICKET:'Ingresso',
+  EDUCATIONAL:'Educacional', OTHER:'Outros',
+};
+const NIVEL_LABELS = { forn_agencia:'Forn → Agência', agencia_agente:'Agência → Agente' };
+const fmtMoney = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(+v||0);
+
+/* ── Faixas de comissão ─────────────────────────────────────── */
+const FAIXAS = [
+  { min: 0,      max: 10000, pct: 20 },
+  { min: 10000,  max: 12000, pct: 21 },
+  { min: 12000,  max: 14000, pct: 22 },
+  { min: 14000,  max: 16000, pct: 23 },
+  { min: 16000,  max: 18000, pct: 24 },
+  { min: 18000,  max: 20000, pct: 25 },
+  { min: 20000,  max: 22000, pct: 26 },
+  { min: 22000,  max: 24000, pct: 27 },
+  { min: 24000,  max: 26000, pct: 28 },
+  { min: 26000,  max: 28000, pct: 29 },
+  { min: 28000,  max: Infinity, pct: 30 },
+];
+function getFaixaAtual(acumulado) {
+  return FAIXAS.find(f => acumulado >= f.min && acumulado < f.max) || FAIXAS[FAIXAS.length - 1];
+}
+
+/* ── Estado ─────────────────────────────────────────────────── */
+let currentPage  = 1;
+const pageSize   = 20;
+let totalRecords = 0;
+let modalVendaId = null;
+let modalComId   = null;
+let userCargo    = 'agente';
+
+/* ── Filtros ─────────────────────────────────────────────────── */
+const filterMes    = document.getElementById('filter-mes');
+const filterStatus = document.getElementById('filter-status');
+const filterNivel  = document.getElementById('filter-nivel');
+const filterQ      = document.getElementById('filter-q');
+
+function mesAtual() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+filterMes.value = mesAtual();
+
+/* ── Buscar dados ───────────────────────────────────────────── */
+async function buscarComissoes(page = 1) {
+  currentPage = page;
+  const params = new URLSearchParams({
+    page, limit: pageSize,
+    mes: filterMes.value || '',
+    status: filterStatus.value || '',
+    ...(filterNivel.value ? { nivel: filterNivel.value } : {}),  // backend nao tem nivel filter ainda, mas mandamos
+    ...(filterQ.value.trim() ? { q: filterQ.value.trim() } : {}),
+  });
+  document.getElementById('comissoes-tbody').innerHTML =
+    `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div></td></tr>`;
+
+  try {
+    const res  = await Auth.apiFetch(`/api/comissoes/agente?${params}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    totalRecords = body.total;
+    renderTabela(body.data);
+    renderKpis(body.data, body.total_valor);
+    renderPaginacao();
+    renderFaixa(body.data);
+    document.getElementById('sum-total').textContent  = body.total;
+    document.getElementById('sum-valor').textContent  = fmtMoney(body.total_valor);
+  } catch (err) {
+    document.getElementById('comissoes-tbody').innerHTML =
+      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${err.message}</div></td></tr>`;
+  }
+}
+
+/* ── Render tabela ──────────────────────────────────────────── */
+function renderTabela(rows) {
+  const tbody = document.getElementById('comissoes-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5">
+      <div class="empty-state"><i class="bi bi-wallet2"></i>Nenhuma comissão encontrada para o período.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const nivelCls = r.nivel === 'forn_agencia' ? 'forn' : 'agente';
+    const statusCls = r.status;
+    const tipo = TIPO_LABELS[r.tipo_produto] || r.tipo_produto || '—';
+    const canEdit = ['diretor','gerente'].includes(userCargo);
+    return `<tr>
+      <td><a href="sale-form.html?id=${r.venda_id}" class="fw-700" style="color:var(--primary);text-decoration:none">${r.venda_codigo || '—'}</a></td>
+      <td><span style="font-size:11px;font-weight:600">${tipo}</span>
+          ${r.item_descricao ? `<br><span style="font-size:10px;color:var(--text-muted)">${r.item_descricao}</span>` : ''}</td>
+      <td style="font-size:12px;font-weight:600">${r.agente_nome || '—'}</td>
+      <td><span class="nivel-badge ${nivelCls}">${NIVEL_LABELS[r.nivel] || r.nivel}</span></td>
+      <td style="font-size:12px">${r.mes_referencia}</td>
+      <td class="text-end" style="font-size:12px;font-weight:600">${fmtMoney(r.base_calculo)}</td>
+      <td class="text-end" style="font-size:12px;font-weight:700">${(+r.percentual).toFixed(1)}%</td>
+      <td class="text-end" style="font-size:13px;font-weight:900;color:var(--text-heading)">${fmtMoney(r.valor)}</td>
+      <td><span class="status-badge ${statusCls}">${r.status}</span></td>
+      <td>
+        ${canEdit ? `<button class="acc-teal-btn" style="background:#0d9488;width:28px;height:28px"
+          title="Alterar status" onclick="abrirModalStatus(${r.venda_id},${r.id},'${r.status}','${r.venda_codigo||''}')">
+          <i class="bi bi-pencil" style="font-size:11px"></i></button>` : '—'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── KPIs ────────────────────────────────────────────────────── */
+function renderKpis(rows, totalValor) {
+  const byStatus = { pendente: {qtd:0,val:0}, aprovado:{qtd:0,val:0}, pago:{qtd:0,val:0}, estornado:{qtd:0,val:0} };
+  rows.forEach(r => {
+    if (byStatus[r.status]) { byStatus[r.status].qtd++; byStatus[r.status].val += +r.valor; }
+  });
+  document.getElementById('kpi-total').textContent       = fmtMoney(totalValor);
+  document.getElementById('kpi-qtd').textContent         = `${totalRecords} comissões`;
+  document.getElementById('kpi-pendente').textContent    = fmtMoney(byStatus.pendente.val);
+  document.getElementById('kpi-pendente-qtd').textContent= `${byStatus.pendente.qtd} item(s)`;
+  document.getElementById('kpi-aprovado').textContent    = fmtMoney(byStatus.aprovado.val);
+  document.getElementById('kpi-aprovado-qtd').textContent= `${byStatus.aprovado.qtd} item(s)`;
+  document.getElementById('kpi-pago').textContent        = fmtMoney(byStatus.pago.val);
+  document.getElementById('kpi-pago-qtd').textContent    = `${byStatus.pago.qtd} item(s)`;
+}
+
+/* ── Faixa de progressão ────────────────────────────────────── */
+function renderFaixa(rows) {
+  // Mostra só para agente_agente (leads da agência com progressão)
+  const isAgenciaNivel = rows.some(r => r.nivel === 'agencia_agente');
+  if (!isAgenciaNivel || userCargo === 'agente' === false) {
+    document.getElementById('faixa-wrap').style.display = 'none'; return;
+  }
+  document.getElementById('faixa-wrap').style.display = 'block';
+  const acumulado = rows
+    .filter(r => r.nivel === 'agencia_agente' && r.status !== 'estornado')
+    .reduce((s, r) => s + +r.valor, 0);
+  const faixa = getFaixaAtual(acumulado);
+  const teto  = 30000;
+  const pct   = Math.min(acumulado / teto * 100, 100);
+  document.getElementById('faixa-bar').style.width          = `${pct}%`;
+  document.getElementById('faixa-pct-badge').textContent    = `${faixa.pct}%`;
+  document.getElementById('faixa-acumulado-label').textContent = `${fmtMoney(acumulado)} acumulado`;
+  document.getElementById('faixa-prox-label').textContent   = faixa.max === Infinity ? 'Teto máximo atingido (30%)' : `${fmtMoney(faixa.max - acumulado)} para ${faixa.pct + 1}%`;
+}
+
+/* ── Paginação ──────────────────────────────────────────────── */
+function renderPaginacao() {
+  const totalPages = Math.ceil(totalRecords / pageSize);
+  const wrap = document.getElementById('pagination-wrap');
+  const info = document.getElementById('pagination-info');
+  const btns = document.getElementById('pagination-btns');
+  if (totalPages <= 1) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  info.textContent = `Página ${currentPage} de ${totalPages} — ${totalRecords} registros`;
+  btns.innerHTML = '';
+  const addBtn = (label, page, disabled) => {
+    const b = document.createElement('button');
+    b.className = `btn-os-ghost${page === currentPage ? ' active' : ''}`;
+    b.style.cssText = 'padding:.3rem .65rem;font-size:12px;min-width:32px';
+    b.textContent = label; b.disabled = disabled;
+    b.addEventListener('click', () => buscarComissoes(page));
+    btns.appendChild(b);
+  };
+  addBtn('‹', currentPage - 1, currentPage === 1);
+  const start = Math.max(1, currentPage - 2), end = Math.min(totalPages, currentPage + 2);
+  for (let p = start; p <= end; p++) addBtn(p, p, false);
+  addBtn('›', currentPage + 1, currentPage === totalPages);
+}
+
+/* ── Modal status ────────────────────────────────────────────── */
+const modalStatusEl = new bootstrap.Modal(document.getElementById('modalStatus'));
+function abrirModalStatus(vendaId, comId, statusAtual, codigo) {
+  modalVendaId = vendaId; modalComId = comId;
+  document.getElementById('modalStatusTitle').textContent = `Comissão — ${codigo}`;
+  document.getElementById('modalStatusDesc').textContent  = `Status atual: ${statusAtual}`;
+  document.getElementById('modalStatusSel').value = statusAtual;
+  modalStatusEl.show();
+}
+document.getElementById('btn-modal-status-ok').addEventListener('click', async () => {
+  const status = document.getElementById('modalStatusSel').value;
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${modalVendaId}/comissoes/${modalComId}/status`,
+      { method: 'PATCH', body: JSON.stringify({ status }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    modalStatusEl.hide();
+    Notify.success('Status atualizado!');
+    buscarComissoes(currentPage);
+  } catch (err) { Notify.error(err.message); }
+});
+
+/* ── Eventos ─────────────────────────────────────────────────── */
+document.getElementById('btn-buscar').addEventListener('click', () => buscarComissoes(1));
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  filterMes.value = mesAtual(); filterStatus.value = ''; filterNivel.value = ''; filterQ.value = '';
+  buscarComissoes(1);
+});
+filterQ.addEventListener('keydown', e => { if (e.key === 'Enter') buscarComissoes(1); });
+document.getElementById('btn-exportar').addEventListener('click', () => Notify.info('Exportação em breve.'));
+
+/* ── Init ────────────────────────────────────────────────────── */
+(async () => {
+  await App.init();
+  const ctx = Auth.getContexto();
+  userCargo = ctx?.user?.cargo || 'agente';
+
+  // Ajusta label de acordo com cargo
+  if (['diretor','gerente'].includes(userCargo)) {
+    document.getElementById('page-subtitle').textContent = 'Extrato consolidado de todos os agentes';
+  }
+
+  await buscarComissoes(1);
+})();
+</script>
+</body>
+</html>
