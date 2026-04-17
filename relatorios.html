@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios — TravelAgent OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <!-- Libs export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ── Tabs ── */
+    .rel-tabs { display:flex;gap:.25rem;border-bottom:2px solid var(--border-color);margin-bottom:1.5rem;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none; }
+    .rel-tabs::-webkit-scrollbar { display:none; }
+    .rel-tab { background:none;border:none;padding:.625rem 1.1rem;font-size:13px;font-weight:700;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:color .15s; }
+    .rel-tab:hover { color:var(--text-heading); }
+    .rel-tab.active { color:var(--primary);border-bottom-color:var(--primary); }
+
+    /* ── Filtros ── */
+    .filters-bar { background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end; }
+    .filters-bar .form-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.3rem; }
+    .filters-bar .form-control,
+    .filters-bar .form-select { font-size:13px;font-weight:600;padding:.375rem .625rem;height:34px; }
+    .filter-group { display:flex;flex-direction:column; }
+    .filter-actions { display:flex;gap:.5rem;align-items:flex-end;margin-left:auto; }
+
+    /* ── Table ── */
+    .rel-table-wrap { background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);overflow:hidden; }
+    .rel-table-header { padding:.875rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem; }
+    .rel-table-title { font-size:14px;font-weight:800;color:var(--text-heading); }
+    .rel-table-sub   { font-size:11px;color:var(--text-muted);margin-top:1px; }
+    .rel-table { width:100%;font-size:12.5px;border-collapse:collapse; }
+    .rel-table th { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:.625rem 1rem;border-bottom:2px solid var(--border-color);white-space:nowrap;background:var(--bg-page); }
+    .rel-table td { padding:.625rem 1rem;border-bottom:1px solid var(--border-color);vertical-align:middle;color:var(--text-body); }
+    .rel-table tbody tr:last-child td { border-bottom:none; }
+    .rel-table tbody tr:hover td { background:var(--bg-page); }
+    .rel-table .tfoot-row td { font-weight:800;color:var(--text-heading);background:var(--bg-page);border-top:2px solid var(--border-color); }
+
+    /* ── Status badges ── */
+    .st { display:inline-block;padding:.15rem .55rem;border-radius:.35rem;font-size:10px;font-weight:800;text-transform:uppercase; }
+    .st-confirmada { background:#dcfce7;color:#166534; }
+    .st-cotacao    { background:#fef3c7;color:#92400e; }
+    .st-cancelada  { background:#fee2e2;color:#991b1b; }
+    .st-concluida  { background:#dbeafe;color:#1e40af; }
+    .st-pago       { background:#dcfce7;color:#166534; }
+    .st-pendente   { background:#fef3c7;color:#92400e; }
+    .st-cancelado  { background:#fee2e2;color:#991b1b; }
+
+    /* ── Summary cards ── */
+    .summ-row { display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem; }
+    .summ-card { flex:1;min-width:140px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem 1.25rem; }
+    .summ-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted);margin-bottom:.4rem; }
+    .summ-value { font-size:1.35rem;font-weight:900;letter-spacing:-.04em;color:var(--text-heading);line-height:1; }
+    .summ-sub   { font-size:10px;color:var(--text-muted);margin-top:.3rem; }
+
+    /* ── Clientes ranking ── */
+    .cli-avatar { width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+
+    /* ── Empty ── */
+    .empty-rel { text-align:center;padding:3rem 1rem;color:var(--text-muted);font-size:13px;font-weight:600; }
+    .empty-rel i { font-size:2.5rem;display:block;margin-bottom:.75rem;opacity:.3; }
+
+    /* ── Export btns ── */
+    .export-btn { font-size:12px;font-weight:700;padding:.35rem .85rem;border-radius:var(--radius);border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-body);cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;transition:background .15s; }
+    .export-btn:hover { background:var(--bg-page); }
+    .export-btn.pdf  { border-color:#ef4444;color:#ef4444; }
+    .export-btn.pdf:hover  { background:#fef2f2; }
+    .export-btn.xlsx { border-color:#16a34a;color:#16a34a; }
+    .export-btn.xlsx:hover { background:#f0fdf4; }
+    [data-bs-theme="dark"] .export-btn.pdf:hover  { background:rgba(239,68,68,.1); }
+    [data-bs-theme="dark"] .export-btn.xlsx:hover { background:rgba(22,163,74,.1); }
+
+    /* ── DRE ── */
+    .dre-section { background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);margin-bottom:1rem;overflow:hidden; }
+    .dre-header { padding:.75rem 1.25rem;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);background:var(--bg-page); }
+    .dre-row { display:flex;align-items:center;padding:.75rem 1.25rem;border-bottom:1px solid var(--border-color);font-size:13px; }
+    .dre-row:last-child { border-bottom:none; }
+    .dre-indent { padding-left:2rem; }
+    .dre-label { flex:1;color:var(--text-body);font-weight:600; }
+    .dre-value { font-weight:800;color:var(--text-heading);min-width:140px;text-align:right; }
+    .dre-pct   { font-size:11px;color:var(--text-muted);min-width:70px;text-align:right; }
+    .dre-total { background:var(--bg-page);font-weight:900; }
+    .dre-total .dre-label { color:var(--text-heading); }
+    .dre-green .dre-value { color:#16a34a; }
+    .dre-red   .dre-value { color:#dc2626; }
+
+    /* ── Spinner ── */
+    .rel-loading { display:flex;align-items:center;justify-content:center;padding:3rem;gap:.75rem;color:var(--text-muted);font-size:13px;font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="os-wrapper">
+
+  <aside class="os-sidebar" id="sidebar">
+    <div class="os-sidebar-header">
+      <div class="os-brand">
+        <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="os-brand-name">TravelAgent<span>OS</span></div>
+      </div>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="os-nav">
+      <div class="os-nav-section-label">Principal</div>
+      <a href="dashboard.html"  class="os-nav-item" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <a href="relatorios.html" class="os-nav-item active" data-page="relatorios.html"><i class="bi bi-bar-chart-line-fill"></i> Relatórios</a>
+      <div class="os-nav-section-label mt-3">Sistema</div>
+      <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-percent"></i> Comissões</a>
+      <a href="lembretes.html"        class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
+      <a href="usuarios.html"         class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
+      <a href="configuracoes.html"    class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
+    </nav>
+    <div class="os-sidebar-footer">
+      <div class="os-user-card">
+        <div class="os-avatar" data-user-initials>AD</div>
+        <div class="os-user-info">
+          <div class="os-user-name" data-user-name>Carregando...</div>
+          <div class="os-user-role" data-user-role>—</div>
+        </div>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </aside>
+  <div class="os-overlay" id="os-overlay"></div>
+
+  <main class="os-main">
+    <header class="os-topbar">
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
+      <div class="os-topbar-title">
+        <h1 class="os-page-title">Relatórios</h1>
+        <span class="os-page-subtitle">Exportável em PDF e Excel</span>
+      </div>
+      <div class="os-topbar-actions">
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
+        <div class="os-avatar sm" data-user-initials>AD</div>
+      </div>
+    </header>
+
+    <div class="os-content">
+
+      <!-- ── Tabs ── -->
+      <div class="rel-tabs" id="relTabs">
+        <button class="rel-tab active" data-tab="vendas">
+          <i class="bi bi-bag-check-fill"></i> Vendas
+        </button>
+        <button class="rel-tab" data-tab="financeiro">
+          <i class="bi bi-cash-stack"></i> Financeiro (DRE)
+        </button>
+        <button class="rel-tab" data-tab="comissoes">
+          <i class="bi bi-percent"></i> Comissões
+        </button>
+        <button class="rel-tab" data-tab="clientes">
+          <i class="bi bi-people-fill"></i> Clientes
+        </button>
+      </div>
+
+      <!-- ════════════════════════════════════
+           ABA: VENDAS
+      ════════════════════════════════════ -->
+      <div id="tab-vendas">
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="form-label">De</label>
+            <input type="date" id="v-de" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Até</label>
+            <input type="date" id="v-ate" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Status</label>
+            <select id="v-status" class="form-select" style="min-width:130px">
+              <option value="">Todos</option>
+              <option value="cotacao">Cotação</option>
+              <option value="confirmada">Confirmada</option>
+              <option value="concluida">Concluída</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Produto</label>
+            <select id="v-produto" class="form-select" style="min-width:130px">
+              <option value="">Todos</option>
+              <option value="AIRFARE">Aéreo</option>
+              <option value="HOSTING">Hotel</option>
+              <option value="INSURANCE">Seguro</option>
+              <option value="PACKAGE">Pacote</option>
+              <option value="CAR">Locação</option>
+              <option value="CRUISE">Cruzeiro</option>
+              <option value="TOUR">Tour</option>
+              <option value="OTHER">Outros</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Agente</label>
+            <select id="v-agente" class="form-select" style="min-width:140px">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="os-btn-primary btn-sm" id="v-buscar"><i class="bi bi-search me-1"></i>Buscar</button>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summ-row" id="v-summ-row">
+          <div class="summ-card">
+            <div class="summ-label">Total Vendas</div>
+            <div class="summ-value" id="v-s-total">—</div>
+            <div class="summ-sub">registros</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Receita Total</div>
+            <div class="summ-value" id="v-s-receita">—</div>
+            <div class="summ-sub">valor total de vendas</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Custo Total</div>
+            <div class="summ-value" id="v-s-custo">—</div>
+            <div class="summ-sub">custo fornecedores</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Margem Bruta</div>
+            <div class="summ-value" id="v-s-margem">—</div>
+            <div class="summ-sub" id="v-s-margem-pct">—% da receita</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="rel-table-wrap">
+          <div class="rel-table-header">
+            <div>
+              <div class="rel-table-title">Relatório de Vendas</div>
+              <div class="rel-table-sub" id="v-count-label">Clique em Buscar para carregar</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="export-btn pdf"  id="v-exp-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
+              <button class="export-btn xlsx" id="v-exp-xlsx"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+            </div>
+          </div>
+          <div id="v-table-body">
+            <div class="empty-rel"><i class="bi bi-bag-check"></i>Aplique os filtros e clique em Buscar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════
+           ABA: FINANCEIRO (DRE)
+      ════════════════════════════════════ -->
+      <div id="tab-financeiro" style="display:none">
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="form-label">De</label>
+            <input type="date" id="f-de" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Até</label>
+            <input type="date" id="f-ate" class="form-control">
+          </div>
+          <div class="filter-actions">
+            <button class="os-btn-primary btn-sm" id="f-buscar"><i class="bi bi-search me-1"></i>Buscar</button>
+          </div>
+          <div class="filter-actions" style="margin-left:0">
+            <button class="export-btn pdf"  id="f-exp-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
+            <button class="export-btn xlsx" id="f-exp-xlsx"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+          </div>
+        </div>
+
+        <!-- DRE estruturada -->
+        <div id="f-dre-wrap">
+          <div class="empty-rel"><i class="bi bi-cash-stack"></i>Aplique os filtros e clique em Buscar</div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════
+           ABA: COMISSÕES
+      ════════════════════════════════════ -->
+      <div id="tab-comissoes" style="display:none">
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="form-label">De</label>
+            <input type="date" id="c-de" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Até</label>
+            <input type="date" id="c-ate" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Agente</label>
+            <select id="c-agente" class="form-select" style="min-width:160px">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Status</label>
+            <select id="c-status" class="form-select">
+              <option value="">Todos</option>
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="os-btn-primary btn-sm" id="c-buscar"><i class="bi bi-search me-1"></i>Buscar</button>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summ-row">
+          <div class="summ-card">
+            <div class="summ-label">Total Comissões</div>
+            <div class="summ-value" id="c-s-total">—</div>
+            <div class="summ-sub">registros</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Valor Total</div>
+            <div class="summ-value" id="c-s-valor">—</div>
+            <div class="summ-sub">a pagar</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Já Pago</div>
+            <div class="summ-value" id="c-s-pago">—</div>
+            <div class="summ-sub">comissões pagas</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Pendente</div>
+            <div class="summ-value" id="c-s-pendente">—</div>
+            <div class="summ-sub">a liquidar</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="rel-table-wrap">
+          <div class="rel-table-header">
+            <div>
+              <div class="rel-table-title">Relatório de Comissões</div>
+              <div class="rel-table-sub" id="c-count-label">Clique em Buscar para carregar</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="export-btn pdf"  id="c-exp-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
+              <button class="export-btn xlsx" id="c-exp-xlsx"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+            </div>
+          </div>
+          <div id="c-table-body">
+            <div class="empty-rel"><i class="bi bi-percent"></i>Aplique os filtros e clique em Buscar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════
+           ABA: CLIENTES
+      ════════════════════════════════════ -->
+      <div id="tab-clientes" style="display:none">
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label class="form-label">De</label>
+            <input type="date" id="cl-de" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Até</label>
+            <input type="date" id="cl-ate" class="form-control">
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Buscar cliente</label>
+            <input type="text" id="cl-q" class="form-control" placeholder="Nome ou email..." style="min-width:180px">
+          </div>
+          <div class="filter-actions">
+            <button class="os-btn-primary btn-sm" id="cl-buscar"><i class="bi bi-search me-1"></i>Buscar</button>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summ-row">
+          <div class="summ-card">
+            <div class="summ-label">Total Clientes</div>
+            <div class="summ-value" id="cl-s-total">—</div>
+            <div class="summ-sub">com compras</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Receita Total</div>
+            <div class="summ-value" id="cl-s-receita">—</div>
+            <div class="summ-sub">vendas confirmadas</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Ticket Médio</div>
+            <div class="summ-value" id="cl-s-ticket">—</div>
+            <div class="summ-sub">por cliente</div>
+          </div>
+          <div class="summ-card">
+            <div class="summ-label">Recorrentes</div>
+            <div class="summ-value" id="cl-s-rec">—</div>
+            <div class="summ-sub">+2 compras</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="rel-table-wrap">
+          <div class="rel-table-header">
+            <div>
+              <div class="rel-table-title">Relatório de Clientes</div>
+              <div class="rel-table-sub" id="cl-count-label">Clique em Buscar para carregar</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="export-btn pdf"  id="cl-exp-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
+              <button class="export-btn xlsx" id="cl-exp-xlsx"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+            </div>
+          </div>
+          <div id="cl-table-body">
+            <div class="empty-rel"><i class="bi bi-people"></i>Aplique os filtros e clique em Buscar</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.os-content -->
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+'use strict';
+App.init();
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = v => v == null ? '—' : Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtN = v => v == null ? '—' : Number(v).toLocaleString('pt-BR');
+const pct  = (a,b) => b > 0 ? ((a/b)*100).toFixed(1)+'%' : '0%';
+
+const PROD_MAP = {
+  AIRFARE:'Aéreo', HOSTING:'Hotel', INSURANCE:'Seguro', PACKAGE:'Pacote',
+  CAR:'Locação', BUS:'Ônibus', TRAIN:'Trem', CRUISE:'Cruzeiro',
+  TOUR:'Tour', TICKET:'Ingresso', EDUCATIONAL:'Educacional', OTHER:'Outros'
+};
+
+function defaultDe() {
+  const d = new Date();
+  d.setDate(1); d.setMonth(d.getMonth() - 2);
+  return d.toISOString().slice(0,10);
+}
+function defaultAte() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// Init defaults
+['v-de','f-de','c-de','cl-de'].forEach(id => { const el = $(id); if(el) el.value = defaultDe(); });
+['v-ate','f-ate','c-ate','cl-ate'].forEach(id => { const el = $(id); if(el) el.value = defaultAte(); });
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+const tabs = document.querySelectorAll('.rel-tab');
+const tabPanels = { vendas:$('tab-vendas'), financeiro:$('tab-financeiro'), comissoes:$('tab-comissoes'), clientes:$('tab-clientes') };
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    Object.values(tabPanels).forEach(p => p.style.display='none');
+    tabPanels[tab.dataset.tab].style.display = '';
+  });
+});
+
+// ── Carrega agentes ───────────────────────────────────────────────────────
+async function carregarAgentes() {
+  try {
+    const data = await Auth.apiFetch('/api/usuarios?role=agente&limit=200');
+    const lista = data.rows || data.data || data.usuarios || [];
+    ['v-agente','c-agente'].forEach(id => {
+      const sel = $(id);
+      if (!sel) return;
+      lista.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.nome;
+        sel.appendChild(opt);
+      });
+    });
+  } catch(e) { console.warn('agentes:', e); }
+}
+carregarAgentes();
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ABA VENDAS
+// ══════════════════════════════════════════════════════════════════════════
+let vendaData = [];
+
+async function buscarVendas() {
+  const de      = $('v-de').value;
+  const ate     = $('v-ate').value;
+  const status  = $('v-status').value;
+  const produto = $('v-produto').value;
+  const agente  = $('v-agente').value;
+
+  $('v-table-body').innerHTML = '<div class="rel-loading"><div class="spinner-border spinner-border-sm text-primary"></div> Carregando...</div>';
+
+  const params = new URLSearchParams();
+  if (de) params.append('de', de);
+  if (ate) params.append('ate', ate);
+  if (status) params.append('status', status);
+  if (produto) params.append('tipo_produto', produto);
+  if (agente) params.append('agente_id', agente);
+
+  try {
+    const data = await Auth.apiFetch('/api/relatorios/vendas?' + params);
+    vendaData = data.rows || [];
+    const totais = data.totais || {};
+
+    // Summaries
+    $('v-s-total').textContent = fmtN(vendaData.length);
+    $('v-s-receita').textContent = fmt(totais.receita_total);
+    $('v-s-custo').textContent = fmt(totais.custo_total);
+    $('v-s-margem').textContent = fmt(totais.margem_bruta);
+    $('v-s-margem-pct').textContent = pct(totais.margem_bruta, totais.receita_total) + ' da receita';
+    $('v-count-label').textContent = vendaData.length + ' registros encontrados';
+
+    if (!vendaData.length) {
+      $('v-table-body').innerHTML = '<div class="empty-rel"><i class="bi bi-bag-check"></i>Nenhuma venda encontrada</div>';
+      return;
+    }
+
+    const html = `
+    <div style="overflow-x:auto">
+    <table class="rel-table" id="tabela-vendas">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Cliente</th>
+          <th>Agente</th>
+          <th>Produtos</th>
+          <th>Status</th>
+          <th style="text-align:right">Receita</th>
+          <th style="text-align:right">Custo</th>
+          <th style="text-align:right">Margem</th>
+          <th style="text-align:right">Margem %</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${vendaData.map(r => {
+          const m = (r.total_venda||0) - (r.total_custo||0);
+          const mp = pct(m, r.total_venda||1);
+          return `
+          <tr>
+            <td><a href="sale-form.html?id=${r.id}" class="font-monospace fw-bold text-primary text-decoration-none">${r.codigo||r.id}</a></td>
+            <td>${r.cliente_nome||'—'}</td>
+            <td>${r.agente_nome||'—'}</td>
+            <td>${(r.produtos||'').split(',').map(p=>PROD_MAP[p.trim()]||p.trim()).join(', ')||'—'}</td>
+            <td><span class="st st-${r.status}">${r.status||'—'}</span></td>
+            <td style="text-align:right;font-weight:700">${fmt(r.total_venda)}</td>
+            <td style="text-align:right;color:var(--text-muted)">${fmt(r.total_custo)}</td>
+            <td style="text-align:right;font-weight:700;color:#16a34a">${fmt(m)}</td>
+            <td style="text-align:right;color:var(--text-muted)">${mp}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <tfoot>
+        <tr class="tfoot-row">
+          <td colspan="5" style="font-weight:800">TOTAL (${vendaData.length} vendas)</td>
+          <td style="text-align:right">${fmt(totais.receita_total)}</td>
+          <td style="text-align:right">${fmt(totais.custo_total)}</td>
+          <td style="text-align:right;color:#16a34a">${fmt(totais.margem_bruta)}</td>
+          <td style="text-align:right">${pct(totais.margem_bruta, totais.receita_total)}</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>`;
+    $('v-table-body').innerHTML = html;
+  } catch(e) {
+    $('v-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+  }
+}
+
+$('v-buscar').addEventListener('click', buscarVendas);
+
+// Export vendas PDF
+$('v-exp-pdf').addEventListener('click', () => {
+  if (!vendaData.length) return alert('Carregue os dados antes de exportar.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('Relatório de Vendas', 14, 18);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('TravelAgent OS — ' + new Date().toLocaleDateString('pt-BR'), 14, 25);
+
+  const totais = {
+    receita: vendaData.reduce((a,r)=>a+(r.total_venda||0),0),
+    custo:   vendaData.reduce((a,r)=>a+(r.total_custo||0),0)
+  };
+
+  doc.autoTable({
+    startY: 30,
+    head: [['Código','Cliente','Agente','Produtos','Status','Receita','Custo','Margem']],
+    body: vendaData.map(r => {
+      const m = (r.total_venda||0)-(r.total_custo||0);
+      return [
+        r.codigo||r.id, r.cliente_nome||'—', r.agente_nome||'—',
+        (r.produtos||'').split(',').map(p=>PROD_MAP[p.trim()]||p.trim()).join(', ')||'—',
+        r.status||'—', fmt(r.total_venda), fmt(r.total_custo), fmt(m)
+      ];
+    }),
+    foot: [['TOTAL','','','','', fmt(totais.receita), fmt(totais.custo), fmt(totais.receita-totais.custo)]],
+    styles: { fontSize:8, cellPadding:2 },
+    headStyles: { fillColor:[79,70,229], textColor:255, fontStyle:'bold' },
+    footStyles: { fillColor:[243,244,246], textColor:[30,30,30], fontStyle:'bold' },
+    alternateRowStyles: { fillColor:[249,250,251] }
+  });
+  doc.save('relatorio-vendas-' + new Date().toISOString().slice(0,10) + '.pdf');
+});
+
+// Export vendas XLSX
+$('v-exp-xlsx').addEventListener('click', () => {
+  if (!vendaData.length) return alert('Carregue os dados antes de exportar.');
+  const rows = vendaData.map(r => {
+    const m = (r.total_venda||0)-(r.total_custo||0);
+    return {
+      'Código': r.codigo||r.id,
+      'Cliente': r.cliente_nome||'—',
+      'Agente': r.agente_nome||'—',
+      'Produtos': (r.produtos||'').split(',').map(p=>PROD_MAP[p.trim()]||p.trim()).join(', ')||'—',
+      'Status': r.status||'—',
+      'Receita': r.total_venda||0,
+      'Custo': r.total_custo||0,
+      'Margem': m,
+      'Margem %': r.total_venda > 0 ? +((m/(r.total_venda))*100).toFixed(2) : 0
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vendas');
+  XLSX.writeFile(wb, 'relatorio-vendas-' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ABA FINANCEIRO (DRE)
+// ══════════════════════════════════════════════════════════════════════════
+let dreData = null;
+
+async function buscarDRE() {
+  const de  = $('f-de').value;
+  const ate = $('f-ate').value;
+  $('f-dre-wrap').innerHTML = '<div class="rel-loading"><div class="spinner-border spinner-border-sm text-primary"></div> Carregando DRE...</div>';
+
+  const params = new URLSearchParams();
+  if (de) params.append('de', de);
+  if (ate) params.append('ate', ate);
+
+  try {
+    dreData = await Auth.apiFetch('/api/financeiro/dre?' + params);
+    renderDRE(dreData);
+  } catch(e) {
+    $('f-dre-wrap').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar DRE'}</div>`;
+  }
+}
+
+function renderDRE(d) {
+  if (!d || !d.totais) {
+    $('f-dre-wrap').innerHTML = '<div class="empty-rel"><i class="bi bi-cash-stack"></i>Sem dados para o período</div>';
+    return;
+  }
+  const t = d.totais;
+  const receita   = t.receita_bruta    || 0;
+  const custo     = t.custo_direto     || 0;
+  const margem    = t.margem_bruta     || 0;
+  const comiss    = t.comissoes_agentes|| 0;
+  const resultado = t.resultado_operacional || 0;
+
+  // Por produto
+  const porProd = (d.por_produto || []).map(p => `
+    <div class="dre-row dre-indent">
+      <span class="dre-label">${PROD_MAP[p.tipo_produto]||p.tipo_produto||'—'}</span>
+      <span class="dre-pct">${pct(p.receita_bruta, receita)}</span>
+      <span class="dre-value">${fmt(p.receita_bruta)}</span>
+    </div>`).join('');
+
+  $('f-dre-wrap').innerHTML = `
+    <!-- Receita -->
+    <div class="dre-section">
+      <div class="dre-header">(+) Receita Bruta</div>
+      ${porProd}
+      <div class="dre-row dre-total dre-green">
+        <span class="dre-label">Total Receita Bruta</span>
+        <span class="dre-pct">100%</span>
+        <span class="dre-value">${fmt(receita)}</span>
+      </div>
+    </div>
+
+    <!-- Custos -->
+    <div class="dre-section">
+      <div class="dre-header">(-) Custos Diretos (Fornecedores)</div>
+      ${(d.por_produto||[]).map(p => `
+        <div class="dre-row dre-indent">
+          <span class="dre-label">${PROD_MAP[p.tipo_produto]||p.tipo_produto||'—'}</span>
+          <span class="dre-pct">${pct(p.custo_direto, receita)}</span>
+          <span class="dre-value dre-red" style="color:#dc2626">${fmt(p.custo_direto)}</span>
+        </div>`).join('')}
+      <div class="dre-row dre-total dre-red">
+        <span class="dre-label">Total Custos Diretos</span>
+        <span class="dre-pct">${pct(custo, receita)}</span>
+        <span class="dre-value" style="color:#dc2626">${fmt(custo)}</span>
+      </div>
+    </div>
+
+    <!-- Margem -->
+    <div class="dre-section">
+      <div class="dre-row dre-total dre-green" style="background:var(--primary-light)">
+        <span class="dre-label" style="color:var(--primary)">( = ) Margem Bruta</span>
+        <span class="dre-pct" style="color:var(--primary)">${pct(margem, receita)}</span>
+        <span class="dre-value" style="color:var(--primary)">${fmt(margem)}</span>
+      </div>
+    </div>
+
+    <!-- Comissões -->
+    <div class="dre-section">
+      <div class="dre-header">(-) Comissões de Agentes</div>
+      <div class="dre-row">
+        <span class="dre-label">Comissões pagas/devidas a agentes</span>
+        <span class="dre-pct">${pct(comiss, receita)}</span>
+        <span class="dre-value" style="color:#dc2626">${fmt(comiss)}</span>
+      </div>
+    </div>
+
+    <!-- Resultado -->
+    <div class="dre-section" style="border-color:${resultado>=0?'#16a34a':'#dc2626'};border-width:2px">
+      <div class="dre-row dre-total" style="background:${resultado>=0?'#dcfce7':'#fee2e2'}">
+        <span class="dre-label" style="color:${resultado>=0?'#166534':'#991b1b'}">( = ) Resultado Operacional</span>
+        <span class="dre-pct" style="color:${resultado>=0?'#166534':'#991b1b'}">${pct(resultado, receita)}</span>
+        <span class="dre-value" style="color:${resultado>=0?'#166534':'#991b1b'}">${fmt(resultado)}</span>
+      </div>
+    </div>
+  `;
+}
+
+$('f-buscar').addEventListener('click', buscarDRE);
+
+// Export DRE PDF
+$('f-exp-pdf').addEventListener('click', () => {
+  if (!dreData) return alert('Carregue o DRE antes de exportar.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const t = dreData.totais || {};
+  const receita = t.receita_bruta || 0;
+
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('DRE — Demonstrativo de Resultado', 14, 20);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('TravelAgent OS — ' + new Date().toLocaleDateString('pt-BR'), 14, 28);
+
+  const rows = [
+    ['(+) Receita Bruta', fmt(receita), '100%'],
+    ['(-) Custos Diretos', fmt(t.custo_direto||0), pct(t.custo_direto||0, receita)],
+    ['(=) Margem Bruta', fmt(t.margem_bruta||0), pct(t.margem_bruta||0, receita)],
+    ['(-) Comissões Agentes', fmt(t.comissoes_agentes||0), pct(t.comissoes_agentes||0, receita)],
+    ['(=) Resultado Operacional', fmt(t.resultado_operacional||0), pct(t.resultado_operacional||0, receita)]
+  ];
+
+  doc.autoTable({
+    startY: 35,
+    head: [['Item','Valor','% Receita']],
+    body: rows,
+    styles: { fontSize:10, cellPadding:3 },
+    headStyles: { fillColor:[79,70,229], textColor:255 },
+    columnStyles: { 1:{ halign:'right' }, 2:{ halign:'right' } }
+  });
+
+  if (dreData.por_produto && dreData.por_produto.length) {
+    const y = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text('Detalhamento por Produto', 14, y);
+    doc.autoTable({
+      startY: y + 5,
+      head: [['Produto','Receita','Custo','Margem','Margem %']],
+      body: dreData.por_produto.map(p => [
+        PROD_MAP[p.tipo_produto]||p.tipo_produto, fmt(p.receita_bruta), fmt(p.custo_direto),
+        fmt(p.margem_bruta), pct(p.margem_bruta, p.receita_bruta)
+      ]),
+      styles: { fontSize:9, cellPadding:2 },
+      headStyles: { fillColor:[79,70,229], textColor:255 },
+      alternateRowStyles: { fillColor:[249,250,251] }
+    });
+  }
+
+  doc.save('dre-' + new Date().toISOString().slice(0,10) + '.pdf');
+});
+
+// Export DRE XLSX
+$('f-exp-xlsx').addEventListener('click', () => {
+  if (!dreData) return alert('Carregue o DRE antes de exportar.');
+  const t = dreData.totais || {};
+  const receita = t.receita_bruta || 0;
+
+  const wb = XLSX.utils.book_new();
+
+  // DRE sheet
+  const dreRows = [
+    { 'Item':'(+) Receita Bruta', 'Valor':receita, '% Receita':'100%' },
+    { 'Item':'(-) Custos Diretos', 'Valor':t.custo_direto||0, '% Receita':pct(t.custo_direto||0, receita) },
+    { 'Item':'(=) Margem Bruta', 'Valor':t.margem_bruta||0, '% Receita':pct(t.margem_bruta||0, receita) },
+    { 'Item':'(-) Comissões', 'Valor':t.comissoes_agentes||0, '% Receita':pct(t.comissoes_agentes||0, receita) },
+    { 'Item':'(=) Resultado Operacional', 'Valor':t.resultado_operacional||0, '% Receita':pct(t.resultado_operacional||0, receita) }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dreRows), 'DRE');
+
+  if (dreData.por_produto && dreData.por_produto.length) {
+    const prodRows = dreData.por_produto.map(p => ({
+      'Produto': PROD_MAP[p.tipo_produto]||p.tipo_produto,
+      'Receita': p.receita_bruta||0, 'Custo': p.custo_direto||0,
+      'Margem': p.margem_bruta||0, 'Margem %': pct(p.margem_bruta||0, p.receita_bruta||1)
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prodRows), 'Por Produto');
+  }
+
+  XLSX.writeFile(wb, 'dre-' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ABA COMISSÕES
+// ══════════════════════════════════════════════════════════════════════════
+let comissData = [];
+
+async function buscarComissoes() {
+  const de     = $('c-de').value;
+  const ate    = $('c-ate').value;
+  const agente = $('c-agente').value;
+  const status = $('c-status').value;
+
+  $('c-table-body').innerHTML = '<div class="rel-loading"><div class="spinner-border spinner-border-sm text-primary"></div> Carregando...</div>';
+
+  const params = new URLSearchParams();
+  if (de) params.append('de', de);
+  if (ate) params.append('ate', ate);
+  if (agente) params.append('agente_id', agente);
+  if (status) params.append('status', status);
+
+  try {
+    const data = await Auth.apiFetch('/api/relatorios/comissoes?' + params);
+    comissData = data.rows || [];
+    const totais = data.totais || {};
+
+    $('c-s-total').textContent  = fmtN(comissData.length);
+    $('c-s-valor').textContent  = fmt(totais.valor_total);
+    $('c-s-pago').textContent   = fmt(totais.valor_pago);
+    $('c-s-pendente').textContent = fmt(totais.valor_pendente);
+    $('c-count-label').textContent = comissData.length + ' registros';
+
+    if (!comissData.length) {
+      $('c-table-body').innerHTML = '<div class="empty-rel"><i class="bi bi-percent"></i>Nenhuma comissão encontrada</div>';
+      return;
+    }
+
+    const html = `
+    <div style="overflow-x:auto">
+    <table class="rel-table" id="tabela-comissoes">
+      <thead>
+        <tr>
+          <th>Agente</th>
+          <th>Venda</th>
+          <th>Cliente</th>
+          <th>Produto</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th style="text-align:right">Valor</th>
+          <th>Pago em</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${comissData.map(r => `
+          <tr>
+            <td style="font-weight:700">${r.agente_nome||'—'}</td>
+            <td><a href="sale-form.html?id=${r.venda_id}" class="font-monospace fw-bold text-primary text-decoration-none">${r.venda_codigo||r.venda_id||'—'}</a></td>
+            <td>${r.cliente_nome||'—'}</td>
+            <td>${PROD_MAP[r.tipo_produto]||r.tipo_produto||'—'}</td>
+            <td>${r.tipo_comissao === 'agencia_agente' ? 'Agência→Agente' : 'Fornec.→Agência'}</td>
+            <td><span class="st st-${r.status||'pendente'}">${r.status||'pendente'}</span></td>
+            <td style="text-align:right;font-weight:800;color:var(--primary)">${fmt(r.valor)}</td>
+            <td style="color:var(--text-muted)">${r.pago_em ? new Date(r.pago_em).toLocaleDateString('pt-BR') : '—'}</td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr class="tfoot-row">
+          <td colspan="6">TOTAL</td>
+          <td style="text-align:right">${fmt(totais.valor_total)}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>`;
+    $('c-table-body').innerHTML = html;
+  } catch(e) {
+    $('c-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+  }
+}
+
+$('c-buscar').addEventListener('click', buscarComissoes);
+
+// Export comissões PDF
+$('c-exp-pdf').addEventListener('click', () => {
+  if (!comissData.length) return alert('Carregue os dados antes de exportar.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('Relatório de Comissões', 14, 18);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('TravelAgent OS — ' + new Date().toLocaleDateString('pt-BR'), 14, 25);
+
+  doc.autoTable({
+    startY: 30,
+    head: [['Agente','Venda','Cliente','Produto','Tipo','Status','Valor']],
+    body: comissData.map(r => [
+      r.agente_nome||'—', r.venda_codigo||r.venda_id||'—', r.cliente_nome||'—',
+      PROD_MAP[r.tipo_produto]||r.tipo_produto||'—',
+      r.tipo_comissao === 'agencia_agente' ? 'Ag.→Agente' : 'Forn.→Ag.',
+      r.status||'pendente', fmt(r.valor)
+    ]),
+    foot: [['TOTAL','','','','','', fmt(comissData.reduce((a,r)=>a+(r.valor||0),0))]],
+    styles: { fontSize:8, cellPadding:2 },
+    headStyles: { fillColor:[79,70,229], textColor:255, fontStyle:'bold' },
+    footStyles: { fillColor:[243,244,246], fontStyle:'bold' }
+  });
+  doc.save('comissoes-' + new Date().toISOString().slice(0,10) + '.pdf');
+});
+
+// Export comissões XLSX
+$('c-exp-xlsx').addEventListener('click', () => {
+  if (!comissData.length) return alert('Carregue os dados antes de exportar.');
+  const rows = comissData.map(r => ({
+    'Agente': r.agente_nome||'—',
+    'Venda': r.venda_codigo||r.venda_id||'—',
+    'Cliente': r.cliente_nome||'—',
+    'Produto': PROD_MAP[r.tipo_produto]||r.tipo_produto||'—',
+    'Tipo': r.tipo_comissao === 'agencia_agente' ? 'Agência→Agente' : 'Fornec.→Agência',
+    'Status': r.status||'pendente',
+    'Valor': r.valor||0,
+    'Pago em': r.pago_em ? new Date(r.pago_em).toLocaleDateString('pt-BR') : ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comissões');
+  XLSX.writeFile(wb, 'comissoes-' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ABA CLIENTES
+// ══════════════════════════════════════════════════════════════════════════
+let clienteData = [];
+
+async function buscarClientes() {
+  const de  = $('cl-de').value;
+  const ate = $('cl-ate').value;
+  const q   = $('cl-q').value;
+
+  $('cl-table-body').innerHTML = '<div class="rel-loading"><div class="spinner-border spinner-border-sm text-primary"></div> Carregando...</div>';
+
+  const params = new URLSearchParams();
+  if (de) params.append('de', de);
+  if (ate) params.append('ate', ate);
+  if (q) params.append('q', q);
+
+  try {
+    const data = await Auth.apiFetch('/api/relatorios/clientes?' + params);
+    clienteData = data.rows || [];
+    const totais = data.totais || {};
+
+    const recorrentes = clienteData.filter(r => (r.total_vendas||0) >= 2).length;
+    const receitaTotal = clienteData.reduce((a,r)=>a+(r.receita_total||0),0);
+    const ticketMedio = clienteData.length > 0 ? receitaTotal / clienteData.length : 0;
+
+    $('cl-s-total').textContent  = fmtN(clienteData.length);
+    $('cl-s-receita').textContent = fmt(receitaTotal);
+    $('cl-s-ticket').textContent  = fmt(ticketMedio);
+    $('cl-s-rec').textContent     = fmtN(recorrentes);
+    $('cl-count-label').textContent = clienteData.length + ' clientes encontrados';
+
+    if (!clienteData.length) {
+      $('cl-table-body').innerHTML = '<div class="empty-rel"><i class="bi bi-people"></i>Nenhum cliente encontrado</div>';
+      return;
+    }
+
+    const html = `
+    <div style="overflow-x:auto">
+    <table class="rel-table" id="tabela-clientes">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Email</th>
+          <th style="text-align:right">Nº Vendas</th>
+          <th style="text-align:right">Receita Total</th>
+          <th style="text-align:right">Ticket Médio</th>
+          <th>Última Compra</th>
+          <th>Recorrente?</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${clienteData.map(r => {
+          const initials = (r.cliente_nome||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+          const rec = (r.total_vendas||0) >= 2;
+          return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:.625rem">
+                <div class="cli-avatar">${initials}</div>
+                <span style="font-weight:700;color:var(--text-heading)">${r.cliente_nome||'—'}</span>
+              </div>
+            </td>
+            <td style="color:var(--text-muted)">${r.cliente_email||'—'}</td>
+            <td style="text-align:right;font-weight:700">${fmtN(r.total_vendas)}</td>
+            <td style="text-align:right;font-weight:800;color:var(--primary)">${fmt(r.receita_total)}</td>
+            <td style="text-align:right">${fmt(r.ticket_medio)}</td>
+            <td style="color:var(--text-muted)">${r.ultima_compra ? new Date(r.ultima_compra).toLocaleDateString('pt-BR') : '—'}</td>
+            <td>${rec ? '<span class="st" style="background:#dcfce7;color:#166534">Sim</span>' : '<span class="st" style="background:var(--bg-page);color:var(--text-muted)">Não</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>`;
+    $('cl-table-body').innerHTML = html;
+  } catch(e) {
+    $('cl-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+  }
+}
+
+$('cl-buscar').addEventListener('click', buscarClientes);
+
+// Export clientes PDF
+$('cl-exp-pdf').addEventListener('click', () => {
+  if (!clienteData.length) return alert('Carregue os dados antes de exportar.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('Relatório de Clientes', 14, 18);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('TravelAgent OS — ' + new Date().toLocaleDateString('pt-BR'), 14, 25);
+
+  doc.autoTable({
+    startY: 30,
+    head: [['Cliente','Email','Nº Vendas','Receita Total','Ticket Médio','Última Compra','Recorrente']],
+    body: clienteData.map(r => [
+      r.cliente_nome||'—', r.cliente_email||'—',
+      fmtN(r.total_vendas), fmt(r.receita_total), fmt(r.ticket_medio),
+      r.ultima_compra ? new Date(r.ultima_compra).toLocaleDateString('pt-BR') : '—',
+      (r.total_vendas||0)>=2 ? 'Sim' : 'Não'
+    ]),
+    styles: { fontSize:8, cellPadding:2 },
+    headStyles: { fillColor:[79,70,229], textColor:255, fontStyle:'bold' },
+    alternateRowStyles: { fillColor:[249,250,251] }
+  });
+  doc.save('clientes-' + new Date().toISOString().slice(0,10) + '.pdf');
+});
+
+// Export clientes XLSX
+$('cl-exp-xlsx').addEventListener('click', () => {
+  if (!clienteData.length) return alert('Carregue os dados antes de exportar.');
+  const rows = clienteData.map(r => ({
+    'Cliente': r.cliente_nome||'—',
+    'Email': r.cliente_email||'—',
+    'Nº Vendas': r.total_vendas||0,
+    'Receita Total': r.receita_total||0,
+    'Ticket Médio': r.ticket_medio||0,
+    'Última Compra': r.ultima_compra ? new Date(r.ultima_compra).toLocaleDateString('pt-BR') : '',
+    'Recorrente': (r.total_vendas||0)>=2 ? 'Sim' : 'Não'
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  XLSX.writeFile(wb, 'clientes-' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+</script>
+</body>
+</html>

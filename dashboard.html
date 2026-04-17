@@ -9,246 +9,90 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
   <style>
-    /* ── KPI Cards ─────────────────────────────────────────── */
-    .kpi {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.375rem 1.5rem;
-      position: relative;
-      overflow: hidden;
-      transition: var(--transition);
-    }
-    .kpi:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
-    .kpi-icon {
-      width: 40px; height: 40px;
-      border-radius: var(--radius);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-    .kpi-label {
-      font-size: 10px; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 0.15em;
-      color: var(--text-muted);
-      margin-bottom: 0.375rem;
-    }
-    .kpi-value {
-      font-size: 1.6rem; font-weight: 900;
-      letter-spacing: -0.04em;
-      color: var(--text-heading);
-      line-height: 1;
-      margin-bottom: 0.625rem;
-    }
-    .kpi-sub {
-      font-size: 11px; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 8px;
-      border-radius: 100px;
-    }
-    .kpi-sub.up   { background: #dcfce7; color: #15803d; }
-    .kpi-sub.warn { background: #fef3c7; color: #b45309; }
-    .kpi-sub.muted{ background: var(--bg-page); color: var(--text-muted); }
-    .kpi-sub.danger { background: #fee2e2; color: #dc2626; }
+    .kpi { background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;transition:var(--transition); }
+    .kpi:hover { box-shadow:var(--shadow);transform:translateY(-2px); }
+    .kpi-icon { width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.875rem; }
+    .kpi-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:var(--text-muted);margin-bottom:.35rem; }
+    .kpi-value { font-size:1.5rem;font-weight:900;letter-spacing:-.04em;color:var(--text-heading);line-height:1;margin-bottom:.5rem; }
+    .kpi-badge { font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px;display:inline-flex;align-items:center;gap:3px; }
+    .kpi-badge.up     { background:#dcfce7;color:#15803d; }
+    .kpi-badge.warn   { background:#fef3c7;color:#b45309; }
+    .kpi-badge.muted  { background:var(--bg-page);color:var(--text-muted); }
+    .kpi-badge.danger { background:#fee2e2;color:#dc2626; }
+    .kpi-badge.blue   { background:#dbeafe;color:#1d4ed8; }
+    .kpi-badge.purple { background:#ede9fe;color:#7c3aed; }
+    .kpi-embarque { border-color:#fbbf24;background:linear-gradient(135deg,#fffbeb,#fef3c7); }
+    [data-bs-theme="dark"] .kpi-embarque { background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(251,191,36,.04));border-color:rgba(251,191,36,.3); }
 
-    /* Embarques KPI — highlight */
-    .kpi-embarque {
-      border-color: #fbbf24;
-      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-    }
-    [data-bs-theme="dark"] .kpi-embarque {
-      background: linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(251,191,36,0.04) 100%);
-      border-color: rgba(251,191,36,0.3);
-    }
+    .dash-card { background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.5rem; }
+    .dash-card-title { font-size:14px;font-weight:800;color:var(--text-heading); }
+    .dash-card-sub   { font-size:11px;color:var(--text-muted);margin-top:2px; }
+    .chart-wrap { position:relative; }
 
-    /* ── Indicador ao vivo ─────────────────────────────────── */
-    .live-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 10px; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 0.12em;
-      color: var(--success);
-      background: rgba(16,185,129,0.1);
-      padding: 4px 10px; border-radius: 100px;
-    }
-    .live-pill::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--success);
-      animation: blink 2s infinite;
-    }
-    @keyframes blink {
-      0%,100% { opacity:1; transform:scale(1); }
-      50%      { opacity:.4; transform:scale(1.4); }
-    }
+    .live-pill { display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--success);background:rgba(16,185,129,.1);padding:4px 10px;border-radius:100px; }
+    .live-pill::before { content:'';width:6px;height:6px;border-radius:50%;background:var(--success);animation:blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
 
-    /* ── Card padrão ───────────────────────────────────────── */
-    .dash-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-    }
-    .dash-card-header {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-    .dash-card-title   { font-size: 14px; font-weight: 800; color: var(--text-heading); }
-    .dash-card-sub     { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .dash-link {
-      font-size: 11px; font-weight: 700; color: var(--primary);
-      text-decoration: none; display: flex; align-items: center; gap: 3px; opacity:.8;
-    }
-    .dash-link:hover { opacity:1; }
+    .rank-row { display:flex;align-items:center;gap:.75rem;padding:.625rem 0;border-bottom:1px solid var(--border-color); }
+    .rank-row:last-child { border-bottom:none; }
+    .rank-num  { width:24px;height:24px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .rank-num.gold   { background:#fef3c7;color:#b45309; }
+    .rank-num.silver { background:#f1f5f9;color:#475569; }
+    .rank-num.bronze { background:#fed7aa;color:#9a3412; }
+    .rank-name { font-size:13px;font-weight:700;color:var(--text-heading);flex:1; }
+    .rank-val  { font-size:12px;font-weight:800;color:var(--text-heading); }
+    .rank-sub  { font-size:10px;color:var(--text-muted); }
 
-    /* ── Gráficos ──────────────────────────────────────────── */
-    .chart-wrap { position: relative; }
-    .chart-wrap canvas { width: 100% !important; }
+    .venda-row { display:flex;align-items:center;gap:.875rem;padding:.625rem 0;border-bottom:1px solid var(--border-color);transition:background .15s; }
+    .venda-row:last-child { border-bottom:none; }
+    .venda-codigo { font-family:'Courier New',monospace;font-size:11px;font-weight:700;background:var(--primary-light);color:var(--primary);padding:2px 7px;border-radius:5px;flex-shrink:0; }
+    .venda-cliente { font-size:13px;font-weight:700;color:var(--text-heading);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .venda-valor   { font-size:13px;font-weight:800;flex-shrink:0;color:var(--text-heading); }
 
-    /* ── Donut centro ──────────────────────────────────────── */
-    .donut-wrap {
-      position: relative;
-      height: 170px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .donut-center {
-      position: absolute;
-      text-align: center;
-      pointer-events: none;
-    }
-    .donut-center-val  { font-size: 24px; font-weight: 900; color: var(--text-heading); }
-    .donut-center-lbl  { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); }
+    .prod-leg { display:flex;flex-direction:column;gap:.35rem;margin-top:.875rem; }
+    .prod-leg-row { display:flex;align-items:center;gap:.5rem;font-size:11px;font-weight:600;color:var(--text-muted); }
+    .prod-dot { width:10px;height:10px;border-radius:2px;flex-shrink:0; }
 
-    /* ── Status legend ─────────────────────────────────────── */
-    .status-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .625rem .875rem;
-      border-radius: var(--radius);
-      margin-bottom: .375rem;
-    }
-    .status-row:last-child { margin-bottom: 0; }
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%; flex-shrink: 0;
-    }
-    .status-lbl  { font-size: 12px; font-weight: 700; }
-    .status-num  { font-size: 13px; font-weight: 900; }
+    .st-badge { display:inline-block;border-radius:.35rem;padding:.15rem .5rem;font-size:10px;font-weight:800;text-transform:uppercase; }
+    .st-badge.confirmada { background:#dcfce7;color:#166534; }
+    .st-badge.cotacao    { background:#fef3c7;color:#92400e; }
+    .st-badge.cancelada  { background:#fee2e2;color:#991b1b; }
+    .st-badge.concluida  { background:#dbeafe;color:#1e40af; }
 
-    /* ── Pipeline barras ───────────────────────────────────── */
-    .pipe-row    { margin-bottom: .875rem; }
-    .pipe-row:last-child { margin-bottom: 0; }
-    .pipe-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .pipe-lbl    { font-size: 12px; font-weight: 700; color: var(--text-body); }
-    .pipe-count  { font-size: 12px; font-weight: 900; color: var(--text-heading); }
-    .pipe-track  { height: 7px; background: var(--bg-page); border-radius: 100px; overflow: hidden; }
-    .pipe-fill   { height: 100%; border-radius: 100px; transition: width .9s cubic-bezier(.4,0,.2,1); }
+    .empty-state { text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:13px;font-weight:600; }
+    .empty-state i { font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4; }
 
-    /* ── Embarques lista ───────────────────────────────────── */
-    .emb-item {
-      display: flex; align-items: center; gap: .75rem;
-      padding: .75rem 0;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .emb-item:last-child { border-bottom: none; }
-    .emb-av {
-      width: 38px; height: 38px; flex-shrink: 0;
-      border-radius: var(--radius);
-      background: var(--primary-light);
-      color: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 900;
-    }
-    .emb-name    { font-size: 13px; font-weight: 700; color: var(--text-heading); }
-    .emb-dest    { font-size: 11px; color: var(--text-muted); }
-    .emb-time {
-      margin-left: auto; flex-shrink: 0;
-      font-size: 10px; font-weight: 800;
-      padding: 3px 8px; border-radius: 6px;
-      background: #fef3c7; color: #b45309;
-    }
-    .emb-time.hoje { background: #fee2e2; color: #dc2626; }
-    [data-bs-theme="dark"] .emb-time      { background: rgba(251,191,36,.15); color: #fbbf24; }
-    [data-bs-theme="dark"] .emb-time.hoje { background: rgba(239,68,68,.15);  color: #f87171; }
-
-    /* ── Reservas lista ────────────────────────────────────── */
-    .res-row {
-      display: flex; align-items: center; gap: .875rem;
-      padding: .75rem 0;
-      border-bottom: 1px solid var(--border-color);
-      transition: background .15s;
-    }
-    .res-row:last-child { border-bottom: none; }
-    .res-codigo {
-      font-family: 'Courier New', monospace;
-      font-size: 11px; font-weight: 700;
-      background: var(--primary-light); color: var(--primary);
-      padding: 2px 7px; border-radius: 5px; flex-shrink: 0;
-    }
-    [data-bs-theme="dark"] .res-codigo { background: rgba(79,70,229,.2); }
-    .res-cliente { font-size: 13px; font-weight: 700; color: var(--text-heading); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .res-dest    { font-size: 11px; color: var(--text-muted); flex-shrink: 0; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .res-valor   { font-size: 13px; font-weight: 800; flex-shrink: 0; color: var(--text-heading); }
-    .res-status  { flex-shrink: 0; }
-
-    /* ── Empty state ───────────────────────────────────────── */
-    .empty-state {
-      text-align: center; padding: 2rem 1rem;
-      color: var(--text-muted); font-size: 13px; font-weight: 600;
-    }
-    .empty-state i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity:.4; }
-
-    /* ── 5 colunas ─────────────────────────────────────────── */
-    @media (min-width: 1200px) {
-      .col-xl-fifth {
-        flex: 0 0 auto;
-        width: 20%;
-      }
-    }
-
-    /* ── Dark mode ajustes ─────────────────────────────────── */
-    [data-bs-theme="dark"] .kpi-sub.up     { background: rgba(21,128,61,.2); }
-    [data-bs-theme="dark"] .kpi-sub.warn   { background: rgba(180,83,9,.2); color: #fbbf24; }
-    [data-bs-theme="dark"] .kpi-sub.muted  { background: rgba(148,163,184,.08); }
-    [data-bs-theme="dark"] .kpi-sub.danger { background: rgba(220,38,38,.2); color: #f87171; }
-    [data-bs-theme="dark"] .status-row     { opacity: .95; }
+    @media(min-width:1200px){ .col-xl-fifth { flex:0 0 auto;width:20%; } }
+    [data-bs-theme="dark"] .kpi-badge.up     { background:rgba(21,128,61,.2); }
+    [data-bs-theme="dark"] .kpi-badge.warn   { background:rgba(180,83,9,.2);color:#fbbf24; }
+    [data-bs-theme="dark"] .kpi-badge.muted  { background:rgba(148,163,184,.08); }
+    [data-bs-theme="dark"] .kpi-badge.danger { background:rgba(220,38,38,.2);color:#f87171; }
   </style>
 </head>
 <body>
 <div class="os-wrapper">
 
-  <!-- ── Sidebar ─────────────────────────────────────────────── -->
   <aside class="os-sidebar" id="sidebar">
     <div class="os-sidebar-header">
       <div class="os-brand">
         <div class="os-brand-icon"><i class="bi bi-briefcase-fill"></i></div>
         <div class="os-brand-name">TravelAgent<span>OS</span></div>
       </div>
-      <button class="os-sidebar-close" id="sidebar-close">
-        <i class="bi bi-x-lg"></i>
-      </button>
+      <button class="os-sidebar-close" id="sidebar-close"><i class="bi bi-x-lg"></i></button>
     </div>
-
     <nav class="os-nav">
       <div class="os-nav-section-label">Principal</div>
-      <a href="dashboard.html" class="os-nav-item" data-page="dashboard.html">
-        <i class="bi bi-grid-fill"></i> Dashboard
-      </a>
-      <a href="reservas.html" class="os-nav-item" data-page="reservas.html">
-        <i class="bi bi-folder2-open"></i> Vendas
-      </a>
-      <a href="clientes.html" class="os-nav-item" data-page="clientes.html">
-        <i class="bi bi-people-fill"></i> Clientes & Fornecedores
-      </a>
-      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html">
-        <i class="bi bi-cash-stack"></i> Financeiro
-      </a>
+      <a href="dashboard.html"  class="os-nav-item active" data-page="dashboard.html"><i class="bi bi-grid-fill"></i> Dashboard</a>
+      <a href="reservas.html"   class="os-nav-item" data-page="reservas.html"><i class="bi bi-folder2-open"></i> Vendas</a>
+      <a href="clientes.html"   class="os-nav-item" data-page="clientes.html"><i class="bi bi-people-fill"></i> Clientes & Fornecedores</a>
+      <a href="financeiro.html" class="os-nav-item" data-page="financeiro.html"><i class="bi bi-cash-stack"></i> Financeiro</a>
+      <a href="relatorios.html" class="os-nav-item" data-page="relatorios.html"><i class="bi bi-bar-chart-line-fill"></i> Relatórios</a>
       <div class="os-nav-section-label mt-3">Sistema</div>
       <a href="comissoes-config.html" class="os-nav-item" data-page="comissoes-config.html"><i class="bi bi-percent"></i> Comissões</a>
-      <a href="lembretes.html" class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
-      <a href="usuarios.html"  class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
-      <a href="configuracoes.html" class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
+      <a href="lembretes.html"        class="os-nav-item" data-page="lembretes.html"><i class="bi bi-bell-fill"></i> Lembretes</a>
+      <a href="usuarios.html"         class="os-nav-item" data-page="usuarios.html"><i class="bi bi-person-gear"></i> Usuários</a>
+      <a href="configuracoes.html"    class="os-nav-item" data-page="configuracoes.html"><i class="bi bi-gear-fill"></i> Configurações</a>
     </nav>
-
     <div class="os-sidebar-footer">
       <div class="os-user-card">
         <div class="os-avatar" data-user-initials>AD</div>
@@ -256,485 +100,441 @@
           <div class="os-user-name" data-user-name>Carregando...</div>
           <div class="os-user-role" data-user-role>—</div>
         </div>
-        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair">
-          <i class="bi bi-box-arrow-right"></i>
-        </button>
+        <button class="os-icon-btn ms-auto" data-action="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </div>
   </aside>
-
   <div class="os-overlay" id="os-overlay"></div>
 
-  <!-- ── Main ────────────────────────────────────────────────── -->
   <main class="os-main">
-
-    <!-- Topbar -->
     <header class="os-topbar">
-      <button class="os-icon-btn" id="sidebar-open">
-        <i class="bi bi-list"></i>
-      </button>
+      <button class="os-icon-btn" id="sidebar-open"><i class="bi bi-list"></i></button>
       <div class="os-topbar-title">
-        <h1 class="os-page-title">Visão Geral</h1>
+        <h1 class="os-page-title">Dashboard</h1>
         <span class="os-page-subtitle" id="topbar-date">—</span>
       </div>
       <div class="os-topbar-actions">
         <span class="live-pill">Ao vivo</span>
-        <button class="os-icon-btn ms-1" id="btn-refresh" title="Atualizar">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
-        <button class="os-icon-btn" id="theme-toggle" title="Alternar tema">
-          <i class="bi bi-moon-fill" id="theme-icon"></i>
-        </button>
+        <button class="os-icon-btn ms-1" id="btn-refresh" title="Atualizar"><i class="bi bi-arrow-clockwise"></i></button>
+        <button class="os-icon-btn" id="theme-toggle"><i class="bi bi-moon-fill" id="theme-icon"></i></button>
         <div class="os-avatar sm" data-user-initials>AD</div>
       </div>
     </header>
 
-    <!-- Content -->
     <div class="os-content">
 
-      <!-- ── Linha 1: 5 KPIs ─────────────────────────────────── -->
+      <!-- ── Filtro de Período ── -->
+      <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Período</span>
+        <div class="d-flex gap-1">
+          <button class="btn-os-ghost btn-sm periodo-btn active" data-meses="1">Este mês</button>
+          <button class="btn-os-ghost btn-sm periodo-btn" data-meses="3">3 meses</button>
+          <button class="btn-os-ghost btn-sm periodo-btn" data-meses="6">6 meses</button>
+          <button class="btn-os-ghost btn-sm periodo-btn" data-meses="12">12 meses</button>
+          <button class="btn-os-ghost btn-sm periodo-btn" data-meses="0">Total</button>
+        </div>
+        <a href="relatorios.html" class="btn-os-ghost btn-sm ms-auto"><i class="bi bi-file-earmark-bar-graph me-1"></i>Relatórios</a>
+      </div>
+
+      <!-- ── Linha 1: 7 KPIs ── -->
       <div class="row g-3 mb-4">
-
-        <div class="col-6 col-md-4 col-xl-fifth">
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
           <div class="kpi">
-            <div class="kpi-icon bg-primary-soft">
-              <i class="bi bi-currency-dollar" style="color:var(--primary)"></i>
-            </div>
-            <div class="kpi-label">Faturamento Mês</div>
-            <div class="kpi-value" id="kpi-faturamento">—</div>
-            <span class="kpi-sub up"><i class="bi bi-arrow-up-short"></i>receita confirmada</span>
+            <div class="kpi-icon bg-primary-soft"><i class="bi bi-graph-up-arrow" style="color:var(--primary)"></i></div>
+            <div class="kpi-label">Receita Total</div>
+            <div class="kpi-value" id="kpi-receita">—</div>
+            <span class="kpi-badge muted">vendas confirmadas</span>
           </div>
         </div>
-
-        <div class="col-6 col-md-4 col-xl-fifth">
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
           <div class="kpi">
-            <div class="kpi-icon bg-warning-soft">
-              <i class="bi bi-hourglass-split text-warning"></i>
-            </div>
-            <div class="kpi-label">A Receber</div>
-            <div class="kpi-value" style="color:var(--warning)" id="kpi-a-receber">—</div>
-            <span class="kpi-sub warn" id="kpi-a-receber-info">— em aberto</span>
+            <div class="kpi-icon" style="background:#dcfce7"><i class="bi bi-currency-dollar" style="color:#16a34a"></i></div>
+            <div class="kpi-label">Margem Bruta</div>
+            <div class="kpi-value" id="kpi-margem">—</div>
+            <span class="kpi-badge up" id="kpi-margem-pct">—% da receita</span>
           </div>
         </div>
-
-        <div class="col-6 col-md-4 col-xl-fifth">
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
           <div class="kpi">
-            <div class="kpi-icon bg-success-soft">
-              <i class="bi bi-calendar2-check-fill text-success"></i>
-            </div>
-            <div class="kpi-label">Reservas</div>
-            <div class="kpi-value" id="kpi-reservas">—</div>
-            <span class="kpi-sub muted" id="kpi-confirmadas-sub">— confirmadas</span>
+            <div class="kpi-icon" style="background:#e0e7ff"><i class="bi bi-bag-check-fill" style="color:#4338ca"></i></div>
+            <div class="kpi-label">Vendas</div>
+            <div class="kpi-value" id="kpi-vendas">—</div>
+            <span class="kpi-badge purple" id="kpi-vendas-sub">— confirmadas</span>
           </div>
         </div>
-
-        <div class="col-6 col-md-6 col-xl-fifth">
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
           <div class="kpi">
-            <div class="kpi-icon" style="background:#ede9fe">
-              <i class="bi bi-people-fill" style="color:#7c3aed"></i>
-            </div>
+            <div class="kpi-icon" style="background:#fef3c7"><i class="bi bi-cash-coin" style="color:#d97706"></i></div>
+            <div class="kpi-label">Ticket Médio</div>
+            <div class="kpi-value" id="kpi-ticket">—</div>
+            <span class="kpi-badge warn">por venda</span>
+          </div>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
+          <div class="kpi">
+            <div class="kpi-icon" style="background:#cffafe"><i class="bi bi-percent" style="color:#0891b2"></i></div>
+            <div class="kpi-label">Conversão</div>
+            <div class="kpi-value" id="kpi-conversao">—</div>
+            <span class="kpi-badge blue">cotação → venda</span>
+          </div>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3 col-xl">
+          <div class="kpi">
+            <div class="kpi-icon" style="background:#ede9fe"><i class="bi bi-people-fill" style="color:#7c3aed"></i></div>
             <div class="kpi-label">Clientes</div>
             <div class="kpi-value" id="kpi-clientes">—</div>
-            <span class="kpi-sub muted">na base</span>
+            <span class="kpi-badge muted" id="kpi-clientes-sub">na base</span>
           </div>
         </div>
-
-        <div class="col-12 col-md-6 col-xl-fifth">
+        <div class="col-12 col-sm-4 col-lg-3 col-xl">
           <div class="kpi kpi-embarque">
-            <div class="kpi-icon" style="background:rgba(251,191,36,.2)">
-              <i class="bi bi-airplane-fill" style="color:#d97706"></i>
-            </div>
+            <div class="kpi-icon" style="background:rgba(251,191,36,.2)"><i class="bi bi-airplane-fill" style="color:#d97706"></i></div>
             <div class="kpi-label" style="color:#92400e">Embarques 48h</div>
             <div class="kpi-value" style="color:#d97706" id="kpi-embarques">—</div>
-            <span class="kpi-sub" style="background:rgba(251,191,36,.2);color:#92400e">próximas partidas</span>
+            <span class="kpi-badge warn">próximas partidas</span>
           </div>
         </div>
-
       </div>
 
-      <!-- ── Linha 2: Gráfico receita + Saúde financeira ─────── -->
+      <!-- ── Linha 2: Gráfico Receita Mensal + Produto Donut ── -->
       <div class="row g-3 mb-4">
-
-        <!-- Gráfico barras — receita mensal -->
-        <div class="col-12 col-lg-7">
+        <div class="col-12 col-lg-8">
           <div class="dash-card h-100">
-            <div class="dash-card-header">
+            <div class="d-flex align-items-start justify-content-between mb-3">
               <div>
                 <div class="dash-card-title">Receita Mensal</div>
-                <div class="dash-card-sub">Faturamento dos últimos 6 meses</div>
+                <div class="dash-card-sub">Faturamento dos últimos 12 meses (vendas confirmadas)</div>
               </div>
+              <a href="relatorios.html" class="btn-os-ghost btn-sm" style="font-size:10px">Ver relatório</a>
             </div>
-            <div class="chart-wrap" style="height:220px">
-              <canvas id="chart-receita"></canvas>
-            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chart-receita"></canvas></div>
           </div>
         </div>
-
-        <!-- Donut + status legend -->
-        <div class="col-12 col-lg-5">
-          <div class="dash-card h-100">
-            <div class="dash-card-header">
-              <div>
-                <div class="dash-card-title">Pipeline de Reservas</div>
-                <div class="dash-card-sub">Distribuição atual por status</div>
-              </div>
-            </div>
-
-            <!-- Donut -->
-            <div class="donut-wrap">
-              <canvas id="chart-status" style="max-height:170px"></canvas>
-              <div class="donut-center">
-                <div class="donut-center-val" id="donut-total">—</div>
-                <div class="donut-center-lbl">reservas</div>
-              </div>
-            </div>
-
-            <!-- Legend -->
-            <div id="status-legend" class="mt-2">
-              <div class="status-row" style="background:#dcfce7">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="status-dot" style="background:#10b981"></span>
-                  <span class="status-lbl" style="color:#166534">Confirmadas</span>
-                </div>
-                <span class="status-num" style="color:#166534" id="s-confirmadas">—</span>
-              </div>
-              <div class="status-row" style="background:#fef3c7">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="status-dot" style="background:#f59e0b"></span>
-                  <span class="status-lbl" style="color:#92400e">Pendentes</span>
-                </div>
-                <span class="status-num" style="color:#92400e" id="s-pendentes">—</span>
-              </div>
-              <div class="status-row" style="background:#fee2e2">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="status-dot" style="background:#ef4444"></span>
-                  <span class="status-lbl" style="color:#991b1b">Canceladas</span>
-                </div>
-                <span class="status-num" style="color:#991b1b" id="s-canceladas">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ── Linha 3: Embarques próximos + Últimas reservas ──── -->
-      <div class="row g-3">
-
-        <!-- Embarques -->
         <div class="col-12 col-lg-4">
           <div class="dash-card h-100">
-            <div class="dash-card-header">
-              <div>
-                <div class="dash-card-title">
-                  <i class="bi bi-airplane-fill text-warning me-1"></i>
-                  Próximos Embarques
-                </div>
-                <div class="dash-card-sub">Partidas nas próximas 48 horas</div>
+            <div class="mb-3">
+              <div class="dash-card-title">Vendas por Produto</div>
+              <div class="dash-card-sub">Mix de produtos confirmados</div>
+            </div>
+            <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center">
+              <canvas id="chart-produto"></canvas>
+              <div style="position:absolute;text-align:center;pointer-events:none">
+                <div style="font-size:22px;font-weight:900;color:var(--text-heading)" id="donut-total">—</div>
+                <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted)">vendas</div>
               </div>
             </div>
-            <div id="embarques-list">
-              <div class="empty-state">
-                <div class="spinner-border spinner-border-sm text-muted mb-2"></div>
-                <div>Carregando...</div>
-              </div>
-            </div>
+            <div class="prod-leg" id="prod-legenda"></div>
           </div>
         </div>
-
-        <!-- Últimas reservas -->
-        <div class="col-12 col-lg-8">
-          <div class="dash-card">
-            <div class="dash-card-header">
-              <div>
-                <div class="dash-card-title">Reservas Recentes</div>
-                <div class="dash-card-sub">Últimas movimentações do sistema</div>
-              </div>
-              <a href="reservas.html" class="dash-link">
-                Ver todas <i class="bi bi-arrow-right"></i>
-              </a>
-            </div>
-            <div id="reservas-list">
-              <div class="empty-state">
-                <div class="spinner-border spinner-border-sm text-muted mb-2"></div>
-                <div>Carregando...</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-    </div><!-- /os-content -->
+      <!-- ── Linha 3: Ranking Agentes + Últimas Vendas ── -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-4">
+          <div class="dash-card h-100">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+              <div>
+                <div class="dash-card-title">Top Agentes</div>
+                <div class="dash-card-sub">Por receita confirmada</div>
+              </div>
+            </div>
+            <div id="ranking-agentes">
+              <div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-8">
+          <div class="dash-card h-100">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+              <div>
+                <div class="dash-card-title">Últimas Vendas</div>
+                <div class="dash-card-sub">Vendas recentes do sistema</div>
+              </div>
+              <a href="reservas.html" class="btn-os-ghost btn-sm" style="font-size:10px">Ver todas</a>
+            </div>
+            <div id="ultimas-vendas">
+              <div class="empty-state"><i class="bi bi-hourglass-split"></i>Carregando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Linha 4: A Receber + A Pagar ── -->
+      <div class="row g-3 mb-2">
+        <div class="col-12 col-md-6">
+          <div class="dash-card">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+              <div>
+                <div class="dash-card-title">A Receber</div>
+                <div class="dash-card-sub">Parcelas pendentes do cliente</div>
+              </div>
+              <a href="financeiro.html" class="btn-os-ghost btn-sm" style="font-size:10px">Financeiro</a>
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+              <div>
+                <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Total</div>
+                <div style="font-size:1.5rem;font-weight:900;color:var(--text-heading)" id="fin-receber">—</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Em atraso</div>
+                <div style="font-size:1.5rem;font-weight:900;color:#dc2626" id="fin-atraso">—</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Recebido</div>
+                <div style="font-size:1.5rem;font-weight:900;color:#16a34a" id="fin-recebido">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="dash-card">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+              <div>
+                <div class="dash-card-title">A Pagar</div>
+                <div class="dash-card-sub">Compromissos com fornecedores</div>
+              </div>
+              <a href="financeiro.html" class="btn-os-ghost btn-sm" style="font-size:10px">Financeiro</a>
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+              <div>
+                <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Total</div>
+                <div style="font-size:1.5rem;font-weight:900;color:var(--text-heading)" id="fin-pagar">—</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted)">Margem</div>
+                <div style="font-size:1.5rem;font-weight:900;color:#0891b2" id="fin-margem-pct">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </main>
 </div>
 
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="assets/js/notifications.js"></script>
 <script src="assets/js/auth.js"></script>
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-  App.init();
+/* ── Helpers ─────────────────────────────────────────────── */
+const fmtM  = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(+v||0);
+const fmtMK = v => { const n=+v||0; if(n>=1e6) return 'R$'++(n/1e6).toFixed(1)+'M'; if(n>=1e3) return 'R$'++(n/1e3).toFixed(0)+'k'; return fmtM(n); };
+const mesLbl= m => { const [y,mo]=m.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y.slice(2); };
 
-  // ── Helpers ────────────────────────────────────────────────
-  const fmtR$ = v =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v || 0);
+const PROD_MAP = {
+  AIRFARE:'Aéreo', HOSTING:'Hotel', INSURANCE:'Seguro', PACKAGE:'Pacote',
+  CAR:'Veículo', BUS:'Ônibus', TRAIN:'Trem', CRUISE:'Cruzeiro',
+  TOUR:'Passeio', TICKET:'Ingresso', EDUCATIONAL:'Educacional', OTHER:'Outro',
+};
+const PROD_COLORS = ['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#dc2626','#ea580c','#84cc16','#06b6d4','#ec4899','#8b5cf6','#14b8a6'];
 
-  const fmtDate = d =>
-    d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—';
+/* ── Estado ──────────────────────────────────────────────── */
+let mesesFiltro = 1;
+let chartReceita = null, chartProduto = null;
 
-  const initials = name =>
-    name ? name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
+/* ── Período ─────────────────────────────────────────────── */
+document.querySelectorAll('.periodo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mesesFiltro = +btn.dataset.meses;
+    carregarDashboard();
+  });
+});
 
-  function statusBadge(s) {
-    const map = {
-      pendente:   '<span class="os-badge badge-yellow">Pendente</span>',
-      confirmada: '<span class="os-badge badge-green">Confirmada</span>',
-      cancelada:  '<span class="os-badge badge-red">Cancelada</span>',
-      concluida:  '<span class="os-badge badge-blue">Concluída</span>',
-    };
-    return map[s] || `<span class="os-badge">${s}</span>`;
-  }
+document.getElementById('btn-refresh').addEventListener('click', carregarDashboard);
 
-  // ── Data topbar ────────────────────────────────────────────
-  document.getElementById('topbar-date').textContent =
-    new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+/* ── Topbar date ─────────────────────────────────────────── */
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('pt-BR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  // ── Instâncias dos charts ──────────────────────────────────
-  let cReceita = null;
-  let cStatus  = null;
+/* ── Carregar dados ──────────────────────────────────────── */
+async function carregarDashboard() {
+  try {
+    const [charts, kpis_fin] = await Promise.all([
+      Auth.apiFetch('/api/dashboard/charts').then(r => r.json()),
+      Auth.apiFetch('/api/financeiro/kpis').then(r => r.json()),
+    ]);
 
-  // ── Cores conforme tema ────────────────────────────────────
-  function themeColors() {
-    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    return {
-      grid:  dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-      tick:  dark ? '#64748b' : '#94a3b8',
-      bar:   dark ? 'rgba(99,102,241,0.25)' : 'rgba(79,70,229,0.12)',
-      barBorder: '#4f46e5',
-    };
-  }
-
-  // Últimos 6 meses como labels
-  function last6Months() {
-    return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (5 - i));
-      return d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-    });
-  }
-
-  // ── Inicializa / atualiza gráfico de barras ────────────────
-  function buildChartReceita(data6m) {
-    const c = themeColors();
-    if (cReceita) cReceita.destroy();
-    cReceita = new Chart(document.getElementById('chart-receita'), {
-      type: 'bar',
-      data: {
-        labels: last6Months(),
-        datasets: [{
-          label: 'Receita',
-          data: data6m,
-          backgroundColor: c.bar,
-          borderColor: c.barBorder,
-          borderWidth: 2,
-          borderRadius: 8,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: { label: ctx => fmtR$(ctx.raw) }
-          }
-        },
-        scales: {
-          x: {
-            grid: { color: c.grid },
-            ticks: { color: c.tick, font: { size: 11, weight: '600' } }
-          },
-          y: {
-            grid: { color: c.grid },
-            beginAtZero: true,
-            ticks: {
-              color: c.tick,
-              font: { size: 11 },
-              callback: v => v >= 1000 ? 'R$' + (v / 1000).toFixed(0) + 'k' : 'R$' + v
-            }
-          }
-        }
-      }
-    });
-  }
-
-  // ── Inicializa / atualiza donut ────────────────────────────
-  function buildChartStatus(confirmadas, pendentes, canceladas) {
-    if (cStatus) cStatus.destroy();
-    cStatus = new Chart(document.getElementById('chart-status'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Confirmadas', 'Pendentes', 'Canceladas'],
-        datasets: [{
-          data: [confirmadas, pendentes, canceladas],
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-          borderWidth: 0,
-          hoverOffset: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '74%',
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } }
-        }
-      }
-    });
-  }
-
-  // ── Carrega KPIs e charts ──────────────────────────────────
-  async function loadDashboard() {
-    try {
-      const res  = await Auth.apiFetch('/api/dashboard');
-      const body = await res.json();
-      if (!body.ok) throw new Error(body.error);
-
-      const d = body.data;
-      const canceladas = Math.max(0, d.total_reservas - d.confirmadas - d.pendentes);
-      const aReceber   = d.a_receber || 0;
-      const embarques  = Array.isArray(d.embarques_48h) ? d.embarques_48h : [];
-
-      // KPI values
-      document.getElementById('kpi-faturamento').textContent   = fmtR$(d.receita_total);
-      document.getElementById('kpi-a-receber').textContent     = fmtR$(aReceber);
-      document.getElementById('kpi-a-receber-info').textContent = d.pendentes + ' em aberto';
-      document.getElementById('kpi-reservas').textContent      = d.total_reservas;
-      document.getElementById('kpi-confirmadas-sub').textContent = d.confirmadas + ' confirmadas';
-      document.getElementById('kpi-clientes').textContent      = d.total_clientes;
-      document.getElementById('kpi-embarques').textContent     = embarques.length;
-
-      // Pipeline legend
-      document.getElementById('s-confirmadas').textContent = d.confirmadas;
-      document.getElementById('s-pendentes').textContent   = d.pendentes;
-      document.getElementById('s-canceladas').textContent  = canceladas;
-      document.getElementById('donut-total').textContent   = d.total_reservas;
-
-      // Gráfico de receita:
-      // API ainda não retorna dados mensais — usamos receita_total no mês atual
-      // e zeros nos anteriores até ser implementado o endpoint /api/dashboard/mensal
-      const data6m = [0, 0, 0, 0, 0, d.receita_total || 0];
-      if (d.receita_mensal && Array.isArray(d.receita_mensal)) {
-        // quando a API retornar, substituir acima
-        d.receita_mensal.forEach((v, i) => { if (i < 6) data6m[i] = v; });
-      }
-
-      buildChartReceita(data6m);
-      buildChartStatus(d.confirmadas, d.pendentes, canceladas);
-
-      // Embarques
-      renderEmbarques(embarques);
-
-    } catch (err) {
-      console.error(err);
-      Notify.error('Não foi possível carregar o dashboard.');
+    if (charts.ok) {
+      const d = charts.data;
+      renderKPIs(d.kpis);
+      renderChartReceita(filtrarMeses(d.vendas_mes));
+      renderChartProduto(d.por_produto);
+      renderRankingAgentes(d.ranking_agentes);
     }
-  }
 
-  // ── Embarques ──────────────────────────────────────────────
-  function renderEmbarques(list) {
-    const el = document.getElementById('embarques-list');
-    if (!list.length) {
-      el.innerHTML = `
-        <div class="empty-state">
-          <i class="bi bi-check-circle-fill text-success"></i>
-          Nenhum embarque nas próximas 48h
-        </div>`;
+    if (kpis_fin.ok) renderFinanceiro(kpis_fin.data);
+
+    carregarUltimasVendas();
+    carregarEmbarques();
+    carregarTotalClientes();
+  } catch(e) { console.error(e); }
+}
+
+function filtrarMeses(dados) {
+  if (!mesesFiltro) return dados;
+  const limite = new Date();
+  limite.setMonth(limite.getMonth() - mesesFiltro + 1);
+  const minMes = limite.toISOString().slice(0,7);
+  return dados.filter(d => d.mes >= minMes);
+}
+
+/* ── KPIs ─────────────────────────────────────────────────── */
+function renderKPIs(k) {
+  document.getElementById('kpi-receita').textContent   = fmtMK(k.receita_total);
+  const margem = +k.receita_total - +k.custo_total;
+  document.getElementById('kpi-margem').textContent    = fmtMK(margem);
+  const margemPct = k.receita_total > 0 ? (margem/k.receita_total*100).toFixed(1) : 0;
+  document.getElementById('kpi-margem-pct').textContent = margemPct + '% da receita';
+  document.getElementById('kpi-vendas').textContent    = k.total_vendas;
+  document.getElementById('kpi-vendas-sub').textContent = k.confirmadas + ' confirmadas';
+  document.getElementById('kpi-ticket').textContent    = fmtMK(k.ticket_medio);
+  document.getElementById('kpi-conversao').textContent = k.taxa_conversao + '%';
+}
+
+function renderFinanceiro(f) {
+  document.getElementById('fin-receber').textContent  = fmtMK(f.a_receber);
+  document.getElementById('fin-atraso').textContent   = fmtMK(f.em_atraso);
+  document.getElementById('fin-recebido').textContent = fmtMK(f.total_recebido);
+  document.getElementById('fin-pagar').textContent    = fmtMK(f.a_pagar);
+  document.getElementById('fin-margem-pct').textContent = f.margem_pct + '%';
+}
+
+/* ── Chart Receita ───────────────────────────────────────── */
+function renderChartReceita(dados) {
+  const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  const grid   = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
+  const text   = isDark ? '#94a3b8' : '#64748b';
+
+  const labels  = dados.map(d => mesLbl(d.mes));
+  const receita = dados.map(d => +d.receita);
+  const custo   = dados.map(d => +d.custo);
+  const margem  = receita.map((r,i) => r - custo[i]);
+
+  if (chartReceita) chartReceita.destroy();
+  chartReceita = new Chart(document.getElementById('chart-receita'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Receita', data:receita, backgroundColor:'rgba(37,99,235,.8)', borderRadius:4, stack:'v' },
+      { label:'Custo',   data:custo,   backgroundColor:'rgba(220,38,38,.4)', borderRadius:4, stack:'v' },
+      { label:'Margem',  data:margem,  type:'line', borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#16a34a', fill:true, tension:.3, stack:undefined },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => `${ctx.dataset.label}: ${fmtM(ctx.parsed.y)}` }}},
+      scales:{
+        x:{ grid:{ color:grid }, ticks:{ color:text, font:{size:10} }},
+        y:{ grid:{ color:grid }, ticks:{ color:text, font:{size:10}, callback: v => 'R$'+Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v) }, stacked:true },
+      }
+    }
+  });
+}
+
+/* ── Chart Produto ───────────────────────────────────────── */
+function renderChartProduto(dados) {
+  if (!dados.length) {
+    document.getElementById('donut-total').textContent = '0';
+    document.getElementById('prod-legenda').innerHTML = '<div class="empty-state" style="padding:.75rem"><i class="bi bi-inbox"></i>Sem dados</div>';
+    return;
+  }
+  const total = dados.reduce((s,d) => s + +d.qtd_vendas, 0);
+  document.getElementById('donut-total').textContent = total;
+
+  const labels = dados.map(d => PROD_MAP[d.tipo_produto] || d.tipo_produto);
+  const values = dados.map(d => +d.receita);
+  const colors = dados.map((_, i) => PROD_COLORS[i % PROD_COLORS.length]);
+
+  if (chartProduto) chartProduto.destroy();
+  chartProduto = new Chart(document.getElementById('chart-produto'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:2, borderColor:'var(--card-bg)' }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${fmtM(ctx.parsed)}` }}}
+    }
+  });
+
+  document.getElementById('prod-legenda').innerHTML = dados.slice(0,5).map((d,i) =>
+    `<div class="prod-leg-row"><div class="prod-dot" style="background:${colors[i]}"></div><span style="flex:1">${labels[i]}</span><span style="font-weight:800;color:var(--text-heading)">${fmtMK(d.receita)}</span></div>`
+  ).join('');
+}
+
+/* ── Ranking Agentes ─────────────────────────────────────── */
+function renderRankingAgentes(dados) {
+  const wrap = document.getElementById('ranking-agentes');
+  if (!dados.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i>Sem vendas confirmadas</div>';
+    return;
+  }
+  const medalhas = ['gold','silver','bronze'];
+  wrap.innerHTML = dados.map((a,i) => {
+    const margem = +a.receita - +a.custo;
+    return `<div class="rank-row">
+      <div class="rank-num ${medalhas[i]||''}">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div class="rank-name">${a.nome}</div>
+        <div class="rank-sub">${a.qtd_vendas} venda(s)</div>
+      </div>
+      <div style="text-align:right">
+        <div class="rank-val">${fmtMK(a.receita)}</div>
+        <div class="rank-sub" style="color:#16a34a">+${fmtMK(margem)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Últimas Vendas ──────────────────────────────────────── */
+async function carregarUltimasVendas() {
+  try {
+    const r = await Auth.apiFetch('/api/vendas?page=1&limit=6').then(r => r.json());
+    const wrap = document.getElementById('ultimas-vendas');
+    if (!r.ok || !r.data.length) {
+      wrap.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i>Nenhuma venda ainda</div>';
       return;
     }
-    const todayStr = new Date().toDateString();
-    el.innerHTML = list.map(r => {
-      const dt     = new Date(r.data_embarque || r.data_saida);
-      const isHoje = dt.toDateString() === todayStr;
-      const hora   = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      return `
-        <div class="emb-item">
-          <div class="emb-av">${initials(r.cliente_nome)}</div>
-          <div class="flex-grow-1" style="min-width:0">
-            <div class="emb-name">${r.cliente_nome || '—'}</div>
-            <div class="emb-dest"><i class="bi bi-geo-alt-fill me-1" style="color:var(--primary)"></i>${r.destino}</div>
-          </div>
-          <span class="emb-time${isHoje ? ' hoje' : ''}">${isHoje ? 'Hoje · ' : ''}${hora}</span>
-        </div>`;
-    }).join('');
-  }
+    wrap.innerHTML = r.data.map(v =>
+      `<div class="venda-row">
+        <span class="venda-codigo">${v.codigo}</span>
+        <span class="venda-cliente">${v.cliente_nome||'—'}</span>
+        <span class="venda-valor">${fmtMK(v.total_venda)}</span>
+        <span class="st-badge ${v.status}">${v.status}</span>
+      </div>`
+    ).join('');
+  } catch {}
+}
 
-  // ── Reservas recentes ──────────────────────────────────────
-  async function loadReservas() {
-    const el = document.getElementById('reservas-list');
-    try {
-      const res  = await Auth.apiFetch('/api/reservas?limit=7');
-      const body = await res.json();
-      if (!body.ok) throw new Error(body.error);
-
-      if (!body.data.length) {
-        el.innerHTML = '<div class="empty-state"><i class="bi bi-calendar2-x"></i>Nenhuma reserva encontrada.</div>';
-        return;
-      }
-
-      el.innerHTML = body.data.map(r => `
-        <div class="res-row">
-          <span class="res-codigo">${r.codigo}</span>
-          <span class="res-cliente">${r.cliente_nome || '—'}</span>
-          <span class="res-dest"><i class="bi bi-geo-alt-fill me-1" style="color:var(--primary)"></i>${r.destino}</span>
-          <span class="res-valor">${fmtR$(r.valor_total)}</span>
-          <span class="res-status">${statusBadge(r.status)}</span>
-        </div>`).join('');
-
-    } catch {
-      el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-triangle text-danger"></i>Erro ao carregar reservas.</div>';
+/* ── Embarques ───────────────────────────────────────────── */
+async function carregarEmbarques() {
+  try {
+    const r = await Auth.apiFetch('/api/dashboard').then(r => r.json());
+    if (r.ok) {
+      document.getElementById('kpi-embarques').textContent = r.data?.embarques?.length ?? 0;
     }
-  }
+  } catch {}
+}
 
-  // ── SSE — atualização em tempo real ───────────────────────
-  function initSSE() {
-    const token = Auth.getToken();
-    if (!token) return;
-    const es = new EventSource(`/api/eventos?token=${token}`);
-    es.onmessage = e => {
-      const msg = JSON.parse(e.data);
-      if (['reserva_criada', 'reserva_status', 'cliente_criado'].includes(msg.tipo)) {
-        loadDashboard();
-        loadReservas();
-        Notify.info('Dados atualizados em tempo real.');
-      }
-    };
-    es.onerror = () => es.close();
-  }
+/* ── Clientes ────────────────────────────────────────────── */
+async function carregarTotalClientes() {
+  try {
+    const r = await Auth.apiFetch('/api/clientes?page=1&limit=1').then(r => r.json());
+    if (r.ok) {
+      document.getElementById('kpi-clientes').textContent = r.total ?? 0;
+      document.getElementById('kpi-clientes-sub').textContent = `${r.total} na base`;
+    }
+  } catch {}
+}
 
-  // ── Botão atualizar ────────────────────────────────────────
-  document.getElementById('btn-refresh').addEventListener('click', () => {
-    loadDashboard();
-    loadReservas();
-    Notify.success('Dashboard atualizado!');
-  });
-
-  // Reconstrói charts ao trocar tema
-  document.getElementById('theme-toggle').addEventListener('click', () => {
-    setTimeout(() => { loadDashboard(); loadReservas(); }, 150);
-  });
-
-  // ── Boot ───────────────────────────────────────────────────
-  loadDashboard();
-  loadReservas();
-  initSSE();
+/* ── Init ─────────────────────────────────────────────────── */
+App.init().then(() => {
+  carregarDashboard();
+  // Auto-refresh a cada 60s
+  setInterval(carregarDashboard, 60000);
+});
 </script>
 </body>
 </html>
