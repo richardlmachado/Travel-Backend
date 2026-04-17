@@ -1806,7 +1806,7 @@ app.get('/api/financeiro/aging', auth, checkPerm('financeiro','ver'), async (req
   try {
     const [rows] = await pool.query(`
       SELECT pp.id, pp.numero, pp.valor, pp.multa_encargo, pp.data_vencimento, pp.conta,
-             v.codigo AS venda_codigo, COALESCE(cli.nome, cli.razao_social) AS contraparte,
+             v.id AS venda_id, v.codigo AS venda_codigo, COALESCE(cli.nome, cli.razao_social) AS contraparte,
              CASE
                WHEN pp.data_vencimento >= CURDATE()                                THEN 'corrente'
                WHEN DATEDIFF(CURDATE(),pp.data_vencimento) BETWEEN 1  AND 30       THEN '1-30'

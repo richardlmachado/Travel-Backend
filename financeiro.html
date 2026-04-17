@@ -125,6 +125,9 @@
     .leg-dot.proj-s  { background:#fca5a5; }
     .leg-dot.saldo   { background:#2563eb; }
 
+    .fin-tab-count { background:var(--primary-light);color:var(--primary);border-radius:9999px;padding:0 6px;font-size:10px;font-weight:800;margin-left:.25rem; }
+    .main-tab.active .fin-tab-count { background:var(--primary);color:#fff; }
+
     .empty-state { text-align:center;padding:3rem 1rem;color:var(--text-muted); }
     .empty-state i { font-size:2.5rem;margin-bottom:.75rem;display:block;opacity:.4; }
   </style>
@@ -604,6 +607,11 @@ const TIPO_PROD_MAP = {
   carro:'Locação Veículo', seguro:'Seguro Viagem', trem:'Trem',
   transfer:'Transfer', ingresso:'Ingresso/Atrativo', visto:'Visto',
   cambio:'Câmbio', outro:'Outro',
+  // Fallbacks para valores legados em inglês
+  AIRFARE:'Aéreo', INSURANCE:'Seguro Viagem', HOTEL:'Hotel',
+  PACKAGE:'Pacote', CRUISE:'Cruzeiro', CAR:'Locação Veículo',
+  TRAIN:'Trem', TRANSFER:'Transfer', TICKET:'Ingresso/Atrativo',
+  VISA:'Visto', EXCHANGE:'Câmbio', OTHER:'Outro',
 };
 
 /* ── Tabs ────────────────────────────────────────────────── */
@@ -681,6 +689,16 @@ async function buscarTitulos(page = 1) {
     geralTotal = body.total;
     renderTitulos(body.data);
     renderPaginacao();
+
+    // Atualizar contadores dos sub-tabs (conta todos sem filtro de tipo)
+    if (!geralTipo) {
+      const counts = { '': body.total, cliente_agencia:0, cliente_fornecedor:0, fornecedor_agencia:0 };
+      body.data.forEach(r => { if (counts[r.tipo] !== undefined) counts[r.tipo]++; });
+      document.getElementById('tc-').textContent   = body.total;
+      document.getElementById('tc-ca').textContent  = counts.cliente_agencia;
+      document.getElementById('tc-cf').textContent  = counts.cliente_fornecedor;
+      document.getElementById('tc-fa').textContent  = counts.fornecedor_agencia;
+    }
   } catch { Notify.error('Erro de conexão'); }
 }
 
