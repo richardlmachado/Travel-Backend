@@ -76,6 +76,9 @@ const App = (() => {
 
     // 7. Nav ativo
     _highlightNav();
+
+    // 8. RBAC — esconde itens sem permissão
+    Auth.aplicarRBAC();
   }
 
   /**

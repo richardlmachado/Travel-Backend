@@ -48,6 +48,45 @@ function gestorOnly(req, res, next) {
   next();
 }
 
+// ── RBAC: verificar permissão por usuário ────────────────────
+// Cache de permissões em memória (invalidado a cada 60s ou em update)
+let permCache = {};
+let permCacheTs = 0;
+const PERM_TTL = 60000;
+
+async function loadPerms(userId) {
+  const now = Date.now();
+  if (permCache[userId] && (now - permCacheTs) < PERM_TTL) return permCache[userId];
+  const [rows] = await pool.query(
+    'SELECT modulo, acao FROM usuario_permissoes WHERE usuario_id = ? AND permitido = 1',
+    [userId]
+  );
+  const set = new Set(rows.map(r => `${r.modulo}:${r.acao}`));
+  permCache[userId] = set;
+  permCacheTs = now;
+  return set;
+}
+
+function invalidatePermCache(userId) {
+  if (userId) delete permCache[userId];
+  else permCache = {};
+}
+
+// Middleware factory: checkPerm('vendas', 'criar')
+function checkPerm(modulo, acao) {
+  return async (req, res, next) => {
+    try {
+      const perms = await loadPerms(req.user.id);
+      if (!perms.has(`${modulo}:${acao}`)) {
+        return res.status(403).json({ ok: false, error: `Sem permissão: ${modulo}/${acao}` });
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ ok: false, error: 'Erro ao verificar permissões' });
+    }
+  };
+}
+
 // ── Audit helper ─────────────────────────────────────────────
 async function audit(tabela, registro_id, acao, campo, valor_antes, valor_depois, usuario_id, loja_id) {
   await pool.query(
@@ -92,7 +131,7 @@ async function calcularComissao(reserva_id, agente_id, origem_lead, valor_venda,
 
 // ── Health ────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, version: '5.0.0-sprint5', ts: new Date().toISOString() });
+  res.json({ ok: true, version: '5.1.0-rbac', ts: new Date().toISOString() });
 });
 
 // ── Auth ──────────────────────────────────────────────────────
@@ -119,9 +158,19 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '8h' }
     );
 
+    // Carregar permissões RBAC do usuário
+    const permsSet = await loadPerms(user.id);
+    const permissoes = {};
+    for (const key of permsSet) {
+      const [mod, act] = key.split(':');
+      if (!permissoes[mod]) permissoes[mod] = [];
+      permissoes[mod].push(act);
+    }
+
     res.json({
       ok: true, token,
-      user: { id: user.id, nome: user.nome, email: user.email, role: user.role, loja_id: user.loja_id, cargo: user.cargo }
+      user: { id: user.id, nome: user.nome, email: user.email, role: user.role, loja_id: user.loja_id, cargo: user.cargo },
+      permissoes
     });
   } catch (err) {
     console.error(err);
@@ -171,7 +220,7 @@ app.get('/api/usuarios', auth, async (req, res) => {
 });
 
 // ── Clientes (unificado: CRM + Pagantes, PF/PJ) ──────────────
-app.get('/api/clientes', auth, async (req, res) => {
+app.get('/api/clientes', auth, checkPerm('clientes','ver'), async (req, res) => {
   try {
     const { q, tipo_pessoa, eh_pagante, eh_passageiro, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
@@ -197,7 +246,7 @@ app.get('/api/clientes', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.get('/api/clientes/:id', auth, async (req, res) => {
+app.get('/api/clientes/:id', auth, checkPerm('clientes','ver'), async (req, res) => {
   try {
     const [[cliente]] = await pool.query(
       `SELECT c.*, u.nome as agente_nome FROM clientes c
@@ -210,7 +259,7 @@ app.get('/api/clientes/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.post('/api/clientes', auth, async (req, res) => {
+app.post('/api/clientes', auth, checkPerm('clientes','criar'), async (req, res) => {
   try {
     const {
       tipo_pessoa = 'PF', nome, razao_social, email, telefone, whatsapp,
@@ -235,7 +284,7 @@ app.post('/api/clientes', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.put('/api/clientes/:id', auth, async (req, res) => {
+app.put('/api/clientes/:id', auth, checkPerm('clientes','editar'), async (req, res) => {
   try {
     // garante que só edita cliente da própria loja
     const [[exist]] = await pool.query('SELECT id FROM clientes WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
@@ -263,7 +312,7 @@ app.put('/api/clientes/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.delete('/api/clientes/:id', auth, async (req, res) => {
+app.delete('/api/clientes/:id', auth, checkPerm('clientes','excluir'), async (req, res) => {
   try {
     await pool.query('DELETE FROM clientes WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
     await audit('clientes', req.params.id, 'cancelamento', null, null, null, req.user.id, req.user.loja_id);
@@ -272,7 +321,7 @@ app.delete('/api/clientes/:id', auth, async (req, res) => {
 });
 
 // ── Fornecedores ──────────────────────────────────────────────
-app.get('/api/fornecedores', auth, async (req, res) => {
+app.get('/api/fornecedores', auth, checkPerm('fornecedores','ver'), async (req, res) => {
   try {
     const { q, tipo, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
@@ -293,7 +342,7 @@ app.get('/api/fornecedores', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.get('/api/fornecedores/:id', auth, async (req, res) => {
+app.get('/api/fornecedores/:id', auth, checkPerm('fornecedores','ver'), async (req, res) => {
   try {
     const [[f]] = await pool.query('SELECT * FROM fornecedores WHERE id=?', [req.params.id]);
     if (!f) return res.status(404).json({ ok: false, error: 'Fornecedor não encontrado' });
@@ -305,7 +354,7 @@ app.get('/api/fornecedores/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.post('/api/fornecedores', auth, async (req, res) => {
+app.post('/api/fornecedores', auth, checkPerm('fornecedores','criar'), async (req, res) => {
   try {
     const { nome, razao_social, cnpj, tipo, contato_nome, contato_email, contato_telefone, condicoes_pgto, comissao_padrao, observacoes } = req.body;
     if (!nome) return res.status(400).json({ ok: false, error: 'Nome obrigatório' });
@@ -319,7 +368,7 @@ app.post('/api/fornecedores', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.put('/api/fornecedores/:id', auth, async (req, res) => {
+app.put('/api/fornecedores/:id', auth, checkPerm('fornecedores','editar'), async (req, res) => {
   try {
     const { nome, razao_social, cnpj, tipo, contato_nome, contato_email, contato_telefone, condicoes_pgto, comissao_padrao, observacoes } = req.body;
     await pool.query(
@@ -331,7 +380,7 @@ app.put('/api/fornecedores/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.delete('/api/fornecedores/:id', auth, async (req, res) => {
+app.delete('/api/fornecedores/:id', auth, checkPerm('fornecedores','excluir'), async (req, res) => {
   try {
     await pool.query('UPDATE fornecedores SET ativo=0 WHERE id=?', [req.params.id]);
     res.json({ ok: true });
@@ -542,7 +591,7 @@ app.post('/api/financeiro', auth, async (req, res) => {
 });
 
 // ── Comissões ─────────────────────────────────────────────────
-app.get('/api/comissoes', auth, async (req, res) => {
+app.get('/api/comissoes', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const { mes, agente_id, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
@@ -574,7 +623,7 @@ app.get('/api/comissoes', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.patch('/api/comissoes/:id/status', auth, adminOrFinanceiro, async (req, res) => {
+app.patch('/api/comissoes/:id/status', auth, checkPerm('comissoes','editar'), adminOrFinanceiro, async (req, res) => {
   try {
     const { status } = req.body;
     await pool.query('UPDATE comissoes SET status=? WHERE id=?', [status, req.params.id]);
@@ -639,7 +688,7 @@ async function recalcVendaTotais(conn, venda_id) {
 }
 
 // GET /api/vendas — listagem com filtros
-app.get('/api/vendas', auth, async (req, res) => {
+app.get('/api/vendas', auth, checkPerm('vendas','ver'), async (req, res) => {
   try {
     const { status, agente_id, cliente_id, q, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
@@ -680,7 +729,7 @@ app.get('/api/vendas', auth, async (req, res) => {
 });
 
 // GET /api/vendas/:id — detalhe com itens, pax e log
-app.get('/api/vendas/:id', auth, async (req, res) => {
+app.get('/api/vendas/:id', auth, checkPerm('vendas','ver'), async (req, res) => {
   try {
     const [[venda]] = await pool.query(
       `SELECT v.*, c.nome AS cliente_nome, c.tipo_pessoa, c.email AS cliente_email,
@@ -725,7 +774,7 @@ app.get('/api/vendas/:id', auth, async (req, res) => {
 });
 
 // POST /api/vendas — cria venda (com itens e pax opcionais)
-app.post('/api/vendas', auth, async (req, res) => {
+app.post('/api/vendas', auth, checkPerm('vendas','criar'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -823,7 +872,7 @@ app.post('/api/vendas', auth, async (req, res) => {
 });
 
 // PUT /api/vendas/:id — atualiza cabeçalho da venda
-app.put('/api/vendas/:id', auth, async (req, res) => {
+app.put('/api/vendas/:id', auth, checkPerm('vendas','editar'), async (req, res) => {
   try {
     const [[venda]] = await pool.query('SELECT id, status FROM vendas WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
     if (!venda) return res.status(404).json({ ok: false, error: 'Venda não encontrada' });
@@ -849,7 +898,7 @@ app.put('/api/vendas/:id', auth, async (req, res) => {
 });
 
 // PATCH /api/vendas/:id/status — muda status
-app.patch('/api/vendas/:id/status', auth, async (req, res) => {
+app.patch('/api/vendas/:id/status', auth, checkPerm('vendas','editar'), async (req, res) => {
   try {
     const { status } = req.body;
     const VALIDOS = ['cotacao', 'confirmada', 'cancelada', 'concluida'];
@@ -895,7 +944,7 @@ app.patch('/api/vendas/:id/status', auth, async (req, res) => {
 });
 
 // POST /api/vendas/:id/itens — adiciona item
-app.post('/api/vendas/:id/itens', auth, async (req, res) => {
+app.post('/api/vendas/:id/itens', auth, checkPerm('vendas','editar'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -940,7 +989,7 @@ app.post('/api/vendas/:id/itens', auth, async (req, res) => {
 });
 
 // PUT /api/vendas/:id/itens/:itemId — atualiza item
-app.put('/api/vendas/:id/itens/:itemId', auth, async (req, res) => {
+app.put('/api/vendas/:id/itens/:itemId', auth, checkPerm('vendas','editar'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -989,7 +1038,7 @@ app.put('/api/vendas/:id/itens/:itemId', auth, async (req, res) => {
 });
 
 // DELETE /api/vendas/:id/itens/:itemId — remove item
-app.delete('/api/vendas/:id/itens/:itemId', auth, async (req, res) => {
+app.delete('/api/vendas/:id/itens/:itemId', auth, checkPerm('vendas','excluir'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -1009,7 +1058,7 @@ app.delete('/api/vendas/:id/itens/:itemId', auth, async (req, res) => {
 });
 
 // POST /api/vendas/:id/pax — adiciona passageiro
-app.post('/api/vendas/:id/pax', auth, async (req, res) => {
+app.post('/api/vendas/:id/pax', auth, checkPerm('vendas','editar'), async (req, res) => {
   try {
     const [[venda]] = await pool.query('SELECT id FROM vendas WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
     if (!venda) return res.status(404).json({ ok: false, error: 'Venda não encontrada' });
@@ -1032,7 +1081,7 @@ app.post('/api/vendas/:id/pax', auth, async (req, res) => {
 });
 
 // PUT /api/vendas/:id/pax/:paxId — atualiza passageiro
-app.put('/api/vendas/:id/pax/:paxId', auth, async (req, res) => {
+app.put('/api/vendas/:id/pax/:paxId', auth, checkPerm('vendas','editar'), async (req, res) => {
   try {
     const [[row]] = await pool.query(
       'SELECT vp.id FROM venda_pax vp JOIN vendas v ON vp.venda_id=v.id WHERE vp.id=? AND v.id=? AND v.loja_id=?',
@@ -1056,7 +1105,7 @@ app.put('/api/vendas/:id/pax/:paxId', auth, async (req, res) => {
 });
 
 // DELETE /api/vendas/:id/pax/:paxId — remove passageiro
-app.delete('/api/vendas/:id/pax/:paxId', auth, async (req, res) => {
+app.delete('/api/vendas/:id/pax/:paxId', auth, checkPerm('vendas','excluir'), async (req, res) => {
   try {
     const [[row]] = await pool.query(
       'SELECT vp.id FROM venda_pax vp JOIN vendas v ON vp.venda_id=v.id WHERE vp.id=? AND v.id=? AND v.loja_id=?',
@@ -1069,7 +1118,7 @@ app.delete('/api/vendas/:id/pax/:paxId', auth, async (req, res) => {
 });
 
 // POST /api/vendas/:id/pax-item — vincula pax a item
-app.post('/api/vendas/:id/pax-item', auth, async (req, res) => {
+app.post('/api/vendas/:id/pax-item', auth, checkPerm('vendas','editar'), async (req, res) => {
   try {
     const { item_id, pax_id, detalhes_json } = req.body;
     await pool.query(
@@ -1085,7 +1134,7 @@ app.post('/api/vendas/:id/pax-item', auth, async (req, res) => {
 // ── Pagamentos ────────────────────────────────────────────────
 
 // GET /api/vendas/:id/pagamentos — lista pagamentos (filtro tipo opcional)
-app.get('/api/vendas/:id/pagamentos', auth, async (req, res) => {
+app.get('/api/vendas/:id/pagamentos', auth, checkPerm('financeiro','ver'), async (req, res) => {
   try {
     const [[venda]] = await pool.query('SELECT id FROM vendas WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
     if (!venda) return res.status(404).json({ ok: false, error: 'Venda não encontrada' });
@@ -1124,7 +1173,7 @@ app.get('/api/vendas/:id/pagamentos', auth, async (req, res) => {
 });
 
 // POST /api/vendas/:id/pagamentos/sync
-app.post('/api/vendas/:id/pagamentos/sync', auth, async (req, res) => {
+app.post('/api/vendas/:id/pagamentos/sync', auth, checkPerm('financeiro','editar'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -1198,7 +1247,7 @@ app.post('/api/vendas/:id/pagamentos/sync', auth, async (req, res) => {
 });
 
 // PATCH /api/vendas/:id/pagamentos/:pagId/parcelas/:parcId
-app.patch('/api/vendas/:id/pagamentos/:pagId/parcelas/:parcId', auth, async (req, res) => {
+app.patch('/api/vendas/:id/pagamentos/:pagId/parcelas/:parcId', auth, checkPerm('financeiro','editar'), async (req, res) => {
   try {
     const [[row]] = await pool.query(
       `SELECT pp.id FROM pagamento_parcelas pp
@@ -1322,7 +1371,7 @@ async function calcularComissoesVenda(conn, venda_id, loja_id, agente_id, cargo,
 }
 
 // GET /api/comissoes/config/fornecedor
-app.get('/api/comissoes/config/fornecedor', auth, async (req, res) => {
+app.get('/api/comissoes/config/fornecedor', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const { fornecedor_id } = req.query;
     let where = 'WHERE c.loja_id = ? AND c.ativo = 1', params = [req.user.loja_id];
@@ -1338,7 +1387,7 @@ app.get('/api/comissoes/config/fornecedor', auth, async (req, res) => {
 });
 
 // POST /api/comissoes/config/fornecedor
-app.post('/api/comissoes/config/fornecedor', auth, async (req, res) => {
+app.post('/api/comissoes/config/fornecedor', auth, checkPerm('comissoes','criar'), async (req, res) => {
   try {
     const { fornecedor_id, tipo_produto, percentual } = req.body;
     if (!tipo_produto || percentual == null)
@@ -1354,7 +1403,7 @@ app.post('/api/comissoes/config/fornecedor', auth, async (req, res) => {
 });
 
 // PUT /api/comissoes/config/fornecedor/:id
-app.put('/api/comissoes/config/fornecedor/:id', auth, async (req, res) => {
+app.put('/api/comissoes/config/fornecedor/:id', auth, checkPerm('comissoes','editar'), async (req, res) => {
   try {
     const { tipo_produto, percentual, ativo } = req.body;
     await pool.query(
@@ -1367,7 +1416,7 @@ app.put('/api/comissoes/config/fornecedor/:id', auth, async (req, res) => {
 });
 
 // DELETE /api/comissoes/config/fornecedor/:id
-app.delete('/api/comissoes/config/fornecedor/:id', auth, async (req, res) => {
+app.delete('/api/comissoes/config/fornecedor/:id', auth, checkPerm('comissoes','excluir'), async (req, res) => {
   try {
     await pool.query(
       'UPDATE fornecedor_comissoes_config SET ativo=0 WHERE id=? AND loja_id=?',
@@ -1378,7 +1427,7 @@ app.delete('/api/comissoes/config/fornecedor/:id', auth, async (req, res) => {
 });
 
 // GET /api/comissoes/config/agente
-app.get('/api/comissoes/config/agente', auth, async (req, res) => {
+app.get('/api/comissoes/config/agente', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT * FROM agente_comissoes_config
@@ -1419,7 +1468,7 @@ app.post('/api/comissoes/config/agente', auth, gestorOnly, async (req, res) => {
 });
 
 // GET /api/comissoes/lookup?fornecedor_id=X&tipo_produto=Y
-app.get('/api/comissoes/lookup', auth, async (req, res) => {
+app.get('/api/comissoes/lookup', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const { fornecedor_id, tipo_produto } = req.query;
     const forn_pct   = await getComissaoFornPct(req.user.loja_id, fornecedor_id, tipo_produto || 'OTHER');
@@ -1429,7 +1478,7 @@ app.get('/api/comissoes/lookup', auth, async (req, res) => {
 });
 
 // GET /api/vendas/:id/comissoes
-app.get('/api/vendas/:id/comissoes', auth, async (req, res) => {
+app.get('/api/vendas/:id/comissoes', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const [[venda]] = await pool.query('SELECT id FROM vendas WHERE id=? AND loja_id=?', [req.params.id, req.user.loja_id]);
     if (!venda) return res.status(404).json({ ok: false, error: 'Venda nao encontrada' });
@@ -1449,7 +1498,7 @@ app.get('/api/vendas/:id/comissoes', auth, async (req, res) => {
 });
 
 // POST /api/vendas/:id/comissoes/calcular
-app.post('/api/vendas/:id/comissoes/calcular', auth, async (req, res) => {
+app.post('/api/vendas/:id/comissoes/calcular', auth, checkPerm('comissoes','criar'), async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -1486,7 +1535,7 @@ app.patch('/api/vendas/:id/comissoes/:comId/status', auth, gestorOnly, async (re
 });
 
 // GET /api/comissoes/agente — relatorio consolidado
-app.get('/api/comissoes/agente', auth, async (req, res) => {
+app.get('/api/comissoes/agente', auth, checkPerm('comissoes','ver'), async (req, res) => {
   try {
     const { mes, status, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
@@ -1522,7 +1571,7 @@ app.get('/api/comissoes/agente', auth, async (req, res) => {
 // ── Financeiro Títulos (Fase 3 Complemento) ───────────────────
 
 // GET /api/financeiro/titulos — lista pagamentos com join a vendas/clientes/parcelas
-app.get('/api/financeiro/titulos', auth, async (req, res) => {
+app.get('/api/financeiro/titulos', auth, checkPerm('financeiro','ver'), async (req, res) => {
   try {
     const { tipo, status, q, mes, page = 1, limit = 20 } = req.query;
     const offset = (+page - 1) * +limit;
@@ -1594,7 +1643,7 @@ app.get('/api/financeiro/titulos', auth, async (req, res) => {
 });
 
 // GET /api/financeiro/titulos/:id/parcelas — lista parcelas de um pagamento
-app.get('/api/financeiro/titulos/:id/parcelas', auth, async (req, res) => {
+app.get('/api/financeiro/titulos/:id/parcelas', auth, checkPerm('financeiro','ver'), async (req, res) => {
   try {
     const [[p]] = await pool.query(
       'SELECT id FROM pagamentos WHERE id=? AND loja_id=?',
@@ -1790,7 +1839,7 @@ checkAndDispararLembretes();
 setInterval(checkAndDispararLembretes, 60 * 60 * 1000);
 
 // GET /api/lembretes — lista todos os lembretes
-app.get('/api/lembretes', auth, async (req, res) => {
+app.get('/api/lembretes', auth, checkPerm('lembretes','ver'), async (req, res) => {
   try {
     const { status, tipo, canal, page = 1, limit = 20 } = req.query;
     const offset = (+page - 1) * +limit;
@@ -1833,7 +1882,7 @@ app.get('/api/lembretes', auth, async (req, res) => {
 });
 
 // POST /api/lembretes — criar lembrete manual
-app.post('/api/lembretes', auth, async (req, res) => {
+app.post('/api/lembretes', auth, checkPerm('lembretes','criar'), async (req, res) => {
   try {
     const { venda_id, canal = 'email', destinatario_email, destinatario_nome, assunto, mensagem, agendado_para } = req.body;
     if (!venda_id) return res.status(400).json({ ok: false, error: 'venda_id obrigatorio' });
@@ -1874,7 +1923,7 @@ app.post('/api/lembretes', auth, async (req, res) => {
 });
 
 // POST /api/lembretes/:id/disparar — reenviar / disparar manualmente
-app.post('/api/lembretes/:id/disparar', auth, async (req, res) => {
+app.post('/api/lembretes/:id/disparar', auth, checkPerm('lembretes','editar'), async (req, res) => {
   try {
     const [[vl]] = await pool.query(
       `SELECT vl.*, v.codigo, COALESCE(cli.nome,cli.razao_social) AS cliente_nome,
@@ -1912,7 +1961,7 @@ app.post('/api/lembretes/:id/disparar', auth, async (req, res) => {
 });
 
 // PATCH /api/lembretes/:id/cancelar
-app.patch('/api/lembretes/:id/cancelar', auth, async (req, res) => {
+app.patch('/api/lembretes/:id/cancelar', auth, checkPerm('lembretes','editar'), async (req, res) => {
   try {
     await pool.query(
       "UPDATE venda_lembretes SET status='cancelado' WHERE id=? AND loja_id=? AND status='agendado'",
@@ -1927,7 +1976,7 @@ app.patch('/api/lembretes/:id/cancelar', auth, async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 
 // ── Usuários CRUD (admin only para criar/editar outros) ──────
-app.get('/api/usuarios/lista', auth, async (req, res) => {
+app.get('/api/usuarios/lista', auth, checkPerm('usuarios','ver'), async (req, res) => {
   try {
     if (!['admin', 'financeiro'].includes(req.user.role) && !['diretor', 'gerente'].includes(req.user.cargo))
       return res.status(403).json({ ok: false, error: 'Acesso restrito' });
@@ -1977,7 +2026,7 @@ app.get('/api/usuarios/:id', auth, async (req, res) => {
 });
 
 // POST /api/usuarios — criar novo usuário (admin/gestor only)
-app.post('/api/usuarios', auth, async (req, res) => {
+app.post('/api/usuarios', auth, checkPerm('usuarios','criar'), async (req, res) => {
   try {
     if (req.user.role !== 'admin' && !['diretor', 'gerente'].includes(req.user.cargo))
       return res.status(403).json({ ok: false, error: 'Apenas admin ou gestores podem criar usuários' });
@@ -1995,6 +2044,15 @@ app.post('/api/usuarios', auth, async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
       [nome, email, senha_hash, role || 'agente', cargo || 'consultor', telefone || null, req.user.loja_id]
     );
+
+    // Inserir permissões padrão do role (RBAC)
+    const userRole = role || 'agente';
+    const defaults = (typeof RBAC_DEFAULTS !== 'undefined' && RBAC_DEFAULTS[userRole])
+      ? RBAC_DEFAULTS[userRole]() : [];
+    if (defaults.length) {
+      const inserts = defaults.map(p => [result.insertId, p.modulo, p.acao, 1]);
+      await pool.query('INSERT INTO usuario_permissoes (usuario_id, modulo, acao, permitido) VALUES ?', [inserts]);
+    }
 
     await audit('usuarios', result.insertId, 'criacao', null, null, nome, req.user.id, req.user.loja_id);
     broadcast('usuario_criado', { id: result.insertId, loja_id: req.user.loja_id });
@@ -2033,7 +2091,7 @@ app.put('/api/usuarios/:id', auth, async (req, res) => {
 });
 
 // PATCH /api/usuarios/:id/status — ativar/desativar (admin/gestor only)
-app.patch('/api/usuarios/:id/status', auth, async (req, res) => {
+app.patch('/api/usuarios/:id/status', auth, checkPerm('usuarios','editar'), async (req, res) => {
   try {
     if (req.user.role !== 'admin' && !['diretor', 'gerente'].includes(req.user.cargo))
       return res.status(403).json({ ok: false, error: 'Acesso restrito' });
@@ -2113,7 +2171,7 @@ app.put('/api/lojas/:id', auth, gestorOnly, async (req, res) => {
 });
 
 // ── Configurações do sistema (key-value por loja) ────────────
-app.get('/api/configuracoes', auth, async (req, res) => {
+app.get('/api/configuracoes', auth, checkPerm('configuracoes','ver'), async (req, res) => {
   try {
     const { grupo } = req.query;
     let where = 'WHERE loja_id = ?', params = [req.user.loja_id];
@@ -2128,7 +2186,7 @@ app.get('/api/configuracoes', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.put('/api/configuracoes', auth, gestorOnly, async (req, res) => {
+app.put('/api/configuracoes', auth, checkPerm('configuracoes','editar'), gestorOnly, async (req, res) => {
   try {
     const { configs } = req.body; // Array de { chave, valor }
     if (!Array.isArray(configs)) return res.status(400).json({ ok: false, error: 'Envie um array de configs' });
@@ -2156,4 +2214,133 @@ app.get('/api/lojas/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.listen(PORT, () => console.log(`TravelAgent OS API v5.0-sprint5 — porta ${PORT}`));
+// ── RBAC: Endpoints de permissões ────────────────────────────
+
+// Constantes de módulos e ações disponíveis
+const RBAC_MODULOS = ['dashboard','vendas','clientes','fornecedores','financeiro','comissoes','lembretes','usuarios','configuracoes'];
+const RBAC_ACOES   = ['ver','criar','editar','excluir'];
+
+// Templates de permissões padrão por role (usados ao criar novos usuários)
+const RBAC_DEFAULTS = {
+  admin: () => {
+    const perms = [];
+    RBAC_MODULOS.forEach(m => {
+      if (m === 'configuracoes') { perms.push({modulo:m,acao:'ver'},{modulo:m,acao:'editar'}); }
+      else { RBAC_ACOES.forEach(a => perms.push({modulo:m,acao:a})); }
+    });
+    return perms;
+  },
+  financeiro: () => [
+    {modulo:'dashboard',acao:'ver'},
+    {modulo:'vendas',acao:'ver'},
+    {modulo:'clientes',acao:'ver'},{modulo:'clientes',acao:'criar'},{modulo:'clientes',acao:'editar'},
+    {modulo:'fornecedores',acao:'ver'},{modulo:'fornecedores',acao:'criar'},{modulo:'fornecedores',acao:'editar'},
+    {modulo:'financeiro',acao:'ver'},{modulo:'financeiro',acao:'criar'},{modulo:'financeiro',acao:'editar'},{modulo:'financeiro',acao:'excluir'},
+    {modulo:'comissoes',acao:'ver'},{modulo:'comissoes',acao:'editar'},
+    {modulo:'lembretes',acao:'ver'},
+  ],
+  agente: () => [
+    {modulo:'dashboard',acao:'ver'},
+    {modulo:'vendas',acao:'ver'},{modulo:'vendas',acao:'criar'},{modulo:'vendas',acao:'editar'},
+    {modulo:'clientes',acao:'ver'},{modulo:'clientes',acao:'criar'},{modulo:'clientes',acao:'editar'},
+    {modulo:'fornecedores',acao:'ver'},
+    {modulo:'financeiro',acao:'ver'},
+    {modulo:'comissoes',acao:'ver'},
+    {modulo:'lembretes',acao:'ver'},
+  ],
+};
+
+// GET /api/permissoes/me — permissões do usuário logado
+app.get('/api/permissoes/me', auth, async (req, res) => {
+  try {
+    const perms = await loadPerms(req.user.id);
+    // Retorna como objeto { vendas: ['ver','criar','editar'], ... }
+    const result = {};
+    for (const key of perms) {
+      const [modulo, acao] = key.split(':');
+      if (!result[modulo]) result[modulo] = [];
+      result[modulo].push(acao);
+    }
+    res.json({ ok: true, data: result, modulos: RBAC_MODULOS, acoes: RBAC_ACOES });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/permissoes/:userId — permissões de um usuário (admin/gestor)
+app.get('/api/permissoes/:userId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor','gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const [rows] = await pool.query(
+      'SELECT modulo, acao, permitido FROM usuario_permissoes WHERE usuario_id = ?',
+      [req.params.userId]
+    );
+    const result = {};
+    rows.forEach(r => {
+      if (!result[r.modulo]) result[r.modulo] = [];
+      if (r.permitido) result[r.modulo].push(r.acao);
+    });
+    res.json({ ok: true, data: result, modulos: RBAC_MODULOS, acoes: RBAC_ACOES });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// PUT /api/permissoes/:userId — atualizar permissões (admin/gestor)
+app.put('/api/permissoes/:userId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor','gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const userId = +req.params.userId;
+    const { permissoes } = req.body; // { vendas: ['ver','criar'], clientes: ['ver'], ... }
+    if (!permissoes || typeof permissoes !== 'object')
+      return res.status(400).json({ ok: false, error: 'Formato inválido' });
+
+    // Remove todas e reinsere
+    await pool.query('DELETE FROM usuario_permissoes WHERE usuario_id = ?', [userId]);
+
+    const inserts = [];
+    for (const [modulo, acoes] of Object.entries(permissoes)) {
+      if (!RBAC_MODULOS.includes(modulo)) continue;
+      for (const acao of acoes) {
+        if (!RBAC_ACOES.includes(acao)) continue;
+        inserts.push([userId, modulo, acao, 1]);
+      }
+    }
+
+    if (inserts.length) {
+      await pool.query(
+        'INSERT INTO usuario_permissoes (usuario_id, modulo, acao, permitido) VALUES ?',
+        [inserts]
+      );
+    }
+
+    invalidatePermCache(userId);
+    await audit('usuario_permissoes', userId, 'edicao', 'permissoes', null, JSON.stringify(permissoes), req.user.id, req.user.loja_id);
+    res.json({ ok: true, total: inserts.length });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// POST /api/permissoes/:userId/reset — resetar para padrão do role
+app.post('/api/permissoes/:userId/reset', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && !['diretor','gerente'].includes(req.user.cargo))
+      return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const userId = +req.params.userId;
+    const [[user]] = await pool.query('SELECT role FROM usuarios WHERE id = ?', [userId]);
+    if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado' });
+
+    const defaults = (RBAC_DEFAULTS[user.role] || RBAC_DEFAULTS.agente)();
+
+    await pool.query('DELETE FROM usuario_permissoes WHERE usuario_id = ?', [userId]);
+    if (defaults.length) {
+      const inserts = defaults.map(p => [userId, p.modulo, p.acao, 1]);
+      await pool.query('INSERT INTO usuario_permissoes (usuario_id, modulo, acao, permitido) VALUES ?', [inserts]);
+    }
+
+    invalidatePermCache(userId);
+    res.json({ ok: true, total: defaults.length });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+app.listen(PORT, () => console.log(`TravelAgent OS API v5.1-rbac — porta ${PORT}`));

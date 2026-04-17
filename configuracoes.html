@@ -81,11 +81,12 @@
       </div>
     </header>
 
-    <div class="os-content" style="max-width:800px">
+    <div class="os-content" style="max-width:900px">
 
       <!-- Tabs -->
       <div class="cfg-tabs">
         <button class="cfg-tab active" data-cfg-tab="loja"><i class="bi bi-building me-1"></i> Dados da Loja</button>
+        <button class="cfg-tab" data-cfg-tab="permissoes"><i class="bi bi-shield-lock me-1"></i> Permissões</button>
         <button class="cfg-tab" data-cfg-tab="email"><i class="bi bi-envelope me-1"></i> Email (SMTP)</button>
         <button class="cfg-tab" data-cfg-tab="integracoes"><i class="bi bi-plug me-1"></i> Integrações</button>
         <button class="cfg-tab" data-cfg-tab="sistema"><i class="bi bi-sliders me-1"></i> Sistema</button>
@@ -127,6 +128,48 @@
             <div class="col-12">
               <button class="btn btn-primary" id="btn-salvar-loja"><i class="bi bi-check-lg me-1"></i> Salvar Dados da Loja</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Permissões RBAC -->
+      <div class="cfg-section" id="cfg-permissoes">
+        <div class="card-section">
+          <div class="section-title"><i class="bi bi-shield-lock"></i> Permissões por Usuário (RBAC)</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem">
+            Defina o que cada usuário pode acessar. Selecione um usuário para editar suas permissões.
+          </p>
+
+          <!-- Seletor de usuário -->
+          <div class="d-flex gap-2 align-items-center mb-3">
+            <select class="form-select form-select-sm" id="perm-user-select" style="max-width:300px">
+              <option value="">Selecione um usuário...</option>
+            </select>
+            <button class="btn btn-sm btn-outline-warning" id="btn-reset-perms" disabled title="Resetar para padrão do role">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Resetar Padrão
+            </button>
+            <button class="btn btn-sm btn-primary" id="btn-salvar-perms" disabled>
+              <i class="bi bi-check-lg me-1"></i> Salvar Permissões
+            </button>
+          </div>
+
+          <!-- Matriz de permissões -->
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0" style="font-size:12px" id="perm-table">
+              <thead>
+                <tr>
+                  <th style="width:180px">Módulo</th>
+                  <th class="text-center" style="width:80px">Ver</th>
+                  <th class="text-center" style="width:80px">Criar</th>
+                  <th class="text-center" style="width:80px">Editar</th>
+                  <th class="text-center" style="width:80px">Excluir</th>
+                  <th style="width:50px"></th>
+                </tr>
+              </thead>
+              <tbody id="perm-body">
+                <tr><td colspan="6" class="text-center text-muted py-3">Selecione um usuário acima</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -421,8 +464,130 @@ async function checkApiVersion() {
   } catch { }
 }
 
+// ── RBAC: Permissões por Usuário ─────────────────────────────
+const MODULO_LABELS = {
+  dashboard: 'Dashboard', vendas: 'Vendas', clientes: 'Clientes',
+  fornecedores: 'Fornecedores', financeiro: 'Financeiro',
+  comissoes: 'Comissões', lembretes: 'Lembretes',
+  usuarios: 'Usuários', configuracoes: 'Configurações'
+};
+const MODULO_ICONS = {
+  dashboard: 'bi-grid-fill', vendas: 'bi-folder2-open', clientes: 'bi-people-fill',
+  fornecedores: 'bi-building', financeiro: 'bi-cash-stack',
+  comissoes: 'bi-percent', lembretes: 'bi-bell-fill',
+  usuarios: 'bi-person-gear', configuracoes: 'bi-gear-fill'
+};
+const ACOES = ['ver', 'criar', 'editar', 'excluir'];
+const MODULOS = Object.keys(MODULO_LABELS);
+
+// Carregar lista de usuários no select
+async function carregarUsuariosPerms() {
+  try {
+    const res = await Auth.apiFetch('/api/usuarios/lista?limit=999&ativo=');
+    const body = await res.json();
+    if (!body.ok) return;
+    const sel = document.getElementById('perm-user-select');
+    sel.innerHTML = '<option value="">Selecione um usuário...</option>';
+    (body.data || []).forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = `${u.nome} (${u.role}${u.ativo ? '' : ' — INATIVO'})`;
+      sel.appendChild(opt);
+    });
+  } catch (err) { console.error(err); }
+}
+
+// Carregar permissões do usuário selecionado
+let currentPermUserId = null;
+async function carregarPermsUsuario(userId) {
+  if (!userId) {
+    document.getElementById('perm-body').innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Selecione um usuário acima</td></tr>';
+    document.getElementById('btn-salvar-perms').disabled = true;
+    document.getElementById('btn-reset-perms').disabled = true;
+    currentPermUserId = null;
+    return;
+  }
+  currentPermUserId = userId;
+  try {
+    const res = await Auth.apiFetch(`/api/permissoes/${userId}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+
+    const perms = body.data || {};
+    const tbody = document.getElementById('perm-body');
+    tbody.innerHTML = MODULOS.map(mod => {
+      const modPerms = perms[mod] || [];
+      const icon = MODULO_ICONS[mod] || 'bi-circle';
+      const availableAcoes = mod === 'configuracoes' ? ['ver', 'editar'] : ACOES;
+      return `<tr>
+        <td><i class="bi ${icon} me-2" style="color:var(--primary)"></i><strong>${MODULO_LABELS[mod]}</strong></td>
+        ${ACOES.map(acao => {
+          const disabled = !availableAcoes.includes(acao);
+          const checked = modPerms.includes(acao);
+          return `<td class="text-center">
+            ${disabled ? '<span style="color:#cbd5e1">—</span>' :
+              `<input type="checkbox" class="form-check-input perm-check" data-mod="${mod}" data-acao="${acao}" ${checked ? 'checked' : ''}>`}
+          </td>`;
+        }).join('')}
+        <td>
+          <button class="btn btn-sm btn-link p-0" title="Marcar todas" onclick="toggleRow(this,'${mod}',true)"><i class="bi bi-check-all"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('btn-salvar-perms').disabled = false;
+    document.getElementById('btn-reset-perms').disabled = false;
+  } catch (err) { Notify.error(err.message); }
+}
+
+function toggleRow(btn, mod, state) {
+  document.querySelectorAll(`.perm-check[data-mod="${mod}"]`).forEach(cb => { cb.checked = state; });
+}
+
+document.getElementById('perm-user-select').addEventListener('change', e => {
+  carregarPermsUsuario(e.target.value);
+});
+
+// Salvar permissões
+document.getElementById('btn-salvar-perms').addEventListener('click', async () => {
+  if (!currentPermUserId) return;
+  const permissoes = {};
+  document.querySelectorAll('.perm-check:checked').forEach(cb => {
+    const mod = cb.dataset.mod;
+    const acao = cb.dataset.acao;
+    if (!permissoes[mod]) permissoes[mod] = [];
+    permissoes[mod].push(acao);
+  });
+
+  const btn = document.getElementById('btn-salvar-perms');
+  btn.disabled = true;
+  try {
+    const res = await Auth.apiFetch(`/api/permissoes/${currentPermUserId}`, {
+      method: 'PUT', body: JSON.stringify({ permissoes })
+    });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success(`Permissões salvas (${body.total} permissões)`);
+  } catch (err) { Notify.error(err.message); }
+  btn.disabled = false;
+});
+
+// Resetar para padrão do role
+document.getElementById('btn-reset-perms').addEventListener('click', async () => {
+  if (!currentPermUserId) return;
+  if (!confirm('Resetar permissões para o padrão do role?')) return;
+  try {
+    const res = await Auth.apiFetch(`/api/permissoes/${currentPermUserId}/reset`, { method: 'POST' });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    Notify.success('Permissões resetadas para o padrão');
+    carregarPermsUsuario(currentPermUserId);
+  } catch (err) { Notify.error(err.message); }
+});
+
 // Init
 carregarLoja();
+carregarUsuariosPerms();
 carregarConfigs();
 checkWaStatus();
 checkApiVersion();

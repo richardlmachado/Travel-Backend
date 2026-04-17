@@ -43,6 +43,12 @@ const Auth = (() => {
       };
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+
+      // Salvar permissões RBAC
+      if (data.permissoes) {
+        localStorage.setItem('travelos-perms', JSON.stringify(data.permissoes));
+      }
+
       return { ok: true, user: session };
 
     } catch (err) {
@@ -56,6 +62,7 @@ const Auth = (() => {
    */
   function logout() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('travelos-perms');
     sessionStorage.removeItem('travelos-contexto');
     Notify.info('Sessão encerrada. Até logo!');
     setTimeout(() => {
@@ -167,5 +174,59 @@ const Auth = (() => {
     catch { return null; }
   }
 
-  return { login, logout, getUser, getToken, isLoggedIn, guard, populateUI, apiFetch, loadContexto, getContexto };
+  /**
+   * Retorna as permissões RBAC do usuário logado
+   * @returns {object} ex: { vendas: ['ver','criar','editar'], ... }
+   */
+  function getPerms() {
+    try { return JSON.parse(localStorage.getItem('travelos-perms')) || {}; }
+    catch { return {}; }
+  }
+
+  /**
+   * Verifica se o usuário tem permissão para uma ação num módulo
+   * @param {string} modulo - ex: 'vendas'
+   * @param {string} acao   - ex: 'ver' (default) | 'criar' | 'editar' | 'excluir'
+   * @returns {boolean}
+   */
+  function temPerm(modulo, acao = 'ver') {
+    const perms = getPerms();
+    return Array.isArray(perms[modulo]) && perms[modulo].includes(acao);
+  }
+
+  /**
+   * Esconde itens da sidebar e botões com base nas permissões
+   * Chamar após populateUI()
+   */
+  function aplicarRBAC() {
+    const perms = getPerms();
+
+    // Sidebar: esconder links para módulos sem permissão de ver
+    const modMap = {
+      'dashboard.html': 'dashboard',
+      'reservas.html': 'vendas',
+      'clientes.html': 'clientes',
+      'financeiro.html': 'financeiro',
+      'comissoes-config.html': 'comissoes',
+      'lembretes.html': 'lembretes',
+      'usuarios.html': 'usuarios',
+      'configuracoes.html': 'configuracoes',
+    };
+
+    document.querySelectorAll('.os-nav-item[data-page]').forEach(link => {
+      const page = link.dataset.page;
+      const modulo = modMap[page];
+      if (modulo && !temPerm(modulo, 'ver')) {
+        link.style.display = 'none';
+      }
+    });
+
+    // Botões de criar: esconder se sem permissão
+    document.querySelectorAll('[data-perm]').forEach(el => {
+      const [mod, act] = el.dataset.perm.split(':');
+      if (!temPerm(mod, act)) el.style.display = 'none';
+    });
+  }
+
+  return { login, logout, getUser, getToken, isLoggedIn, guard, populateUI, apiFetch, loadContexto, getContexto, getPerms, temPerm, aplicarRBAC };
 })();
