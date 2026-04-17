@@ -13,3 +13,7 @@ ALTER TABLE pagamento_parcelas
 -- Índice para queries de aging/fluxo (data_vencimento + pago + loja_id via pagamentos)
 ALTER TABLE pagamento_parcelas
   ADD INDEX idx_pp_venc_pago (data_vencimento, pago);
+
+-- Auditoria: adicionar acao 'estorno'
+ALTER TABLE auditoria
+  MODIFY COLUMN acao ENUM('criacao','edicao','cancelamento','status','estorno') NOT NULL;
