@@ -86,7 +86,14 @@
     .dre-total { background:var(--bg-page);font-weight:900; }
     .dre-total .dre-label { color:var(--text-heading); }
     .dre-green .dre-value { color:#16a34a; }
+    .dre-green .dre-label { color:#166534; }
+    .dre-green .dre-pct   { color:#166534; }
+    .dre-green.dre-total  { background:#dcfce7; }
     .dre-red   .dre-value { color:#dc2626; }
+    .dre-red   .dre-label { color:#991b1b; }
+    .dre-red.dre-total    { background:#fee2e2; }
+    .dre-section.dre-green { border-color:#16a34a; }
+    .dre-section.dre-red   { border-color:#dc2626; }
 
     /* ── Spinner ── */
     .rel-loading { display:flex;align-items:center;justify-content:center;padding:3rem;gap:.75rem;color:var(--text-muted);font-size:13px;font-weight:600; }
@@ -477,7 +484,7 @@ tabs.forEach(tab => {
 // ── Carrega agentes ───────────────────────────────────────────────────────
 async function carregarAgentes() {
   try {
-    const data = await Auth.apiFetch('/api/usuarios?role=agente&limit=200');
+    const data = await Auth.apiFetch('/api/usuarios?role=agente&limit=200').then(r => r.json());
     const lista = data.rows || data.data || data.usuarios || [];
     ['v-agente','c-agente'].forEach(id => {
       const sel = $(id);
@@ -515,7 +522,7 @@ async function buscarVendas() {
   if (agente) params.append('agente_id', agente);
 
   try {
-    const data = await Auth.apiFetch('/api/relatorios/vendas?' + params);
+    const data = await Auth.apiFetch('/api/relatorios/vendas?' + params).then(r => r.json());
     vendaData = data.rows || [];
     const totais = data.totais || {};
 
@@ -551,7 +558,7 @@ async function buscarVendas() {
       <tbody>
         ${vendaData.map(r => {
           const m = (r.total_venda||0) - (r.total_custo||0);
-          const mp = pct(m, r.total_venda||1);
+          const mp = pct(m, r.total_venda||0);
           return `
           <tr>
             <td><a href="sale-form.html?id=${r.id}" class="font-monospace fw-bold text-primary text-decoration-none">${r.codigo||r.id}</a></td>
@@ -659,7 +666,7 @@ async function buscarDRE() {
   if (ate) params.append('ate', ate);
 
   try {
-    dreData = await Auth.apiFetch('/api/financeiro/dre?' + params);
+    dreData = await Auth.apiFetch('/api/financeiro/dre?' + params).then(r => r.json());
     renderDRE(dreData);
   } catch(e) {
     $('f-dre-wrap').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar DRE'}</div>`;
@@ -702,43 +709,43 @@ function renderDRE(d) {
     <div class="dre-section">
       <div class="dre-header">(-) Custos Diretos (Fornecedores)</div>
       ${(d.por_produto||[]).map(p => `
-        <div class="dre-row dre-indent">
+        <div class="dre-row dre-indent dre-red">
           <span class="dre-label">${PROD_MAP[p.tipo_produto]||p.tipo_produto||'—'}</span>
           <span class="dre-pct">${pct(p.custo_direto, receita)}</span>
-          <span class="dre-value dre-red" style="color:#dc2626">${fmt(p.custo_direto)}</span>
+          <span class="dre-value">${fmt(p.custo_direto)}</span>
         </div>`).join('')}
       <div class="dre-row dre-total dre-red">
         <span class="dre-label">Total Custos Diretos</span>
         <span class="dre-pct">${pct(custo, receita)}</span>
-        <span class="dre-value" style="color:#dc2626">${fmt(custo)}</span>
+        <span class="dre-value">${fmt(custo)}</span>
       </div>
     </div>
 
     <!-- Margem -->
     <div class="dre-section">
-      <div class="dre-row dre-total dre-green" style="background:var(--primary-light)">
-        <span class="dre-label" style="color:var(--primary)">( = ) Margem Bruta</span>
-        <span class="dre-pct" style="color:var(--primary)">${pct(margem, receita)}</span>
-        <span class="dre-value" style="color:var(--primary)">${fmt(margem)}</span>
+      <div class="dre-row dre-total dre-green">
+        <span class="dre-label">( = ) Margem Bruta</span>
+        <span class="dre-pct">${pct(margem, receita)}</span>
+        <span class="dre-value">${fmt(margem)}</span>
       </div>
     </div>
 
     <!-- Comissões -->
     <div class="dre-section">
       <div class="dre-header">(-) Comissões de Agentes</div>
-      <div class="dre-row">
+      <div class="dre-row dre-red">
         <span class="dre-label">Comissões pagas/devidas a agentes</span>
         <span class="dre-pct">${pct(comiss, receita)}</span>
-        <span class="dre-value" style="color:#dc2626">${fmt(comiss)}</span>
+        <span class="dre-value">${fmt(comiss)}</span>
       </div>
     </div>
 
     <!-- Resultado -->
-    <div class="dre-section" style="border-color:${resultado>=0?'#16a34a':'#dc2626'};border-width:2px">
-      <div class="dre-row dre-total" style="background:${resultado>=0?'#dcfce7':'#fee2e2'}">
-        <span class="dre-label" style="color:${resultado>=0?'#166534':'#991b1b'}">( = ) Resultado Operacional</span>
-        <span class="dre-pct" style="color:${resultado>=0?'#166534':'#991b1b'}">${pct(resultado, receita)}</span>
-        <span class="dre-value" style="color:${resultado>=0?'#166534':'#991b1b'}">${fmt(resultado)}</span>
+    <div class="dre-section ${resultado>=0?'dre-green':'dre-red'}" style="border-width:2px">
+      <div class="dre-row dre-total ${resultado>=0?'dre-green':'dre-red'}">
+        <span class="dre-label">( = ) Resultado Operacional</span>
+        <span class="dre-pct">${pct(resultado, receita)}</span>
+        <span class="dre-value">${fmt(resultado)}</span>
       </div>
     </div>
   `;
@@ -818,7 +825,7 @@ $('f-exp-xlsx').addEventListener('click', () => {
     const prodRows = dreData.por_produto.map(p => ({
       'Produto': PROD_MAP[p.tipo_produto]||p.tipo_produto,
       'Receita': p.receita_bruta||0, 'Custo': p.custo_direto||0,
-      'Margem': p.margem_bruta||0, 'Margem %': pct(p.margem_bruta||0, p.receita_bruta||1)
+      'Margem': p.margem_bruta||0, 'Margem %': pct(p.margem_bruta||0, p.receita_bruta||0)
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prodRows), 'Por Produto');
   }
@@ -847,7 +854,7 @@ async function buscarComissoes() {
   if (status) params.append('status', status);
 
   try {
-    const data = await Auth.apiFetch('/api/relatorios/comissoes?' + params);
+    const data = await Auth.apiFetch('/api/relatorios/comissoes?' + params).then(r => r.json());
     comissData = data.rows || [];
     const totais = data.totais || {};
 
@@ -972,13 +979,14 @@ async function buscarClientes() {
   if (q) params.append('q', q);
 
   try {
-    const data = await Auth.apiFetch('/api/relatorios/clientes?' + params);
+    const data = await Auth.apiFetch('/api/relatorios/clientes?' + params).then(r => r.json());
     clienteData = data.rows || [];
     const totais = data.totais || {};
 
     const recorrentes = clienteData.filter(r => (r.total_vendas||0) >= 2).length;
-    const receitaTotal = clienteData.reduce((a,r)=>a+(r.receita_total||0),0);
-    const ticketMedio = clienteData.length > 0 ? receitaTotal / clienteData.length : 0;
+    const receitaTotal = clienteData.reduce((a,r)=>a+Number(r.receita_total||0),0);
+    const totalVendas = clienteData.reduce((a,r)=>a+(r.total_vendas||0),0);
+    const ticketMedio = totalVendas > 0 ? receitaTotal / totalVendas : 0;
 
     $('cl-s-total').textContent  = fmtN(clienteData.length);
     $('cl-s-receita').textContent = fmt(receitaTotal);

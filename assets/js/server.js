@@ -2590,9 +2590,10 @@ app.get('/api/dashboard/charts', auth, async (req, res) => {
              COALESCE(SUM(v.total_custo),0)    AS custo
         FROM usuarios u
         JOIN vendas v ON v.agente_id=u.id AND v.loja_id=? AND v.status IN ('confirmada','concluida')
+       WHERE u.loja_id=?
        GROUP BY u.id, u.nome
        ORDER BY receita DESC LIMIT 5
-    `, [loja_id]);
+    `, [loja_id, loja_id]);
 
     // KPIs adicionais do dashboard
     const [[kpis]] = await pool.query(`
@@ -2618,16 +2619,15 @@ app.get('/api/dashboard/charts', auth, async (req, res) => {
 app.get('/api/relatorios/vendas', auth, checkPerm('vendas','ver'), async (req, res) => {
   const loja_id = req.user.loja_id;
   const { de, ate, status, agente_id, tipo_produto, page = 1, limit = 100 } = req.query;
-  const offset = (+page - 1) * +limit;
+  const safeLimit = Math.min(+limit || 100, 500);
+  const offset = (+page - 1) * safeLimit;
   try {
     const params = [loja_id];
     let where = 'WHERE v.loja_id=?';
     if (de && ate)   { where += ' AND v.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
     if (status)      { where += ' AND v.status=?'; params.push(status); }
-    if (agente_id)   { where += ' AND v.agente_id=?'; params.push(+agente_id); }
-
-    let itemJoin = 'LEFT JOIN venda_itens vi ON vi.venda_id=v.id';
-    if (tipo_produto) { where += ' AND vi.tipo_produto=?'; params.push(tipo_produto); }
+    if (agente_id && !isNaN(+agente_id)) { where += ' AND v.agente_id=?'; params.push(+agente_id); }
+    if (tipo_produto) { where += ' AND EXISTS (SELECT 1 FROM venda_itens vif WHERE vif.venda_id=v.id AND vif.tipo_produto=?)'; params.push(tipo_produto); }
 
     const [rows] = await pool.query(`
       SELECT v.id, v.codigo, v.status, v.criado_em, v.data_fechamento,
@@ -2635,33 +2635,26 @@ app.get('/api/relatorios/vendas', auth, checkPerm('vendas','ver'), async (req, r
              (v.total_venda - v.total_custo) AS margem,
              COALESCE(cli.nome, cli.razao_social) AS cliente,
              u.nome AS agente,
-             COUNT(DISTINCT vi2.id) AS qtd_itens,
-             GROUP_CONCAT(DISTINCT vi2.tipo_produto) AS tipos_produto
+             (SELECT COUNT(*) FROM venda_itens vi2 WHERE vi2.venda_id=v.id) AS qtd_itens,
+             (SELECT GROUP_CONCAT(DISTINCT vi3.tipo_produto) FROM venda_itens vi3 WHERE vi3.venda_id=v.id) AS tipos_produto
         FROM vendas v
         LEFT JOIN clientes cli ON v.cliente_id=cli.id
         LEFT JOIN usuarios u   ON v.agente_id=u.id
-        LEFT JOIN venda_itens vi2 ON vi2.venda_id=v.id
-        ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : ''}
         ${where}
-       GROUP BY v.id
        ORDER BY v.criado_em DESC
        LIMIT ? OFFSET ?
-    `, [...params, +limit, +offset]);
+    `, [...params, safeLimit, offset]);
 
     const [[{ total }]] = await pool.query(
-      `SELECT COUNT(DISTINCT v.id) AS total FROM vendas v
-       ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : 'LEFT JOIN venda_itens vi ON vi.venda_id=v.id'}
-       ${where}`, params
+      `SELECT COUNT(*) AS total FROM vendas v ${where}`, params
     );
 
-    // Totais
     const [[totais]] = await pool.query(`
       SELECT COALESCE(SUM(v.total_venda),0) AS receita,
              COALESCE(SUM(v.total_custo),0) AS custo,
              COALESCE(SUM(v.total_venda - v.total_custo),0) AS margem,
              COUNT(*) AS qtd
         FROM vendas v
-        ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : ''}
         ${where}
     `, params);
 
@@ -2688,13 +2681,13 @@ app.get('/api/relatorios/comissoes', auth, checkPerm('comissoes','ver'), async (
     const params = [loja_id];
     let where = 'WHERE v.loja_id=?';
     if (de && ate)  { where += ' AND vc.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
-    if (agente_id)  { where += ' AND vc.agente_id=?'; params.push(+agente_id); }
     if (status)     { where += ' AND vc.status=?'; params.push(status); }
-    // Agentes só veem as próprias comissões
-    if (req.user.role === 'agente') { where += ' AND vc.agente_id=?'; params.push(req.user.id); }
+    // Agentes só veem as próprias; admin pode filtrar por agente
+    const finalAgenteId = req.user.role === 'agente' ? req.user.id : (agente_id && !isNaN(+agente_id) ? +agente_id : null);
+    if (finalAgenteId) { where += ' AND vc.agente_id=?'; params.push(finalAgenteId); }
 
     const [rows] = await pool.query(`
-      SELECT vc.id, vc.venda_id, vc.nivel AS tipo_comissao, vc.status,
+      SELECT vc.id, vc.nivel AS tipo_comissao, vc.status,
              vc.valor, vc.percentual AS pct, vc.criado_em,
              v.id AS venda_id, v.codigo AS venda_codigo, v.total_venda,
              u.nome AS agente_nome,
@@ -2722,9 +2715,9 @@ app.get('/api/relatorios/clientes', auth, checkPerm('clientes','ver'), async (re
   const loja_id = req.user.loja_id;
   const { de, ate } = req.query;
   try {
-    const params = [loja_id];
+    const queryParams = [loja_id, loja_id];
     let dateWhere = '';
-    if (de && ate) { dateWhere = ' AND c.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
+    if (de && ate) { dateWhere = ' AND c.criado_em BETWEEN ? AND ?'; queryParams.push(de, ate + ' 23:59:59'); }
 
     // Clientes com métricas de vendas
     const [rows] = await pool.query(`
@@ -2738,7 +2731,7 @@ app.get('/api/relatorios/clientes', auth, checkPerm('clientes','ver'), async (re
        WHERE c.loja_id=?${dateWhere}
        GROUP BY c.id
        ORDER BY receita_total DESC
-    `, [loja_id, ...params]);
+    `, queryParams);
 
     // Novos clientes por mês (últimos 6 meses)
     const [novosPorMes] = await pool.query(`

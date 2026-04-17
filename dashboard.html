@@ -58,6 +58,7 @@
     .st-badge.cotacao    { background:#fef3c7;color:#92400e; }
     .st-badge.cancelada  { background:#fee2e2;color:#991b1b; }
     .st-badge.concluida  { background:#dbeafe;color:#1e40af; }
+    .st-badge.pendente   { background:#fef9c3;color:#854d0e; }
 
     .empty-state { text-align:center;padding:2rem 1rem;color:var(--text-muted);font-size:13px;font-weight:600; }
     .empty-state i { font-size:2rem;display:block;margin-bottom:.5rem;opacity:.4; }
@@ -324,7 +325,7 @@
 <script>
 /* ── Helpers ─────────────────────────────────────────────── */
 const fmtM  = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(+v||0);
-const fmtMK = v => { const n=+v||0; if(n>=1e6) return 'R$'++(n/1e6).toFixed(1)+'M'; if(n>=1e3) return 'R$'++(n/1e3).toFixed(0)+'k'; return fmtM(n); };
+const fmtMK = v => { const n=+v||0; const a=Math.abs(n); const s=n<0?'-':''; if(a>=1e6) return s+'R$ '+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return s+'R$ '+(a/1e3).toFixed(0)+'k'; return fmtM(n); };
 const mesLbl= m => { const [y,mo]=m.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y.slice(2); };
 
 const PROD_MAP = {
@@ -403,7 +404,7 @@ function renderFinanceiro(f) {
   document.getElementById('fin-atraso').textContent   = fmtMK(f.em_atraso);
   document.getElementById('fin-recebido').textContent = fmtMK(f.total_recebido);
   document.getElementById('fin-pagar').textContent    = fmtMK(f.a_pagar);
-  document.getElementById('fin-margem-pct').textContent = f.margem_pct + '%';
+  document.getElementById('fin-margem-pct').textContent = (f.margem_pct != null ? f.margem_pct : '—') + '%';
 }
 
 /* ── Chart Receita ───────────────────────────────────────── */
@@ -423,7 +424,7 @@ function renderChartReceita(dados) {
     data:{ labels, datasets:[
       { label:'Receita', data:receita, backgroundColor:'rgba(37,99,235,.8)', borderRadius:4, stack:'v' },
       { label:'Custo',   data:custo,   backgroundColor:'rgba(220,38,38,.4)', borderRadius:4, stack:'v' },
-      { label:'Margem',  data:margem,  type:'line', borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#16a34a', fill:true, tension:.3, stack:undefined },
+      { label:'Margem',  data:margem,  type:'line', borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#16a34a', fill:true, tension:.3, yAxisID:'y2' },
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       interaction:{ mode:'index', intersect:false },
@@ -431,6 +432,7 @@ function renderChartReceita(dados) {
       scales:{
         x:{ grid:{ color:grid }, ticks:{ color:text, font:{size:10} }},
         y:{ grid:{ color:grid }, ticks:{ color:text, font:{size:10}, callback: v => 'R$'+Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v) }, stacked:true },
+        y2:{ display:false, grid:{ drawOnChartArea:false } },
       }
     }
   });
@@ -438,7 +440,8 @@ function renderChartReceita(dados) {
 
 /* ── Chart Produto ───────────────────────────────────────── */
 function renderChartProduto(dados) {
-  if (!dados.length) {
+  if (!dados || !dados.length) {
+    if (chartProduto) { chartProduto.destroy(); chartProduto = null; }
     document.getElementById('donut-total').textContent = '0';
     document.getElementById('prod-legenda').innerHTML = '<div class="empty-state" style="padding:.75rem"><i class="bi bi-inbox"></i>Sem dados</div>';
     return;
@@ -455,7 +458,7 @@ function renderChartProduto(dados) {
     type:'doughnut',
     data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:2, borderColor:'var(--card-bg)' }]},
     options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${fmtM(ctx.parsed)}` }}}
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => `${ctx.chart.data.labels[ctx.dataIndex]}: ${fmtM(ctx.parsed)}` }}}
     }
   });
 
@@ -493,7 +496,7 @@ async function carregarUltimasVendas() {
   try {
     const r = await Auth.apiFetch('/api/vendas?page=1&limit=6').then(r => r.json());
     const wrap = document.getElementById('ultimas-vendas');
-    if (!r.ok || !r.data.length) {
+    if (!r.ok || !r.data?.length) {
       wrap.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i>Nenhuma venda ainda</div>';
       return;
     }
@@ -511,10 +514,16 @@ async function carregarUltimasVendas() {
 /* ── Embarques ───────────────────────────────────────────── */
 async function carregarEmbarques() {
   try {
-    const r = await Auth.apiFetch('/api/dashboard').then(r => r.json());
-    if (r.ok) {
-      document.getElementById('kpi-embarques').textContent = r.data?.embarques?.length ?? 0;
-    }
+    const r = await Auth.apiFetch('/api/vendas?status=confirmada&limit=100').then(r => r.json());
+    if (!r.ok) return;
+    const hoje = new Date();
+    const em48h = new Date(hoje.getTime() + 48*60*60*1000);
+    const embarques = (r.data || []).filter(v => {
+      if (!v.data_embarque) return false;
+      const d = new Date(v.data_embarque);
+      return d >= hoje && d <= em48h;
+    });
+    document.getElementById('kpi-embarques').textContent = embarques.length;
   } catch {}
 }
 
@@ -532,8 +541,8 @@ async function carregarTotalClientes() {
 /* ── Init ─────────────────────────────────────────────────── */
 App.init().then(() => {
   carregarDashboard();
-  // Auto-refresh a cada 60s
-  setInterval(carregarDashboard, 60000);
+  const refreshId = setInterval(carregarDashboard, 60000);
+  window.addEventListener('beforeunload', () => clearInterval(refreshId), { once: true });
 });
 </script>
 </body>
