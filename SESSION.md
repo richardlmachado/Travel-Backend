@@ -11,40 +11,49 @@
 - **Data**: 2026-04-16
 - **Transcript**: `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\300f7667-058a-42a5-bbda-8a2ba180ea8a.jsonl`
 
-## Status: Sprint 7 completa — Pronto para Sprint 8 (Documentos de Viagem)
+## Status: Sprint 7 completa + Rebranding visual — Pronto para Sprint 8 (Documentos de Viagem)
+
+### Rebranding Visual "Breathe" ✅
+
+1. **`assets/css/style.css` v3** — design system reescrito do zero
+   - Paleta neutra (preto/branco) + acento azul `#2563eb` pontual
+   - Tipografia Inter 400-700 (sem 800-900), sem uppercase agressivo
+   - Radius 0.5rem uniforme, sem sombras em cards
+   - Sidebar sem borda, item ativo com fundo `accent-muted`
+   - Toasts escuros, botões sem shadow, brand icon com contorno fino
+   - Dark mode refinado com palette zinc
+   - Aliases de compatibilidade (`--primary-light`, `--shadow-primary`) para todas as páginas
+
+2. **`index.html`** — login redesenhado
+   - Painel esquerdo sólido preto com tipografia limpa
+   - Formulário minimalista, labels sentence case, inputs borda fina
+   - Toggle de tema no canto
+
+3. **GitHub**: commit `eecaa0b`
 
 ### Sprint 7 — Dashboard Executivo & Relatórios ✅
 
-1. **`dashboard.html`** — redesign completo
-   - 7 KPIs: Receita Total, Margem Bruta (%), Vendas (confirmadas), Ticket Médio, Conversão %, Clientes, Embarques 48h
-   - Filtro de período: Este mês / 3 meses / 6 meses / 12 meses / Total
-   - Gráfico de barras empilhadas: receita/custo por mês + linha margem (Chart.js 4.4.3)
-   - Gráfico donut: vendas por tipo de produto com legenda
-   - Ranking dos top 5 agentes (ouro/prata/bronze)
-   - Últimas 6 vendas com status badge
-   - Cards A Receber / A Pagar linkando para financeiro.html
-   - Auto-refresh a cada 60 segundos
+1. **`dashboard.html`** — redesign com Chart.js 4.4.3
+   - 7 KPIs com filtro de período, gráfico barras (receita/custo) + linha margem eixo Y2
+   - Donut por produto, ranking top 5 agentes, últimas vendas, auto-refresh 60s
 
 2. **`relatorios.html`** — página nova com 4 abas
-   - **Vendas**: filtros de/ate/status/produto/agente, tabela com receita/custo/margem, export PDF+Excel
-   - **Financeiro (DRE)**: filtros período, DRE estruturada (+receita -custo =margem -comissões =resultado), detalhamento por produto, export PDF+Excel (2 abas)
-   - **Comissões**: filtros de/ate/agente/status, tabela por comissão, totais (total/pago/pendente), export PDF+Excel
-   - **Clientes**: filtros de/ate/busca, tabela com receita_total/ticket_medio/ultima_compra/recorrente, export PDF+Excel
-   - Libs via CDN: jsPDF 2.5.1 + jsPDF-AutoTable 3.8.2 + SheetJS (xlsx) 0.18.5
+   - Vendas | Financeiro (DRE) | Comissões | Clientes
+   - Export PDF (jsPDF+AutoTable) e Excel (SheetJS) em cada aba
 
-3. **Backend `server.js`** — 4 novos endpoints:
-   - `GET /api/dashboard/charts` — dados para gráficos (vendas_mes 12mo, por_produto, ranking_agentes top5, kpis com taxa_conversao e ticket_medio)
-   - `GET /api/relatorios/vendas` — relatório de vendas com filtros (de/ate/status/agente_id/tipo_produto), retorna rows + totais (receita_total/custo_total/margem_bruta/qtd)
-   - `GET /api/relatorios/comissoes` — relatório de comissões, usa colunas corretas da tabela (nivel, percentual, venda_item_id), retorna rows + totais
-   - `GET /api/relatorios/clientes` — métricas de clientes (total_vendas, receita_total, ticket_medio, ultima_compra), retorna rows com cliente_nome/cliente_email
+3. **Backend `server.js`** — 4 endpoints:
+   - `GET /api/dashboard/charts`, `/api/relatorios/vendas`, `/api/relatorios/comissoes`, `/api/relatorios/clientes`
 
-4. **Sidebar atualizada** em todas as 15 páginas com link `relatorios.html`
+4. **Validação completa** — 15+ bugs encontrados e corrigidos:
+   - CRÍTICO: Auth.apiFetch sem .json() em relatorios.html (página inteira quebrada)
+   - CRÍTICO: Double JOIN em venda_itens inflava dados SQL
+   - ALTO: Ranking agentes sem filtro loja_id (vazamento multi-tenant)
+   - ALTO: Chart.js margem empilhada com barras (eixo Y2 faltava)
+   - + 11 bugs menores corrigidos
 
-5. **GitHub**: commit `13ed808`
+5. **Sidebar atualizada** em todas as 15 páginas com link Relatórios
 
-### Bugs encontrados e corrigidos no Sprint 7
-- `venda_comissoes` usa colunas `nivel`, `percentual`, `venda_item_id` (não `tipo_comissao`, `pct`, `item_id`)
-- Resposta dos endpoints padronizada para `{ rows, totais }` compatível com o frontend
+6. **GitHub**: commits `13ed808`, `ec489c5`, `eecaa0b`
 
 ### Sprints anteriores (resumo)
 - Sprint 6: Financeiro Completo (DRE, Fluxo de Caixa, Aging, Estorno)
@@ -54,10 +63,10 @@
 - Sprint 2: Reservas legado, CRM básico
 
 ## Estado do Banco (VPS)
-- Tabela `pagamento_parcelas` com campos de estorno
 - 1 venda de teste com cliente Maria Silva Santos (R$5.271,60)
 - WhatsApp conectado (Evolution API status: open)
 - RBAC ativo com permissões por usuário
+- API rodando v7.0-sprint7
 
 ## Roadmap (planejado)
 - **Sprint 8**: Documentos de Viagem (proposta, voucher, recibo em PDF)
