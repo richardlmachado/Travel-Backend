@@ -1659,6 +1659,216 @@ app.get('/api/financeiro/titulos/:id/parcelas', auth, checkPerm('financeiro','ve
 });
 
 
+// ── Sprint 6: Financeiro Completo ────────────────────────────────
+
+// GET /api/financeiro/kpis — 6 KPIs do módulo financeiro
+app.get('/api/financeiro/kpis', auth, checkPerm('financeiro','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  try {
+    const [[kpis]] = await pool.query(`
+      SELECT
+        COALESCE((SELECT SUM(v.total_venda) FROM vendas v WHERE v.loja_id=? AND v.status='confirmada'), 0)  AS receita_total,
+        COALESCE((SELECT SUM(v.total_custo)  FROM vendas v WHERE v.loja_id=? AND v.status='confirmada'), 0)  AS custo_total,
+        COALESCE((SELECT SUM(pp.valor + COALESCE(pp.multa_encargo,0))
+                    FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+                   WHERE p.loja_id=? AND p.tipo='cliente_agencia' AND pp.pago=0), 0)  AS a_receber,
+        COALESCE((SELECT SUM(pp.valor + COALESCE(pp.multa_encargo,0))
+                    FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+                   WHERE p.loja_id=? AND p.tipo='cliente_agencia' AND pp.pago=1), 0)  AS total_recebido,
+        COALESCE((SELECT SUM(pp.valor + COALESCE(pp.multa_encargo,0))
+                    FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+                   WHERE p.loja_id=? AND p.tipo='fornecedor_agencia' AND pp.pago=0), 0) AS a_pagar,
+        COALESCE((SELECT SUM(pp.valor + COALESCE(pp.multa_encargo,0))
+                    FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+                   WHERE p.loja_id=? AND pp.pago=0 AND pp.data_vencimento < CURDATE()), 0) AS em_atraso
+    `, [loja_id, loja_id, loja_id, loja_id, loja_id, loja_id]);
+
+    const margem_pct = kpis.receita_total > 0
+      ? +((kpis.receita_total - kpis.custo_total) / kpis.receita_total * 100).toFixed(1)
+      : 0;
+
+    res.json({ ok: true, data: { ...kpis, margem_pct } });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/financeiro/dre — Demonstrativo de Resultado do Exercício
+app.get('/api/financeiro/dre', auth, checkPerm('financeiro','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  const { de, ate, agente_id } = req.query;
+  try {
+    const params = [loja_id];
+    let dateWhere = '';
+    if (de && ate) { dateWhere = ' AND v.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
+    if (agente_id) { dateWhere += ' AND v.agente_id=?'; params.push(+agente_id); }
+
+    // Receita e custo por tipo de produto
+    const [porTipo] = await pool.query(`
+      SELECT vi.tipo_produto,
+             COALESCE(SUM(vi.total_venda_brl),0) AS receita,
+             COALESCE(SUM(vi.total_custo_brl),0) AS custo,
+             COUNT(DISTINCT v.id) AS qtd_vendas
+        FROM venda_itens vi
+        JOIN vendas v ON vi.venda_id=v.id
+       WHERE v.loja_id=? AND v.status='confirmada'${dateWhere}
+       GROUP BY vi.tipo_produto ORDER BY receita DESC
+    `, params);
+
+    // Totais gerais
+    const [[totais]] = await pool.query(`
+      SELECT COALESCE(SUM(v.total_venda),0) AS receita_bruta,
+             COALESCE(SUM(v.total_custo),0)  AS custo_direto
+        FROM vendas v WHERE v.loja_id=? AND v.status='confirmada'${dateWhere}
+    `, params);
+
+    // Comissões aprovadas/pagas
+    const comParams = [];
+    let comWhere = "c.status IN ('aprovado','pago')";
+    if (de && ate) { comWhere += ' AND c.criado_em BETWEEN ? AND ?'; comParams.push(de, ate + ' 23:59:59'); }
+    if (agente_id) { comWhere += ' AND c.agente_id=?'; comParams.push(+agente_id); }
+    const [[comissoes]] = await pool.query(
+      `SELECT COALESCE(SUM(c.valor_comissao),0) AS total FROM comissoes c WHERE ${comWhere}`,
+      comParams
+    );
+
+    const margem_bruta      = +totais.receita_bruta - +totais.custo_direto;
+    const resultado_op      = margem_bruta - +comissoes.total;
+    const margem_pct        = totais.receita_bruta > 0
+      ? +(margem_bruta / totais.receita_bruta * 100).toFixed(1) : 0;
+    const resultado_op_pct  = totais.receita_bruta > 0
+      ? +(resultado_op / totais.receita_bruta * 100).toFixed(1) : 0;
+
+    res.json({
+      ok: true,
+      data: {
+        receita_bruta:        +totais.receita_bruta,
+        custo_direto:         +totais.custo_direto,
+        margem_bruta,
+        margem_pct,
+        comissoes_agentes:    +comissoes.total,
+        resultado_operacional: resultado_op,
+        resultado_op_pct,
+        por_produto:          porTipo,
+      }
+    });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/financeiro/fluxo-caixa — Entradas/saídas mensais + projeção
+app.get('/api/financeiro/fluxo-caixa', auth, checkPerm('financeiro','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  try {
+    const [entradas] = await pool.query(`
+      SELECT DATE_FORMAT(pp.data_pagamento,'%Y-%m') AS mes,
+             SUM(pp.valor + COALESCE(pp.multa_encargo,0)) AS total
+        FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+       WHERE p.loja_id=? AND pp.pago=1 AND p.tipo='cliente_agencia'
+         AND pp.data_pagamento >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    const [saidas] = await pool.query(`
+      SELECT DATE_FORMAT(pp.data_pagamento,'%Y-%m') AS mes,
+             SUM(pp.valor + COALESCE(pp.multa_encargo,0)) AS total
+        FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+       WHERE p.loja_id=? AND pp.pago=1 AND p.tipo='fornecedor_agencia'
+         AND pp.data_pagamento >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    const [projEntradas] = await pool.query(`
+      SELECT DATE_FORMAT(pp.data_vencimento,'%Y-%m') AS mes,
+             SUM(pp.valor + COALESCE(pp.multa_encargo,0)) AS total
+        FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+       WHERE p.loja_id=? AND pp.pago=0 AND p.tipo='cliente_agencia'
+         AND pp.data_vencimento >= CURDATE()
+         AND pp.data_vencimento <= DATE_ADD(CURDATE(), INTERVAL 5 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    const [projSaidas] = await pool.query(`
+      SELECT DATE_FORMAT(pp.data_vencimento,'%Y-%m') AS mes,
+             SUM(pp.valor + COALESCE(pp.multa_encargo,0)) AS total
+        FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+       WHERE p.loja_id=? AND pp.pago=0 AND p.tipo='fornecedor_agencia'
+         AND pp.data_vencimento >= CURDATE()
+         AND pp.data_vencimento <= DATE_ADD(CURDATE(), INTERVAL 5 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    res.json({ ok: true, data: { entradas, saidas, proj_entradas: projEntradas, proj_saidas: projSaidas } });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/financeiro/aging — Aging de contas a receber ou a pagar
+app.get('/api/financeiro/aging', auth, checkPerm('financeiro','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  const tipoFiltro = req.query.tipo === 'pagar' ? 'fornecedor_agencia' : 'cliente_agencia';
+  try {
+    const [rows] = await pool.query(`
+      SELECT pp.id, pp.numero, pp.valor, pp.multa_encargo, pp.data_vencimento, pp.conta,
+             v.codigo AS venda_codigo, COALESCE(cli.nome, cli.razao_social) AS contraparte,
+             CASE
+               WHEN pp.data_vencimento >= CURDATE()                                THEN 'corrente'
+               WHEN DATEDIFF(CURDATE(),pp.data_vencimento) BETWEEN 1  AND 30       THEN '1-30'
+               WHEN DATEDIFF(CURDATE(),pp.data_vencimento) BETWEEN 31 AND 60       THEN '31-60'
+               WHEN DATEDIFF(CURDATE(),pp.data_vencimento) BETWEEN 61 AND 90       THEN '61-90'
+               ELSE '90+'
+             END AS faixa,
+             DATEDIFF(CURDATE(),pp.data_vencimento) AS dias_atraso
+        FROM pagamento_parcelas pp
+        JOIN pagamentos p ON pp.pagamento_id=p.id
+        JOIN vendas v ON p.venda_id=v.id
+        LEFT JOIN clientes cli ON v.cliente_id=cli.id
+       WHERE p.loja_id=? AND p.tipo=? AND pp.pago=0
+       ORDER BY pp.data_vencimento ASC
+    `, [loja_id, tipoFiltro]);
+
+    const summary = {};
+    for (const r of rows) {
+      if (!summary[r.faixa]) summary[r.faixa] = { qtd: 0, total: 0 };
+      summary[r.faixa].qtd++;
+      summary[r.faixa].total += +r.valor + +(r.multa_encargo||0);
+    }
+    res.json({ ok: true, data: rows, summary });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// POST /api/parcelas/:id/estornar — Estornar parcela paga
+app.post('/api/parcelas/:id/estornar', auth, checkPerm('financeiro','editar'), async (req, res) => {
+  const { motivo = '' } = req.body;
+  try {
+    const [[pc]] = await pool.query(
+      `SELECT pp.*, p.loja_id, p.venda_id
+         FROM pagamento_parcelas pp JOIN pagamentos p ON pp.pagamento_id=p.id
+        WHERE pp.id=? AND p.loja_id=?`,
+      [req.params.id, req.user.loja_id]
+    );
+    if (!pc) return res.status(404).json({ ok: false, error: 'Parcela não encontrada' });
+    if (!pc.pago) return res.status(400).json({ ok: false, error: 'Parcela não está paga' });
+
+    await pool.query(
+      `UPDATE pagamento_parcelas
+          SET pago=0, data_pagamento=NULL,
+              estornado=1, estornado_em=NOW(), estornado_por=?, motivo_estorno=?
+        WHERE id=?`,
+      [req.user.id, motivo, req.params.id]
+    );
+
+    // Recalcula status do pagamento pai
+    const [pagas]  = await pool.query('SELECT COUNT(*) AS n FROM pagamento_parcelas WHERE pagamento_id=? AND pago=1', [pc.pagamento_id]);
+    const [totais] = await pool.query('SELECT COUNT(*) AS n FROM pagamento_parcelas WHERE pagamento_id=?',           [pc.pagamento_id]);
+    let newStatus = 'pendente';
+    if (totais[0].n > 0) {
+      if      (pagas[0].n === totais[0].n) newStatus = 'pago';
+      else if (pagas[0].n > 0)             newStatus = 'parcial';
+    }
+    await pool.query('UPDATE pagamentos SET status=? WHERE id=?', [newStatus, pc.pagamento_id]);
+
+    await audit('pagamento_parcelas', req.params.id, 'estorno', 'estorno_parcela', null, motivo, req.user.id, req.user.loja_id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
 // ── Sprint 4: Lembretes & E-mail ──────────────────────────────
 
 const nodemailer = require('nodemailer');
