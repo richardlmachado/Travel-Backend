@@ -2553,4 +2553,209 @@ app.post('/api/permissoes/:userId/reset', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.listen(PORT, () => console.log(`TravelAgent OS API v5.1-rbac — porta ${PORT}`));
+// ── Sprint 7: Dashboard Charts & Relatórios ──────────────────────
+
+// GET /api/dashboard/charts — dados para gráficos do dashboard
+app.get('/api/dashboard/charts', auth, async (req, res) => {
+  const loja_id = req.user.loja_id;
+  try {
+    // Vendas por mês (últimos 12 meses) — quantidade e receita
+    const [vendasMes] = await pool.query(`
+      SELECT DATE_FORMAT(v.criado_em,'%Y-%m') AS mes,
+             COUNT(*)                          AS qtd,
+             COALESCE(SUM(v.total_venda),0)    AS receita,
+             COALESCE(SUM(v.total_custo),0)    AS custo
+        FROM vendas v
+       WHERE v.loja_id=? AND v.status IN ('confirmada','concluida')
+         AND v.criado_em >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    // Vendas por tipo de produto (todos os itens confirmados)
+    const [porProduto] = await pool.query(`
+      SELECT vi.tipo_produto,
+             COUNT(DISTINCT v.id)              AS qtd_vendas,
+             COALESCE(SUM(vi.total_venda_brl),0) AS receita
+        FROM venda_itens vi
+        JOIN vendas v ON vi.venda_id=v.id
+       WHERE v.loja_id=? AND v.status IN ('confirmada','concluida')
+       GROUP BY vi.tipo_produto ORDER BY receita DESC
+    `, [loja_id]);
+
+    // Ranking agentes top 5 (pelo total_venda das vendas deles)
+    const [rankingAgentes] = await pool.query(`
+      SELECT u.id, u.nome,
+             COUNT(v.id)                       AS qtd_vendas,
+             COALESCE(SUM(v.total_venda),0)    AS receita,
+             COALESCE(SUM(v.total_custo),0)    AS custo
+        FROM usuarios u
+        JOIN vendas v ON v.agente_id=u.id AND v.loja_id=? AND v.status IN ('confirmada','concluida')
+       GROUP BY u.id, u.nome
+       ORDER BY receita DESC LIMIT 5
+    `, [loja_id]);
+
+    // KPIs adicionais do dashboard
+    const [[kpis]] = await pool.query(`
+      SELECT
+        COUNT(*)                                              AS total_vendas,
+        COALESCE(SUM(CASE WHEN status='confirmada' THEN 1 ELSE 0 END),0) AS confirmadas,
+        COALESCE(SUM(CASE WHEN status='cotacao'    THEN 1 ELSE 0 END),0) AS cotacoes,
+        COALESCE(SUM(CASE WHEN status='cancelada'  THEN 1 ELSE 0 END),0) AS canceladas,
+        COALESCE(SUM(CASE WHEN status IN ('confirmada','concluida') THEN total_venda ELSE 0 END),0) AS receita_total,
+        COALESCE(SUM(CASE WHEN status IN ('confirmada','concluida') THEN total_custo ELSE 0 END),0) AS custo_total,
+        COALESCE(AVG(CASE WHEN status IN ('confirmada','concluida') THEN total_venda END),0) AS ticket_medio
+        FROM vendas WHERE loja_id=?
+    `, [loja_id]);
+
+    const taxa_conversao = kpis.total_vendas > 0
+      ? +((kpis.confirmadas / kpis.total_vendas) * 100).toFixed(1) : 0;
+
+    res.json({ ok: true, data: { vendas_mes: vendasMes, por_produto: porProduto, ranking_agentes: rankingAgentes, kpis: { ...kpis, taxa_conversao } } });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/relatorios/vendas — relatório de vendas com filtros
+app.get('/api/relatorios/vendas', auth, checkPerm('vendas','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  const { de, ate, status, agente_id, tipo_produto, page = 1, limit = 100 } = req.query;
+  const offset = (+page - 1) * +limit;
+  try {
+    const params = [loja_id];
+    let where = 'WHERE v.loja_id=?';
+    if (de && ate)   { where += ' AND v.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
+    if (status)      { where += ' AND v.status=?'; params.push(status); }
+    if (agente_id)   { where += ' AND v.agente_id=?'; params.push(+agente_id); }
+
+    let itemJoin = 'LEFT JOIN venda_itens vi ON vi.venda_id=v.id';
+    if (tipo_produto) { where += ' AND vi.tipo_produto=?'; params.push(tipo_produto); }
+
+    const [rows] = await pool.query(`
+      SELECT v.id, v.codigo, v.status, v.criado_em, v.data_fechamento,
+             v.total_venda, v.total_custo,
+             (v.total_venda - v.total_custo) AS margem,
+             COALESCE(cli.nome, cli.razao_social) AS cliente,
+             u.nome AS agente,
+             COUNT(DISTINCT vi2.id) AS qtd_itens,
+             GROUP_CONCAT(DISTINCT vi2.tipo_produto) AS tipos_produto
+        FROM vendas v
+        LEFT JOIN clientes cli ON v.cliente_id=cli.id
+        LEFT JOIN usuarios u   ON v.agente_id=u.id
+        LEFT JOIN venda_itens vi2 ON vi2.venda_id=v.id
+        ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : ''}
+        ${where}
+       GROUP BY v.id
+       ORDER BY v.criado_em DESC
+       LIMIT ? OFFSET ?
+    `, [...params, +limit, +offset]);
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(DISTINCT v.id) AS total FROM vendas v
+       ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : 'LEFT JOIN venda_itens vi ON vi.venda_id=v.id'}
+       ${where}`, params
+    );
+
+    // Totais
+    const [[totais]] = await pool.query(`
+      SELECT COALESCE(SUM(v.total_venda),0) AS receita,
+             COALESCE(SUM(v.total_custo),0) AS custo,
+             COALESCE(SUM(v.total_venda - v.total_custo),0) AS margem,
+             COUNT(*) AS qtd
+        FROM vendas v
+        ${itemJoin.includes('vi ON') && tipo_produto ? itemJoin : ''}
+        ${where}
+    `, params);
+
+    const mappedRows = rows.map(r => ({
+      ...r,
+      cliente_nome: r.cliente,
+      agente_nome:  r.agente,
+      produtos:     r.tipos_produto || ''
+    }));
+    res.json({ ok: true, rows: mappedRows, total, totais: {
+      receita_total: totais.receita,
+      custo_total:   totais.custo,
+      margem_bruta:  totais.margem,
+      qtd:           totais.qtd
+    }});
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/relatorios/comissoes — relatório de comissões por agente/período
+app.get('/api/relatorios/comissoes', auth, checkPerm('comissoes','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  const { de, ate, agente_id, status } = req.query;
+  try {
+    const params = [loja_id];
+    let where = 'WHERE v.loja_id=?';
+    if (de && ate)  { where += ' AND vc.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
+    if (agente_id)  { where += ' AND vc.agente_id=?'; params.push(+agente_id); }
+    if (status)     { where += ' AND vc.status=?'; params.push(status); }
+    // Agentes só veem as próprias comissões
+    if (req.user.role === 'agente') { where += ' AND vc.agente_id=?'; params.push(req.user.id); }
+
+    const [rows] = await pool.query(`
+      SELECT vc.id, vc.venda_id, vc.nivel AS tipo_comissao, vc.status,
+             vc.valor, vc.percentual AS pct, vc.criado_em,
+             v.id AS venda_id, v.codigo AS venda_codigo, v.total_venda,
+             u.nome AS agente_nome,
+             COALESCE(cli.nome, cli.razao_social) AS cliente_nome,
+             vi.tipo_produto
+        FROM venda_comissoes vc
+        JOIN vendas v   ON vc.venda_id=v.id
+        JOIN usuarios u ON vc.agente_id=u.id
+        LEFT JOIN clientes cli ON v.cliente_id=cli.id
+        LEFT JOIN venda_itens vi ON vc.venda_item_id=vi.id
+        ${where}
+       ORDER BY vc.criado_em DESC
+    `, params);
+
+    const valorTotal    = rows.reduce((a,r)=>a+Number(r.valor||0),0);
+    const valorPago     = rows.filter(r=>r.status==='pago').reduce((a,r)=>a+Number(r.valor||0),0);
+    const valorPendente = rows.filter(r=>r.status==='pendente').reduce((a,r)=>a+Number(r.valor||0),0);
+
+    res.json({ ok: true, rows, totais: { valor_total: valorTotal, valor_pago: valorPago, valor_pendente: valorPendente } });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// GET /api/relatorios/clientes — métricas de clientes
+app.get('/api/relatorios/clientes', auth, checkPerm('clientes','ver'), async (req, res) => {
+  const loja_id = req.user.loja_id;
+  const { de, ate } = req.query;
+  try {
+    const params = [loja_id];
+    let dateWhere = '';
+    if (de && ate) { dateWhere = ' AND c.criado_em BETWEEN ? AND ?'; params.push(de, ate + ' 23:59:59'); }
+
+    // Clientes com métricas de vendas
+    const [rows] = await pool.query(`
+      SELECT c.id, c.nome, c.email, c.telefone, c.criado_em,
+             COUNT(DISTINCT v.id)                          AS total_vendas,
+             COALESCE(SUM(CASE WHEN v.status IN ('confirmada','concluida') THEN v.total_venda ELSE 0 END),0) AS receita_total,
+             COALESCE(AVG(CASE WHEN v.status IN ('confirmada','concluida') THEN v.total_venda END),0) AS ticket_medio,
+             MAX(v.criado_em)                              AS ultima_compra
+        FROM clientes c
+        LEFT JOIN vendas v ON v.cliente_id=c.id AND v.loja_id=?
+       WHERE c.loja_id=?${dateWhere}
+       GROUP BY c.id
+       ORDER BY receita_total DESC
+    `, [loja_id, ...params]);
+
+    // Novos clientes por mês (últimos 6 meses)
+    const [novosPorMes] = await pool.query(`
+      SELECT DATE_FORMAT(criado_em,'%Y-%m') AS mes, COUNT(*) AS qtd
+        FROM clientes WHERE loja_id=?
+          AND criado_em >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+       GROUP BY mes ORDER BY mes
+    `, [loja_id]);
+
+    const [[totais]] = await pool.query(`
+      SELECT COUNT(*) AS total_clientes,
+             COALESCE(SUM(CASE WHEN c.criado_em >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END),0) AS novos_30d
+        FROM clientes c WHERE c.loja_id=?
+    `, [loja_id]);
+
+    res.json({ ok: true, rows: rows.map(r=>({...r,cliente_nome:r.nome,cliente_email:r.email})), novos_por_mes: novosPorMes, totais });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+app.listen(PORT, () => console.log(`TravelAgent OS API v7.0-sprint7 — porta ${PORT}`));
