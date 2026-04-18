@@ -2751,4 +2751,4 @@ app.get('/api/relatorios/clientes', auth, checkPerm('clientes','ver'), async (re
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-app.listen(PORT, () => console.log(`TravelAgent OS API v7.0-sprint7 — porta ${PORT}`));
+app.listen(PORT, () => console.log(`TravelAgent OS API v8.0-sprint8 — porta ${PORT}`));
