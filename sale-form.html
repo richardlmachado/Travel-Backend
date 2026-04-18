@@ -560,6 +560,15 @@
       <i class="bi bi-floppy me-1"></i>Salvar Venda
     </button>
     <div class="dropdown">
+      <button class="btn-os-ghost dropdown-toggle" data-bs-toggle="dropdown" id="btnDocumentos">
+        <i class="bi bi-file-earmark-pdf me-1"></i>Documentos
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#" onclick="gerarPropostaAtual(); return false;"><i class="bi bi-file-earmark-text me-2"></i>Gerar Proposta</a></li>
+        <li><a class="dropdown-item" href="#" onclick="abrirModalVoucher(); return false;"><i class="bi bi-ticket-perforated me-2"></i>Gerar Voucher</a></li>
+      </ul>
+    </div>
+    <div class="dropdown">
       <button class="btn-os dropdown-toggle" data-bs-toggle="dropdown">
         <i class="bi bi-credit-card me-1"></i>Pagamentos
       </button>
@@ -572,13 +581,35 @@
   </div>
 </div>
 
+<!-- Modal Seletor de Voucher -->
+<div class="modal fade" id="modalVoucherSelect" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content os-modal">
+      <div class="modal-header os-modal-header">
+        <h5 class="modal-title">Gerar Voucher</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" style="font-size:13px">Selecione o item para o qual deseja gerar o voucher:</p>
+        <div id="voucherItemList" style="display:flex;flex-direction:column;gap:.5rem"></div>
+      </div>
+      <div class="modal-footer os-modal-footer">
+        <button class="btn-os-ghost" data-bs-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="assets/js/notifications.js"></script>
 <script src="assets/js/auth.js"></script>
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/pdf-docs.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════
    TravelAgent OS — Sale Form (Airfare-focused)
@@ -615,6 +646,9 @@ let consultorId = null;
 /* ── Items state ───────────────────────────────────────────── */
 let itemsList = [];   // [{uid, tipo, fornecedor:{id,nome}, dados:{...}, trechos:[], pax:[]}]
 let itemCounter = 0;
+
+/* ── Raw sale data (para geração de PDFs) ─────────────────── */
+let saleData = null;
 
 /* ── Fornecedor state (per-item, set dynamically) ─────────── */
 const fornecedorState = { id: null, nome: null };
@@ -1313,6 +1347,7 @@ async function carregarVenda(id) {
     const body = await res.json();
     if (!body.ok) { Notify.error('Venda nao encontrada.'); return; }
     const v = body.data;
+    saleData = v;
 
     saleCodigo  = v.codigo;
     vendaStatus = v.status;
@@ -1423,6 +1458,75 @@ function goPayment(type) {
     'supplier-agency':   `sale-supplier-agency-payment.html?id=${id}`,
   };
   window.location.href = pages[type];
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DOCUMENTOS (Sprint 8)
+   ══════════════════════════════════════════════════════════════ */
+async function gerarPropostaAtual() {
+  if (!saleId || !saleData) {
+    Notify.error('Salve a venda antes de gerar a proposta.');
+    return;
+  }
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${saleId}`);
+    const body = await res.json();
+    if (!body.ok) { Notify.error('Erro ao recarregar venda.'); return; }
+    await PdfDocs.gerarProposta(body.data);
+  } catch (err) {
+    Notify.error('Erro ao gerar proposta: ' + err.message);
+  }
+}
+
+async function abrirModalVoucher() {
+  if (!saleId || !saleData) {
+    Notify.error('Salve a venda antes de gerar vouchers.');
+    return;
+  }
+  try {
+    const res  = await Auth.apiFetch(`/api/vendas/${saleId}`);
+    const body = await res.json();
+    if (!body.ok) { Notify.error('Erro ao recarregar venda.'); return; }
+    saleData = body.data;
+  } catch { /* usa o que já tem */ }
+
+  const itens = saleData.itens || [];
+  const list  = document.getElementById('voucherItemList');
+  if (!itens.length) {
+    list.innerHTML = '<p class="text-muted" style="font-size:13px">Nenhum item cadastrado nesta venda.</p>';
+  } else {
+    list.innerHTML = itens.map((it, idx) => {
+      const cfg    = TYPE_CONFIG[it.tipo_produto] || { icon:'bi-three-dots', label: it.tipo_produto || 'Item' };
+      const dados  = (typeof it.dados === 'string') ? (JSON.parse(it.dados || '{}')) : (it.dados || {});
+      const localiz= dados.localizador || it.localizador || '—';
+      const forn   = it.fornecedor_nome || '—';
+      return `
+        <button type="button" class="btn-os-ghost voucher-item-btn"
+          style="text-align:left;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem"
+          onclick="gerarVoucherItem(${idx})">
+          <i class="bi ${cfg.icon}" style="font-size:18px;color:var(--primary)"></i>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${cfg.label}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${forn} · Loc: ${localiz}</div>
+          </div>
+          <i class="bi bi-download" style="color:var(--text-muted)"></i>
+        </button>`;
+    }).join('');
+  }
+  const modalEl = document.getElementById('modalVoucherSelect');
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+async function gerarVoucherItem(idx) {
+  if (!saleData || !saleData.itens || !saleData.itens[idx]) {
+    Notify.error('Item não encontrado.'); return;
+  }
+  try {
+    await PdfDocs.gerarVoucher(saleData, saleData.itens[idx]);
+    bootstrap.Modal.getInstance(document.getElementById('modalVoucherSelect'))?.hide();
+  } catch (err) {
+    Notify.error('Erro ao gerar voucher: ' + err.message);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════

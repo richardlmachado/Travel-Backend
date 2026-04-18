@@ -586,10 +586,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="assets/js/notifications.js"></script>
 <script src="assets/js/auth.js"></script>
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/pdf-docs.js"></script>
 <script>
 /* ── Helpers ─────────────────────────────────────────────── */
 const fmtM  = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(+v||0);
@@ -651,6 +654,8 @@ async function atualizarKPIs() {
 /* VISÃO GERAL — tabela de títulos                           */
 /* ══════════════════════════════════════════════════════════ */
 let geralPage = 1, geralTotal = 0, geralTipo = '';
+let geralRows = [];
+let tituloAtual = null;
 const PAGE_SIZE = 20;
 
 document.getElementById('tipo-tabs').addEventListener('click', e => {
@@ -704,6 +709,7 @@ async function buscarTitulos(page = 1) {
 }
 
 function renderTitulos(rows) {
+  geralRows = rows || [];
   const tbody = document.getElementById('fin-tbody');
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><i class="bi bi-inbox"></i>Nenhum título encontrado.</div></td></tr>`;
@@ -745,8 +751,11 @@ function renderPaginacao() {
 
 /* ── Modal Parcelas ─────────────────────────────────────── */
 let modalParcelas;
+let parcelasAtuais = [];
 function verParcelas(pagId, codigo) {
   if (!modalParcelas) modalParcelas = new bootstrap.Modal(document.getElementById('modalParcelas'));
+  tituloAtual = geralRows.find(r => r.id === pagId) || { id: pagId, venda_codigo: codigo };
+  parcelasAtuais = [];
   document.getElementById('modalParcelasTitle').textContent = `Parcelas — Pagamento ${codigo}`;
   document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center py-3">Carregando...</td></tr>`;
   modalParcelas.show();
@@ -754,10 +763,12 @@ function verParcelas(pagId, codigo) {
   Auth.apiFetch(`/api/financeiro/titulos/${pagId}/parcelas`).then(r => r.json()).then(body => {
     if (!body.ok) { document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center">Erro ao carregar</td></tr>`; return; }
     const rows = body.data;
+    parcelasAtuais = rows;
     if (!rows.length) { document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center">Nenhuma parcela</td></tr>`; return; }
     document.getElementById('parcelas-tbody').innerHTML = rows.map(pc => {
       const pago = pc.pago ? `<span class="status-badge pago">Pago</span>` : (isOld(pc.data_vencimento?.substring(0,10)) ? `<span class="status-badge" style="background:#fee2e2;color:#991b1b">Atrasado</span>` : `<span class="status-badge pendente">Pendente</span>`);
       const estornado = pc.estornado ? `<span class="status-badge cancelado" title="Estornado em ${fmtDt(pc.estornado_em)}">Estornado</span>` : '';
+      const btnRecibo  = pc.pago && !pc.estornado ? `<button class="btn-os-ghost btn-sm" onclick="gerarReciboParcela(${pc.id})" title="Gerar recibo" style="font-size:10px;padding:.2rem .5rem;color:#2563eb;border-color:#2563eb"><i class="bi bi-file-earmark-pdf"></i></button>` : '';
       const btnEstorno = pc.pago && !pc.estornado ? `<button class="btn-os-ghost btn-sm" onclick="abrirEstorno(${pc.id})" title="Estornar" style="font-size:10px;padding:.2rem .5rem;color:#dc2626;border-color:#dc2626"><i class="bi bi-arrow-counterclockwise"></i></button>` : '';
       return `<tr>
         <td style="font-size:12px">${pc.numero}</td>
@@ -768,12 +779,37 @@ function verParcelas(pagId, codigo) {
         <td style="font-size:12px">${pc.data_pagamento?fmtDt(pc.data_pagamento):'—'}</td>
         <td style="font-size:12px">${pc.conta||'—'}</td>
         <td>${pago}${estornado}</td>
-        <td>${btnEstorno}</td>
+        <td style="white-space:nowrap">${btnRecibo} ${btnEstorno}</td>
       </tr>`;
     }).join('');
   }).catch(() => {
     document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center">Erro</td></tr>`;
   });
+}
+
+async function gerarReciboParcela(parcelaId) {
+  const pc = parcelasAtuais.find(p => p.id === parcelaId);
+  if (!pc) { Notify.error('Parcela não encontrada'); return; }
+  if (!tituloAtual) { Notify.error('Contexto do pagamento não encontrado'); return; }
+
+  // Busca dados completos da venda para o recibo (cliente + documento)
+  let venda = {
+    codigo: tituloAtual.venda_codigo,
+    cliente_nome: tituloAtual.cliente_nome,
+    cpf: null, cnpj: null,
+  };
+  if (tituloAtual.venda_id) {
+    try {
+      const res  = await Auth.apiFetch(`/api/vendas/${tituloAtual.venda_id}`);
+      const body = await res.json();
+      if (body.ok) venda = body.data;
+    } catch { /* fallback usa os dados básicos */ }
+  }
+  try {
+    await PdfDocs.gerarRecibo(pc, tituloAtual, venda);
+  } catch (err) {
+    Notify.error('Erro ao gerar recibo: ' + err.message);
+  }
 }
 
 /* ── Estorno ─────────────────────────────────────────────── */
