@@ -61,8 +61,75 @@ const Notify = (() => {
     }, DURATION);
   }
 
+  /**
+   * Modal de confirmação (substitui window.confirm nativo).
+   * @param {string} message  texto da pergunta
+   * @param {object} [opts]   { title, confirmLabel, cancelLabel, variant: 'primary'|'danger' }
+   * @returns {Promise<boolean>}
+   */
+  function confirm(message, opts = {}) {
+    const {
+      title        = 'Confirmar',
+      confirmLabel = 'Confirmar',
+      cancelLabel  = 'Cancelar',
+      variant      = 'primary',
+    } = opts;
+
+    return new Promise(resolve => {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'os-confirm-backdrop';
+
+      const modal = document.createElement('div');
+      modal.className = 'os-confirm-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'os-confirm-title');
+
+      const h = document.createElement('h3');
+      h.id = 'os-confirm-title';
+      h.className = 'os-confirm-title';
+      h.textContent = title;
+
+      const p = document.createElement('p');
+      p.className = 'os-confirm-message';
+      p.textContent = message;
+
+      const actions = document.createElement('div');
+      actions.className = 'os-confirm-actions';
+
+      const btnCancel = document.createElement('button');
+      btnCancel.className = 'os-confirm-btn os-confirm-btn-ghost';
+      btnCancel.textContent = cancelLabel;
+
+      const btnOk = document.createElement('button');
+      btnOk.className = `os-confirm-btn os-confirm-btn-${variant === 'danger' ? 'danger' : 'primary'}`;
+      btnOk.textContent = confirmLabel;
+
+      actions.append(btnCancel, btnOk);
+      modal.append(h, p, actions);
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+
+      function cleanup(result) {
+        document.removeEventListener('keydown', onKey);
+        backdrop.remove();
+        resolve(result);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') cleanup(false);
+        else if (e.key === 'Enter') cleanup(true);
+      }
+      btnCancel.addEventListener('click', () => cleanup(false));
+      btnOk.addEventListener('click', () => cleanup(true));
+      backdrop.addEventListener('click', e => { if (e.target === backdrop) cleanup(false); });
+      document.addEventListener('keydown', onKey);
+      setTimeout(() => btnOk.focus(), 50);
+    });
+  }
+
   return {
     show,
+    confirm,
     success: (msg) => show(msg, 'success'),
     error:   (msg) => show(msg, 'error'),
     warning: (msg) => show(msg, 'warning'),

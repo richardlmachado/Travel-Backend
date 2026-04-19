@@ -104,7 +104,7 @@
           </table>
         </div>
         <!-- Formulário de adição inline -->
-        <div class="add-row" id="add-forn-row" style="display:none">
+        <div class="add-row d-none" id="add-forn-row" >
           <div class="row g-2 align-items-end">
             <div class="col-12 col-md-4">
               <label class="os-label">Fornecedor (deixe vazio = regra global)</label>
@@ -170,7 +170,7 @@
             </tbody>
           </table>
         </div>
-        <div class="add-row" id="add-agente-row" style="display:none">
+        <div class="add-row d-none" id="add-agente-row" >
           <div class="row g-2 align-items-end">
             <div class="col-6 col-md-3">
               <label class="os-label">Cargo</label>
@@ -197,7 +197,7 @@
 
       <!-- Legenda -->
       <div style="background:var(--bg-page);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem 1.25rem;font-size:12px;color:var(--text-muted)">
-        <strong style="color:var(--text-heading)">Como funciona:</strong>
+        <strong class="txt-heading">Como funciona:</strong>
         <ul class="mb-0 mt-1 ps-3" style="line-height:2">
           <li><strong>Nível 1</strong> — A agência recebe X% do custo de cada item como comissão do fornecedor. Se não houver regra específica para o fornecedor, usa a regra global (fornecedor em branco).</li>
           <li><strong>Nível 2</strong> — O agente recebe X% da comissão da agência (nível 1). Varia por cargo e origem do lead. Calculado automaticamente ao confirmar a venda.</li>
@@ -237,17 +237,17 @@ async function carregarForn() {
 
   tbody.innerHTML = json.data.map(r => `
     <tr id="forn-row-${r.id}">
-      <td>${r.fornecedor_nome ? `<strong>${r.fornecedor_nome}</strong>` : '<span class="text-muted" style="font-size:11px">GLOBAL (todos)</span>'}</td>
+      <td>${r.fornecedor_nome ? `<strong>${r.fornecedor_nome}</strong>` : '<span class="text-muted fs-11" >GLOBAL (todos)</span>'}</td>
       <td><span class="tipo-badge">${r.tipo_produto}</span> <span style="font-size:12px;color:var(--text-muted)">${TIPOS_PRODUTO[r.tipo_produto]||''}</span></td>
       <td>
         <div class="inline-edit">
-          <input type="number" class="input-os" style="width:90px" value="${r.percentual}" min="0" max="100" step="0.01" id="pct-forn-${r.id}">
+          <input type="number" class="input-os w-90"  value="${r.percentual}" min="0" max="100" step="0.01" id="pct-forn-${r.id}">
           <span style="font-size:12px;color:var(--text-muted)">%</span>
           <button class="os-icon-btn" style="color:#0d9488" title="Salvar" onclick="atualizarForn(${r.id},'${r.tipo_produto}')"><i class="bi bi-check-lg"></i></button>
         </div>
       </td>
       <td>
-        <button class="os-icon-btn" style="color:var(--danger)" onclick="deletarForn(${r.id})" title="Remover"><i class="bi bi-trash"></i></button>
+        <button class="os-icon-btn txt-danger"  onclick="deletarForn(${r.id})" title="Remover"><i class="bi bi-trash"></i></button>
       </td>
     </tr>
   `).join('');
@@ -352,7 +352,7 @@ async function carregarAgente() {
       <td><span class="tipo-badge" style="background:${r.origem_lead==='agente'?'#dcfce7':'#dbeafe'};color:${r.origem_lead==='agente'?'#166534':'#1d4ed8'}">${r.origem_lead === 'agente' ? 'Agente' : 'Agência'}</span></td>
       <td>
         <div class="inline-edit">
-          <input type="number" class="input-os" style="width:90px" value="${r.percentual}" min="0" max="100" step="0.01" id="pct-agente-${r.id}">
+          <input type="number" class="input-os w-90"  value="${r.percentual}" min="0" max="100" step="0.01" id="pct-agente-${r.id}">
           <span style="font-size:12px;color:var(--text-muted)">%</span>
           <button class="os-icon-btn" style="color:#0d9488" onclick="atualizarAgente(${r.id})"><i class="bi bi-check-lg"></i></button>
         </div>

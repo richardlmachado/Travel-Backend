@@ -189,7 +189,7 @@
         <div class="period-section">
           <div class="period-section-header" id="period-toggle">
             <span class="period-section-title"><i class="bi bi-bar-chart-fill me-2"></i>Vendas do Período</span>
-            <i class="bi bi-chevron-up" id="period-chevron" style="color:var(--text-muted)"></i>
+            <i class="bi bi-chevron-up txt-muted" id="period-chevron" ></i>
           </div>
           <div class="period-section-body" id="period-body">
             <div class="row g-3 mb-3 align-items-end">
@@ -505,10 +505,10 @@ let activeTab = 'ultimas';
 function renderCards(sales) {
   const container = document.getElementById('sale-cards-container');
   if (!sales.length) {
-    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+    container.innerHTML = `<div class="empty-state grid-col-full" >
       <i class="bi bi-folder2-open"></i>
       <div style="font-weight:600;font-size:14px;margin-bottom:4px">Nenhuma venda encontrada</div>
-      <div style="font-size:12px">Tente outra aba ou clique em "Buscar Venda"</div>
+      <div class="fs-12">Tente outra aba ou clique em "Buscar Venda"</div>
     </div>`;
     return;
   }
@@ -533,7 +533,7 @@ function renderCards(sales) {
 
 function showLoadingCards() {
   document.getElementById('sale-cards-container').innerHTML =
-    `<div class="empty-state" style="grid-column:1/-1">
+    `<div class="empty-state grid-col-full" >
        <div class="spinner-border spinner-border-sm text-primary"></div>
        <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Carregando vendas…</div>
      </div>`;
@@ -592,7 +592,7 @@ async function loadSalesForTab(tab) {
   } catch (err) {
     console.error(err);
     document.getElementById('sale-cards-container').innerHTML =
-      `<div class="empty-state" style="grid-column:1/-1">
+      `<div class="empty-state grid-col-full" >
          <i class="bi bi-exclamation-triangle text-danger"></i>
          <div>Erro ao carregar vendas</div>
        </div>`;

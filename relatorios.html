@@ -262,7 +262,7 @@
       <!-- ════════════════════════════════════
            ABA: FINANCEIRO (DRE)
       ════════════════════════════════════ -->
-      <div id="tab-financeiro" style="display:none">
+      <div id="tab-financeiro" class="d-none">
 
         <!-- Filtros -->
         <div class="filters-bar">
@@ -292,7 +292,7 @@
       <!-- ════════════════════════════════════
            ABA: COMISSÕES
       ════════════════════════════════════ -->
-      <div id="tab-comissoes" style="display:none">
+      <div id="tab-comissoes" class="d-none">
 
         <!-- Filtros -->
         <div class="filters-bar">
@@ -369,7 +369,7 @@
       <!-- ════════════════════════════════════
            ABA: CLIENTES
       ════════════════════════════════════ -->
-      <div id="tab-clientes" style="display:none">
+      <div id="tab-clientes" class="d-none">
 
         <!-- Filtros -->
         <div class="filters-bar">
@@ -540,7 +540,7 @@ async function buscarVendas() {
     }
 
     const html = `
-    <div style="overflow-x:auto">
+    <div class="overflow-x-auto">
     <table class="rel-table" id="tabela-vendas">
       <thead>
         <tr>
@@ -870,7 +870,7 @@ async function buscarComissoes() {
     }
 
     const html = `
-    <div style="overflow-x:auto">
+    <div class="overflow-x-auto">
     <table class="rel-table" id="tabela-comissoes">
       <thead>
         <tr>
@@ -894,7 +894,7 @@ async function buscarComissoes() {
             <td>${r.tipo_comissao === 'agencia_agente' ? 'Agência→Agente' : 'Fornec.→Agência'}</td>
             <td><span class="st st-${r.status||'pendente'}">${r.status||'pendente'}</span></td>
             <td style="text-align:right;font-weight:800;color:var(--primary)">${fmt(r.valor)}</td>
-            <td style="color:var(--text-muted)">${r.pago_em ? new Date(r.pago_em).toLocaleDateString('pt-BR') : '—'}</td>
+            <td class="txt-muted">${r.pago_em ? new Date(r.pago_em).toLocaleDateString('pt-BR') : '—'}</td>
           </tr>`).join('')}
       </tbody>
       <tfoot>
@@ -1000,7 +1000,7 @@ async function buscarClientes() {
     }
 
     const html = `
-    <div style="overflow-x:auto">
+    <div class="overflow-x-auto">
     <table class="rel-table" id="tabela-clientes">
       <thead>
         <tr>
@@ -1025,11 +1025,11 @@ async function buscarClientes() {
                 <span style="font-weight:700;color:var(--text-heading)">${r.cliente_nome||'—'}</span>
               </div>
             </td>
-            <td style="color:var(--text-muted)">${r.cliente_email||'—'}</td>
+            <td class="txt-muted">${r.cliente_email||'—'}</td>
             <td style="text-align:right;font-weight:700">${fmtN(r.total_vendas)}</td>
             <td style="text-align:right;font-weight:800;color:var(--primary)">${fmt(r.receita_total)}</td>
             <td style="text-align:right">${fmt(r.ticket_medio)}</td>
-            <td style="color:var(--text-muted)">${r.ultima_compra ? new Date(r.ultima_compra).toLocaleDateString('pt-BR') : '—'}</td>
+            <td class="txt-muted">${r.ultima_compra ? new Date(r.ultima_compra).toLocaleDateString('pt-BR') : '—'}</td>
             <td>${rec ? '<span class="st" style="background:#dcfce7;color:#166534">Sim</span>' : '<span class="st" style="background:var(--bg-page);color:var(--text-muted)">Não</span>'}</td>
           </tr>`;
         }).join('')}

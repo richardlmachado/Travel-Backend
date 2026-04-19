@@ -156,7 +156,7 @@
 
           <!-- Matriz de permissões -->
           <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0" style="font-size:12px" id="perm-table">
+            <table class="table table-sm table-hover align-middle mb-0 fs-12"  id="perm-table">
               <thead>
                 <tr>
                   <th style="width:180px">Módulo</th>
@@ -207,7 +207,7 @@
             <div class="col-md-4 d-flex align-items-end">
               <div class="form-check">
                 <input type="checkbox" class="form-check-input" id="smtp-secure">
-                <label class="form-check-label" for="smtp-secure" style="font-size:12px">TLS/SSL</label>
+                <label class="form-check-label fs-12" for="smtp-secure" >TLS/SSL</label>
               </div>
             </div>
             <div class="col-12">
@@ -224,7 +224,7 @@
 
           <div class="integration-card">
             <div class="integration-icon green"><i class="bi bi-whatsapp"></i></div>
-            <div style="flex:1">
+            <div class="flex-1">
               <div style="font-size:13px;font-weight:700">WhatsApp (Evolution API)</div>
               <div style="font-size:11px;color:var(--text-muted)" id="wa-detail">Verificando...</div>
             </div>
@@ -233,7 +233,7 @@
 
           <div class="integration-card">
             <div class="integration-icon blue"><i class="bi bi-envelope"></i></div>
-            <div style="flex:1">
+            <div class="flex-1">
               <div style="font-size:13px;font-weight:700">Email (SMTP)</div>
               <div style="font-size:11px;color:var(--text-muted)" id="smtp-detail">Verificando...</div>
             </div>
@@ -521,7 +521,7 @@ async function carregarPermsUsuario(userId) {
       const icon = MODULO_ICONS[mod] || 'bi-circle';
       const availableAcoes = mod === 'configuracoes' ? ['ver', 'editar'] : ACOES;
       return `<tr>
-        <td><i class="bi ${icon} me-2" style="color:var(--primary)"></i><strong>${MODULO_LABELS[mod]}</strong></td>
+        <td><i class="bi ${icon} me-2 txt-primary" ></i><strong>${MODULO_LABELS[mod]}</strong></td>
         ${ACOES.map(acao => {
           const disabled = !availableAcoes.includes(acao);
           const checked = modPerms.includes(acao);
@@ -576,7 +576,7 @@ document.getElementById('btn-salvar-perms').addEventListener('click', async () =
 // Resetar para padrão do role
 document.getElementById('btn-reset-perms').addEventListener('click', async () => {
   if (!currentPermUserId) return;
-  if (!confirm('Resetar permissões para o padrão do role?')) return;
+  if (!await Notify.confirm('Resetar permissões para o padrão do role?', { title: 'Resetar permissões', confirmLabel: 'Resetar', variant: 'danger' })) return;
   try {
     const res = await Auth.apiFetch(`/api/permissoes/${currentPermUserId}/reset`, { method: 'POST' });
     const body = await res.json();

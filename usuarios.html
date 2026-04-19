@@ -140,7 +140,7 @@
       <!-- Tabela -->
       <div class="os-card">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" style="font-size:13px">
+          <table class="table table-hover align-middle mb-0 fs-13" >
             <thead>
               <tr>
                 <th style="width:40px"></th>
@@ -151,7 +151,7 @@
                 <th>Telefone</th>
                 <th>Status</th>
                 <th>Desde</th>
-                <th style="width:100px">Ações</th>
+                <th class="w-100px">Ações</th>
               </tr>
             </thead>
             <tbody id="table-body">
@@ -159,7 +159,7 @@
             </tbody>
           </table>
         </div>
-        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top" style="font-size:12px">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top fs-12" >
           <span class="text-muted" id="table-info">—</span>
           <div class="d-flex gap-1">
             <button class="btn btn-sm btn-outline-secondary" id="btn-prev" disabled><i class="bi bi-chevron-left"></i></button>
@@ -182,21 +182,21 @@
       <div class="modal-body">
         <input type="hidden" id="edit-id">
         <div class="mb-3">
-          <label class="form-label fw-semibold" style="font-size:12px">Nome completo</label>
+          <label class="form-label fw-semibold fs-12" >Nome completo</label>
           <input type="text" class="form-control" id="edit-nome" required>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold" style="font-size:12px">Email</label>
+          <label class="form-label fw-semibold fs-12" >Email</label>
           <input type="email" class="form-control" id="edit-email" required>
         </div>
         <div class="mb-3" id="senha-group">
-          <label class="form-label fw-semibold" style="font-size:12px">Senha</label>
+          <label class="form-label fw-semibold fs-12" >Senha</label>
           <input type="password" class="form-control" id="edit-senha" minlength="6">
           <div class="form-text">Mínimo 6 caracteres</div>
         </div>
         <div class="row g-3 mb-3">
           <div class="col-6">
-            <label class="form-label fw-semibold" style="font-size:12px">Role (permissão)</label>
+            <label class="form-label fw-semibold fs-12" >Role (permissão)</label>
             <select class="form-select" id="edit-role">
               <option value="agente">Agente</option>
               <option value="financeiro">Financeiro</option>
@@ -204,7 +204,7 @@
             </select>
           </div>
           <div class="col-6">
-            <label class="form-label fw-semibold" style="font-size:12px">Cargo</label>
+            <label class="form-label fw-semibold fs-12" >Cargo</label>
             <select class="form-select" id="edit-cargo">
               <option value="consultor">Consultor</option>
               <option value="gerente">Gerente</option>
@@ -215,7 +215,7 @@
           </div>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold" style="font-size:12px">Telefone</label>
+          <label class="form-label fw-semibold fs-12" >Telefone</label>
           <input type="tel" class="form-control" id="edit-telefone" placeholder="(65) 99999-9999">
         </div>
       </div>
@@ -237,7 +237,7 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="reset-id">
-        <p class="text-muted" style="font-size:13px">Defina uma nova senha para <strong id="reset-nome"></strong>:</p>
+        <p class="text-muted fs-13" >Defina uma nova senha para <strong id="reset-nome"></strong>:</p>
         <input type="password" class="form-control" id="reset-senha" placeholder="Nova senha (min. 6 chars)" minlength="6">
       </div>
       <div class="modal-footer">
@@ -314,11 +314,11 @@ async function carregarUsuarios() {
       tbody.innerHTML = data.map(u => `
         <tr style="opacity:${u.ativo ? 1 : .5}">
           <td><div class="user-avatar ${AVATAR_COLORS[u.role] || 'blue'}">${initials(u.nome)}</div></td>
-          <td><strong style="font-size:13px">${u.nome}</strong></td>
+          <td><strong class="fs-13">${u.nome}</strong></td>
           <td style="font-size:12px;color:var(--text-muted)">${u.email}</td>
           <td><span class="role-badge ${ROLE_CLASSES[u.role] || ''}">${ROLE_LABELS[u.role] || u.role}</span></td>
           <td><span class="cargo-badge">${CARGO_LABELS[u.cargo] || u.cargo || '—'}</span></td>
-          <td style="font-size:12px">${u.telefone || '—'}</td>
+          <td class="fs-12">${u.telefone || '—'}</td>
           <td><span class="status-dot ${u.ativo ? 'active' : 'inactive'}"></span> ${u.ativo ? 'Ativo' : 'Inativo'}</td>
           <td style="font-size:11px;color:var(--text-muted)">${fmtDate(u.criado_em)}</td>
           <td>
@@ -430,7 +430,11 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
 
 // Toggle ativo/inativo
 async function toggleStatus(id, ativo) {
-  if (!confirm(ativo ? 'Reativar este usuário?' : 'Desativar este usuário?')) return;
+  const ok = await Notify.confirm(
+    ativo ? 'Reativar este usuário?' : 'Desativar este usuário?',
+    { title: ativo ? 'Reativar' : 'Desativar', confirmLabel: ativo ? 'Reativar' : 'Desativar', variant: ativo ? 'primary' : 'danger' }
+  );
+  if (!ok) return;
   try {
     const res = await Auth.apiFetch(`/api/usuarios/${id}/status`, { method: 'PATCH', body: JSON.stringify({ ativo }) });
     const body = await res.json();

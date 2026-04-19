@@ -314,6 +314,17 @@
       .fin-input { width: 110px; }
       .trecho-table { font-size: 12px; }
     }
+
+    .sf-required       { color: var(--danger); }
+    .sf-val-before     { color: var(--danger); }
+    .sf-val-after      { color: var(--success); }
+    .sf-voucher-empty  { font-size: 13px; }
+    .voucher-item-btn  { text-align: left; padding: .75rem 1rem; display: flex; align-items: center; gap: .75rem; }
+    .voucher-item-icon { font-size: 18px; color: var(--primary); }
+    .voucher-item-body { flex: 1; }
+    .voucher-item-title{ font-weight: 600; font-size: 13px; }
+    .voucher-item-sub  { font-size: 11px; color: var(--text-muted); }
+    .voucher-item-dl   { color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -390,7 +401,7 @@
           <div class="sf-section-label"><i class="bi bi-clipboard-data"></i> Dados da Venda</div>
           <div class="row g-3">
             <div class="col-12 col-md-5">
-              <label class="os-label">Cliente <span style="color:var(--danger)">*</span></label>
+              <label class="os-label">Cliente <span class="txt-danger">*</span></label>
               <div class="ac-wrap">
                 <input type="text" class="input-os" id="clienteInput" placeholder="Digite o nome do cliente..." autocomplete="off">
               </div>
@@ -457,11 +468,11 @@
                 <div class="sf-section-label"><i class="bi bi-building"></i> Custo Fornecedor</div>
                 <div class="fin-row">
                   <span class="fin-label">Tarifa Total (somatorio PAX)</span>
-                  <div class="fin-input"><input type="number" class="input-os" id="finTarifaTotal" value="0" readonly style="opacity:.7"></div>
+                  <div class="fin-input"><input type="number" class="input-os op-70" id="finTarifaTotal" value="0" readonly ></div>
                 </div>
                 <div class="fin-row">
                   <span class="fin-label">Taxas Embarque Total</span>
-                  <div class="fin-input"><input type="number" class="input-os" id="finTaxasTotal" value="0" readonly style="opacity:.7"></div>
+                  <div class="fin-input"><input type="number" class="input-os op-70" id="finTaxasTotal" value="0" readonly ></div>
                 </div>
                 <div class="fin-row">
                   <span class="fin-label">Cambio (1 USD = X BRL)</span>
@@ -472,16 +483,16 @@
                   <div class="fin-input"><input type="number" class="input-os" id="finComCiaPct" value="0" step="0.01" oninput="calcFinanceiro()"></div>
                 </div>
                 <div class="fin-row">
-                  <span class="fin-label" style="color:var(--success)">Valor Comissao Cia</span>
-                  <div class="fin-input"><input type="number" class="input-os" id="finComCiaVal" value="0" readonly style="opacity:.7"></div>
+                  <span class="fin-label txt-success" >Valor Comissao Cia</span>
+                  <div class="fin-input"><input type="number" class="input-os op-70" id="finComCiaVal" value="0" readonly ></div>
                 </div>
                 <div class="fin-row">
                   <span class="fin-label">Incentivo (%)</span>
                   <div class="fin-input"><input type="number" class="input-os" id="finIncPct" value="0" step="0.01" oninput="calcFinanceiro()"></div>
                 </div>
                 <div class="fin-row">
-                  <span class="fin-label" style="color:var(--success)">Valor Incentivo</span>
-                  <div class="fin-input"><input type="number" class="input-os" id="finIncVal" value="0" readonly style="opacity:.7"></div>
+                  <span class="fin-label txt-success" >Valor Incentivo</span>
+                  <div class="fin-input"><input type="number" class="input-os op-70" id="finIncVal" value="0" readonly ></div>
                 </div>
               </div>
 
@@ -493,8 +504,8 @@
                   <div class="fin-input"><input type="number" class="input-os" id="finMarkupPct" value="0" step="0.01" oninput="calcFinanceiro()"></div>
                 </div>
                 <div class="fin-row">
-                  <span class="fin-label" style="color:var(--primary)">Valor Markup</span>
-                  <div class="fin-input"><input type="number" class="input-os" id="finMarkupVal" value="0" readonly style="opacity:.7"></div>
+                  <span class="fin-label txt-primary" >Valor Markup</span>
+                  <div class="fin-input"><input type="number" class="input-os op-70" id="finMarkupVal" value="0" readonly ></div>
                 </div>
                 <div class="fin-row">
                   <span class="fin-label">Outras Taxas</span>
@@ -525,13 +536,13 @@
         </div>
 
         <!-- ════════════════ 6. AUDITORIA ════════════════ -->
-        <div class="sf-card sf-card-flat" id="auditSection" style="display:none">
+        <div class="sf-card sf-card-flat d-none" id="auditSection" >
           <button class="sf-toggle-link" id="toggleAudit">
             <i class="bi bi-chevron-down"></i> Log de Auditoria
-            <span class="badge bg-secondary ms-1" id="auditCount" style="font-size:10px">0</span>
+            <span class="badge bg-secondary ms-1 fs-10" id="auditCount" >0</span>
           </button>
           <div class="sf-collapse" id="auditBody">
-            <div id="auditList" class="mt-2" style="font-size:12px"></div>
+            <div id="auditList" class="mt-2 fs-12" ></div>
           </div>
         </div>
 
@@ -590,7 +601,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p class="text-muted" style="font-size:13px">Selecione o item para o qual deseja gerar o voucher:</p>
+        <p class="text-muted fs-13" >Selecione o item para o qual deseja gerar o voucher:</p>
         <div id="voucherItemList" style="display:flex;flex-direction:column;gap:.5rem"></div>
       </div>
       <div class="modal-footer os-modal-footer">
@@ -843,16 +854,16 @@ function buildTypeFields(item) {
 function buildTrechosHTML(item) {
   return `
     <div class="sf-section-label mt-2"><i class="bi bi-signpost-split"></i> Trechos</div>
-    <div style="overflow-x:auto">
+    <div class="overflow-x-auto">
       <table class="trecho-table">
-        <thead><tr><th>Origem</th><th>Destino</th><th>Saida</th><th>Chegada</th><th>Voo</th><th style="width:70px"></th></tr></thead>
+        <thead><tr><th>Origem</th><th>Destino</th><th>Saida</th><th>Chegada</th><th>Voo</th><th class="w-70"></th></tr></thead>
         <tbody>${item.trechos.map(t => `
           <tr>
             <td><input type="text" class="input-os" value="${t.origem}" placeholder="GRU" onchange="syncTrecho(${item.uid},${t.uid},'origem',this.value)"></td>
             <td><input type="text" class="input-os" value="${t.destino}" placeholder="GIG" onchange="syncTrecho(${item.uid},${t.uid},'destino',this.value)"></td>
             <td><input type="datetime-local" class="input-os" value="${t.saida}" onchange="syncTrecho(${item.uid},${t.uid},'saida',this.value);recalcTripDates()"></td>
             <td><input type="datetime-local" class="input-os" value="${t.chegada}" onchange="syncTrecho(${item.uid},${t.uid},'chegada',this.value);recalcTripDates()"></td>
-            <td><input type="text" class="input-os" value="${t.voo}" placeholder="LA3045" onchange="syncTrecho(${item.uid},${t.uid},'voo',this.value)" style="width:90px"></td>
+            <td><input type="text" class="input-os w-90" value="${t.voo}" placeholder="LA3045" onchange="syncTrecho(${item.uid},${t.uid},'voo',this.value)" ></td>
             <td><div class="trecho-actions">
               <button class="trecho-btn trecho-btn-add" onclick="addTrechoToItem(${item.uid})"><i class="bi bi-plus-lg"></i></button>
               <button class="trecho-btn trecho-btn-del" onclick="removeTrechoFromItem(${item.uid},${t.uid})"><i class="bi bi-trash"></i></button>
@@ -921,7 +932,7 @@ function renderAllItems() {
   container.innerHTML = itemsList.map((item, idx) => {
     const cfg = TYPE_CONFIG[item.tipo];
     const typeOpts = Object.entries(TYPE_CONFIG).map(([k,v]) =>
-      `<option value="${k}" ${k===item.tipo?'selected':''}>${v.label}</option>`
+      `<option value="${k}" ${k===item.tipo?'selected':''}>${esc(v.label)}</option>`
     ).join('');
 
     return `
@@ -937,9 +948,9 @@ function renderAllItems() {
       <div class="sf-card-body">
         <div class="row g-3 mb-3">
           <div class="col-12 col-md-5">
-            <label class="os-label">Fornecedor <span style="color:var(--danger)">*</span></label>
+            <label class="os-label">Fornecedor <span class="sf-required">*</span></label>
             <div class="ac-wrap">
-              <input type="text" class="input-os" value="${item.fornecedor.nome}" placeholder="Buscar fornecedor..."
+              <input type="text" class="input-os" value="${esc(item.fornecedor.nome)}" placeholder="Buscar fornecedor..."
                 oninput="onFornInputItem(${item.uid},this)" autocomplete="off" data-forn-item="${item.uid}">
             </div>
           </div>
@@ -1067,7 +1078,7 @@ function renderClienteDropdown(clientes) {
   clientes.forEach(c => {
     const row = document.createElement('div');
     row.className = 'ac-dropdown-item';
-    row.innerHTML = `<strong>${c.nome || c.razao_social}</strong> <small>${c.tipo_pessoa === 'PJ' ? c.cnpj || '' : c.cpf || ''}</small>`;
+    row.innerHTML = `<strong>${esc(c.nome || c.razao_social)}</strong> <small>${esc(c.tipo_pessoa === 'PJ' ? c.cnpj || '' : c.cpf || '')}</small>`;
     row.addEventListener('click', () => {
       clienteId = c.id;
       clienteInput.value = c.nome || c.razao_social;
@@ -1107,7 +1118,7 @@ function renderConsultorDropdown(usuarios) {
   usuarios.forEach(u => {
     const row = document.createElement('div');
     row.className = 'ac-dropdown-item';
-    row.innerHTML = `<strong>${u.nome}</strong> <small>${u.cargo || u.perfil || ''}</small>`;
+    row.innerHTML = `<strong>${esc(u.nome)}</strong> <small>${esc(u.cargo || u.perfil || '')}</small>`;
     row.addEventListener('click', () => {
       consultorId = u.id;
       consultorInput.value = u.nome;
@@ -1278,7 +1289,10 @@ function coletarVenda() {
 /* ══════════════════════════════════════════════════════════════
    SAVE HANDLER
    ══════════════════════════════════════════════════════════════ */
+let _salvandoVenda = false;
 async function salvarVenda() {
+  if (_salvandoVenda) return;
+  _salvandoVenda = true;
   const btn     = document.getElementById('btnSaveSale');
   const btnFoot = document.getElementById('btnFooterSave');
   btn.disabled = true;
@@ -1286,6 +1300,9 @@ async function salvarVenda() {
   btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
 
   try {
+    // Validação mínima antes de montar payload
+    if (!clienteId) { Notify.error('Selecione um cliente.'); return; }
+    if (!itemsList.length) { Notify.error('Adicione pelo menos um item.'); return; }
     const payload = coletarVenda();
     let res, body;
 
@@ -1307,6 +1324,7 @@ async function salvarVenda() {
   } catch (err) {
     Notify.error(`Erro ao salvar: ${err.message}`);
   } finally {
+    _salvandoVenda = false;
     btn.disabled = false;
     if (btnFoot) btnFoot.disabled = false;
     btn.innerHTML = '<i class="bi bi-floppy"></i> Salvar';
@@ -1326,7 +1344,8 @@ document.getElementById('statusSelect').addEventListener('change', async (e) => 
 
   if (!saleId) { Notify.error('Salve a venda antes de mudar o status.'); return; }
   const LABELS = { confirmada: 'confirmar', cancelada: 'cancelar', concluida: 'concluir', cotacao: 'voltar para cotacao' };
-  if (!confirm(`Deseja ${LABELS[status] || status} esta venda?`)) return;
+  const acao = LABELS[status] || status;
+  if (!await Notify.confirm(`Deseja ${acao} esta venda?`, { title: 'Alterar status', confirmLabel: 'Sim', variant: status === 'cancelada' ? 'danger' : 'primary' })) return;
 
   try {
     const res  = await Auth.apiFetch(`/api/vendas/${saleId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
@@ -1433,15 +1452,15 @@ function renderAuditLog(auditLog) {
     const dataStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const iconCls = ACAO_ICONS[a.acao] || 'bi-info-circle text-muted';
     const label   = ACAO_LABELS[a.acao] || a.acao;
-    const detail  = a.campo ? ` <span class="text-muted">${a.campo}` +
-      (a.valor_antes ? ` <span style="color:var(--danger)">${a.valor_antes}</span> &rarr; ` : '') +
-      (a.valor_depois ? `<span style="color:var(--success)">${a.valor_depois}</span>` : '') +
+    const detail  = a.campo ? ` <span class="text-muted">${esc(a.campo)}` +
+      (a.valor_antes ? ` <span class="sf-val-before">${esc(a.valor_antes)}</span> &rarr; ` : '') +
+      (a.valor_depois ? `<span class="sf-val-after">${esc(a.valor_depois)}</span>` : '') +
       '</span>' : '';
     return `<div class="audit-item">
       <i class="bi ${iconCls}"></i>
       <div class="audit-item-body">
-        <span class="audit-item-action">${label}</span>${detail}
-        <div class="audit-item-meta">${dataStr} &middot; ${a.usuario_nome || 'Sistema'}</div>
+        <span class="audit-item-action">${esc(label)}</span>${detail}
+        <div class="audit-item-meta">${dataStr} &middot; ${esc(a.usuario_nome || 'Sistema')}</div>
       </div>
     </div>`;
   }).join('');
@@ -1493,7 +1512,7 @@ async function abrirModalVoucher() {
   const itens = saleData.itens || [];
   const list  = document.getElementById('voucherItemList');
   if (!itens.length) {
-    list.innerHTML = '<p class="text-muted" style="font-size:13px">Nenhum item cadastrado nesta venda.</p>';
+    list.innerHTML = '<p class="text-muted sf-voucher-empty">Nenhum item cadastrado nesta venda.</p>';
   } else {
     list.innerHTML = itens.map((it, idx) => {
       const cfg    = TYPE_CONFIG[it.tipo_produto] || { icon:'bi-three-dots', label: it.tipo_produto || 'Item' };
@@ -1501,17 +1520,18 @@ async function abrirModalVoucher() {
       const localiz= dados.localizador || it.localizador || '—';
       const forn   = it.fornecedor_nome || '—';
       return `
-        <button type="button" class="btn-os-ghost voucher-item-btn"
-          style="text-align:left;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem"
-          onclick="gerarVoucherItem(${idx})">
-          <i class="bi ${cfg.icon}" style="font-size:18px;color:var(--primary)"></i>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:13px">${cfg.label}</div>
-            <div style="font-size:11px;color:var(--text-muted)">${forn} · Loc: ${localiz}</div>
+        <button type="button" class="btn-os-ghost voucher-item-btn" data-idx="${idx}">
+          <i class="bi ${cfg.icon} voucher-item-icon"></i>
+          <div class="voucher-item-body">
+            <div class="voucher-item-title">${esc(cfg.label)}</div>
+            <div class="voucher-item-sub">${esc(forn)} · Loc: ${esc(localiz)}</div>
           </div>
-          <i class="bi bi-download" style="color:var(--text-muted)"></i>
+          <i class="bi bi-download voucher-item-dl"></i>
         </button>`;
     }).join('');
+    list.querySelectorAll('.voucher-item-btn').forEach(btn => {
+      btn.addEventListener('click', () => gerarVoucherItem(Number(btn.dataset.idx)));
+    });
   }
   const modalEl = document.getElementById('modalVoucherSelect');
   bootstrap.Modal.getOrCreateInstance(modalEl).show();

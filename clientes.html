@@ -113,7 +113,7 @@
       </div>
 
       <!-- ── Tab Fornecedores ───────────────────────────────── -->
-      <div id="tab-fornecedores" style="display:none">
+      <div id="tab-fornecedores" class="d-none">
         <div class="card-os mb-4">
           <div class="d-flex gap-3">
             <div class="flex-grow-1">
@@ -380,7 +380,7 @@
             <div class="os-avatar sm">${esc((c.nome||'?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase())}</div>
             <div>
               <div class="fw-600">${esc(c.nome)}</div>
-              <div class="text-muted" style="font-size:11px">${esc(c.email)||'—'}</div>
+              <div class="text-muted fs-11" >${esc(c.email)||'—'}</div>
             </div>
           </div>
         </td>
@@ -429,7 +429,7 @@
     }
 
     if (btnDel) {
-      if (!confirm(`Excluir o cliente "${btnDel.dataset.nome}"?`)) return;
+      if (!await Notify.confirm(`Excluir o cliente "${btnDel.dataset.nome}"?`, { title: 'Excluir cliente', confirmLabel: 'Excluir', variant: 'danger' })) return;
       const res  = await Auth.apiFetch('/api/clientes/' + btnDel.dataset.id, { method: 'DELETE' });
       const data = await res.json();
       if (data.ok) { Notify.success('Cliente excluído.'); carregarClientes(); }
@@ -489,13 +489,13 @@
       <tr>
         <td>
           <div class="fw-600">${f.nome}</div>
-          <div class="text-muted" style="font-size:11px">${f.razao_social||''}</div>
+          <div class="text-muted fs-11" >${f.razao_social||''}</div>
         </td>
         <td><span class="os-badge badge-blue">${TIPO_FORN[f.tipo]||f.tipo}</span></td>
         <td>${f.cnpj||'—'}</td>
         <td>
           <div>${f.contato_nome||'—'}</div>
-          <div class="text-muted" style="font-size:11px">${f.contato_email||''}</div>
+          <div class="text-muted fs-11" >${f.contato_email||''}</div>
         </td>
         <td>${f.comissao_padrao ? f.comissao_padrao + '%' : '—'}</td>
         <td>${f.total_reservas || 0}</td>
@@ -538,7 +538,7 @@
     }
 
     if (btnDel) {
-      if (!confirm(`Inativar o fornecedor "${btnDel.dataset.nome}"?`)) return;
+      if (!await Notify.confirm(`Inativar o fornecedor "${btnDel.dataset.nome}"?`, { title: 'Inativar fornecedor', confirmLabel: 'Inativar', variant: 'danger' })) return;
       const res  = await Auth.apiFetch('/api/fornecedores/' + btnDel.dataset.id, { method: 'DELETE' });
       const data = await res.json();
       if (data.ok) { Notify.success('Fornecedor inativado.'); carregarFornecedores(); }

@@ -182,11 +182,11 @@
         <!-- WhatsApp Status Banner -->
         <div class="wa-banner unconfigured" id="wa-banner">
           <div class="wa-status-dot gray" id="wa-dot"></div>
-          <div style="flex:1">
+          <div class="flex-1">
             <div style="font-size:13px;font-weight:700" id="wa-status-label">Verificando status do WhatsApp...</div>
             <div style="font-size:11px;color:var(--text-muted)" id="wa-status-sub"></div>
           </div>
-          <button class="btn-os-ghost" id="btn-wa-refresh" style="font-size:11px"><i class="bi bi-arrow-clockwise me-1"></i>Atualizar</button>
+          <button class="btn-os-ghost fs-11" id="btn-wa-refresh" ><i class="bi bi-arrow-clockwise me-1"></i>Atualizar</button>
         </div>
 
         <!-- KPI Cards -->
@@ -272,7 +272,7 @@
             </table>
           </div>
           <div class="d-flex align-items-center justify-content-between p-3 border-top" id="pagination-wrap" style="display:none!important">
-            <span class="text-muted" style="font-size:12px" id="pagination-info"></span>
+            <span class="text-muted fs-12"  id="pagination-info"></span>
             <div class="d-flex gap-1" id="pagination-btns"></div>
           </div>
         </div>
@@ -344,13 +344,13 @@
   <div class="modal-dialog modal-sm">
     <div class="modal-content os-modal">
       <div class="modal-header os-modal-header">
-        <h5 class="modal-title"><i class="bi bi-whatsapp me-2" style="color:#16a34a"></i>Conectar WhatsApp</h5>
+        <h5 class="modal-title"><i class="bi bi-whatsapp me-2 col-success" ></i>Conectar WhatsApp</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center py-3">
         <p style="font-size:13px;color:var(--text-muted)">Abra o WhatsApp no celular, vá em <strong>Dispositivos Conectados</strong> e escaneie o QR abaixo.</p>
         <div id="qr-loading" style="padding:2rem;color:var(--text-muted)"><i class="bi bi-hourglass-split" style="font-size:2rem"></i><br>Gerando QR...</div>
-        <div id="qr-container" style="display:none"></div>
+        <div id="qr-container" class="d-none"></div>
         <p style="font-size:11px;color:var(--text-muted);margin-top:.75rem" id="qr-hint"></p>
       </div>
       <div class="modal-footer os-modal-footer">
@@ -540,7 +540,7 @@ function renderTabela(rows) {
 }
 
 async function disparar(id) {
-  if (!confirm('Disparar este lembrete agora?')) return;
+  if (!await Notify.confirm('Disparar este lembrete agora?', { title: 'Disparar lembrete', confirmLabel: 'Disparar' })) return;
   try {
     const res  = await Auth.apiFetch(`/api/lembretes/${id}/disparar`, { method: 'POST' });
     const body = await res.json();
@@ -552,7 +552,7 @@ async function disparar(id) {
 }
 
 async function cancelar(id) {
-  if (!confirm('Cancelar este lembrete agendado?')) return;
+  if (!await Notify.confirm('Cancelar este lembrete agendado?', { title: 'Cancelar lembrete', confirmLabel: 'Cancelar lembrete', cancelLabel: 'Voltar', variant: 'danger' })) return;
   try {
     const res  = await Auth.apiFetch(`/api/lembretes/${id}/cancelar`, { method: 'PATCH' });
     const body = await res.json();

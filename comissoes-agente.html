@@ -218,7 +218,7 @@
         </div>
 
         <!-- Barra de Progressão de Faixa (só para agente_agencia) -->
-        <div class="faixa-bar-wrap" id="faixa-wrap" style="display:none">
+        <div class="faixa-bar-wrap d-none" id="faixa-wrap" >
           <div class="faixa-header">
             <span class="faixa-title"><i class="bi bi-bar-chart-steps me-1"></i>Progressão de Faixa — Mês Atual</span>
             <span class="faixa-badge" id="faixa-pct-badge">—%</span>
@@ -296,7 +296,7 @@
           </div>
           <!-- Pagination -->
           <div class="d-flex align-items-center justify-content-between p-3 border-top" id="pagination-wrap" style="display:none!important">
-            <span class="text-muted" style="font-size:12px" id="pagination-info"></span>
+            <span class="text-muted fs-12"  id="pagination-info"></span>
             <div class="d-flex gap-1" id="pagination-btns"></div>
           </div>
         </div>
@@ -329,7 +329,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p class="mb-3" style="font-size:13px" id="modalStatusDesc"></p>
+        <p class="mb-3 fs-13"  id="modalStatusDesc"></p>
         <select class="input-os" id="modalStatusSel">
           <option value="pendente">Pendente</option>
           <option value="aprovado">Aprovado</option>

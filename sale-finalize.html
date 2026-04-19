@@ -325,7 +325,7 @@ function buildInstallmentRow(titleId, instNum, valor, dataDef, pago, dataPago, c
         <input type="date" class="input-os inst-data-pag" value="${dataPago||''}" ${!pago?'disabled':''}>
       </div>
       <div style="display:flex;align-items:flex-end">
-        <button class="os-icon-btn" style="color:var(--danger)" onclick="removeInstallment('${titleId}','${instNum}')"><i class="bi bi-trash"></i></button>
+        <button class="os-icon-btn txt-danger"  onclick="removeInstallment('${titleId}','${instNum}')"><i class="bi bi-trash"></i></button>
       </div>
     </div>
   </div>`;
@@ -443,7 +443,7 @@ function buildTitleCard(titleId, data) {
         <input type="number" class="input-os title-installments" data-title="${titleId}" value="${nParc}" min="1" max="60" style="width:80px" oninput="renderInstallments('${titleId}')">
       </div>
       <div id="installments-${titleId}">${parcelasHtml}</div>
-      <button class="btn-os-ghost mt-2" style="font-size:11px" onclick="addExtraInstallment('${titleId}')">
+      <button class="btn-os-ghost mt-2 fs-11"  onclick="addExtraInstallment('${titleId}')">
         <i class="bi bi-plus-circle me-1"></i>Adicionar parcela extra
       </button>
       <div class="attach-acc mt-2">
