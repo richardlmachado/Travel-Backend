@@ -7,11 +7,122 @@
 ---
 
 ## Última Sessão
-- **ID**: ebeee0ec-0b9a-48dd-ac35-a021a6c60bff
-- **Data**: 2026-04-17
-- **Transcript**: `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\ebeee0ec-0b9a-48dd-ac35-a021a6c60bff.jsonl`
+- **ID**: f0bec501-f1d2-4764-9888-6e9e82417e03
+- **Data**: 2026-04-19
+- **Transcript**: `C:\Users\richa\.claude\projects\c--Users-richa-OneDrive-Documentos-Site-agencia\f0bec501-f1d2-4764-9888-6e9e82417e03.jsonl`
 
-## Status: Sprint 8 implementada (Documentos de Viagem) — aguardando validação visual pelo usuário
+## Status: Auditoria de segurança completa — ~60 bugs corrigidos, 5 commits, sistema em produção funcionando
+
+### Sessão 2026-04-19 — Auditoria de bugs e hardening ✅
+
+Sprint de segurança inteira. 5 commits em `main`:
+- `c6512e7` backend: bugs críticos e hardening
+- `53d130e` sanitiza CLAUDE.md
+- `a9d7468` parametriza secrets do docker-compose via .env
+- `b79de03` frontend: 40+ bugs de XSS/race/listeners/convenções
+- `b8bc15b` sale-form XSS + Notify.confirm + batch-migração inline styles
+
+#### Backend (`assets/js/server.js` → deployado p/ `/docker/travelos/api/server.js`)
+- **Multi-tenant leak**: removido `OR r.loja_id IS NULL` em `/api/reservas`
+- **CORS aberto**: agora whitelist via `ALLOWED_ORIGINS`
+- **Secrets hardcoded**: `JWT_SECRET` e `DB_PASS` obrigam env var ou abortam no boot
+- **Rate limit**: `express-rate-limit` em `/api/auth/login` (10 req / 15 min)
+- **IDOR fornecedores**: filtro `loja_id` em GET/PUT/DELETE `/api/fornecedores/:id`
+- **Race em código de venda**: `gerarCodigoVenda` usa `LAST_INSERT_ID(expr)` atômico
+- **Race em comissão progressiva**: conn dedicada + `SELECT ... FOR UPDATE` + transação
+- **Lembrete WhatsApp morto**: `v.canal` nunca era populado → novo `CANAL_LEMBRETE_PADRAO` env
+- **Validação pagamentos sync**: `pagante_id` contra loja + `moeda` em allowlist
+- **SSE**: heartbeat 25s + cleanup em erro de write
+- **Pool MySQL**: `connectTimeout`, `queueLimit`, `keepAlive`
+- **Cron** blindado com `runCronSafely` wrapper
+- **Auditoria de reservas**: agora inclui `loja_id`
+- **Backfill**: `ALTER TABLE reservas MODIFY loja_id INT NOT NULL` (0 órfãos)
+
+#### Infra (VPS `/docker/travelos/`)
+- `.env` criado com `JWT_SECRET` (96 hex), `DB_PASS` (32 random), `EVOLUTION_API_KEY` (40 alfanum), `ALLOWED_ORIGINS`, `CANAL_LEMBRETE_PADRAO`
+- `docker-compose.yml` parametrizado — nada mais hardcoded
+- `MYSQL_ROOT_PASSWORD` = `TravelRoot@2025!` **MANTIDO** (rotação exige recriar volume; está em `.env` no VPS, fora do repo)
+- `EVOLUTION_DB_PASSWORD` = `Evolution@2025!` **MANTIDO** (interno à rede Docker, parametrizado p/ rotação futura)
+- `/docker/travelos/api/package.json`: adicionado `express-rate-limit`
+- `c:/tmp/deploy_api.py` novo (script de deploy do backend fora do repo)
+
+#### Git history
+- `git filter-repo` rodado em toda a história: senhas antigas (`#R219407##159159re`, `TravelOS@2025!`, `TravelRoot@2025!`, `TravelEvolution@2025!`) substituídas por `***REDACTED-*` em todos os commits
+- Force-push feito — **qualquer clone existente precisa `git fetch && git reset --hard origin/main`**
+- `CLAUDE.md` sanitizada (sem senhas inline)
+- `.env`, `.env.local` no `.gitignore`
+- `.env.example` documenta variáveis esperadas
+
+#### Frontend
+- **`window.esc()`** helper global em `auth.js` — uso obrigatório em innerHTML com dados de API
+- **XSS crítico**: notifications.js (toast com textContent), sale-finalize + sale-supplier-customer-payment (dropdown pagante DOM-based), lembretes (QR/JSON com pre+textContent)
+- **XSS alto**: esc() em innerHTML com `err.message` e dados de API em relatorios (4), dashboard, financeiro, reservas, comissoes-agente, lembretes, sale-form
+- **`onclick` inline**: substituído por `data-*` + event delegation em reservas (buildSaleCard), financeiro (tabela+parcelas), lembretes, comissoes-agente, sale-form (voucher items)
+- **Race em autocomplete**: comissoes-config usa `AbortController`
+- **`!important`**: removido (sale-finalize `.required-border`)
+- **`parseInt` sem radix**: corrigido em 3 arquivos
+- **Divisão por zero**: guard em comissoes-agente (faixa)
+- **`userCargo === 'agente' === false`**: simplificado para `!== 'agente'`
+- **Listeners duplicados**: flag `_initialized` em App.init e `_btnBound` em Theme.init
+
+#### UX
+- Novo **`Notify.confirm(msg, opts)`** → Promise<boolean>. Modal acessível (focus, ESC/Enter, aria-modal). Substitui 7 `confirm()` nativos em clientes, usuarios, configuracoes, lembretes, sale-form
+- Double-submit guard com `_salvandoVenda` em `salvarVenda()` + validação mínima (cliente + 1 item)
+
+#### Inline styles
+- **341 → 227** (114 eliminados, 33%). Batch replace com regex: `color:var(--danger)` → `txt-danger`, `font-size:Npx` → `fs-N`, etc.
+- 76 tags com `class=` duplicado (gerados pelo batch) mesclados automaticamente
+- Novas classes utility em `style.css`: `.fs-9..fs-14`, `.txt-*`, `.w-*`, `.max-w-*`, `.flex-1`, `.grid-col-full`, etc.
+
+### Validação em produção
+- `/api/health` 200 ✅
+- Login admin 200 com JWT ✅
+- CORS whitelist funcionando ✅
+- Todos containers `Up`/`healthy` ✅
+
+### Não corrigido (decisões conscientes — próximas sprints)
+- **227 inline styles restantes**: padrões multi-prop ou valores dinâmicos; exige classe purpose-named caso-a-caso (~3h). Migrar incrementalmente conforme arquivos forem tocados
+- **JWT em localStorage**: TODO marcado em auth.js. Migrar para cookie HttpOnly exige endpoint `/api/auth/refresh` + `credentials:'include'` no `apiFetch` (~meio-dia)
+- **MYSQL_ROOT_PASSWORD + EVOLUTION_DB_PASSWORD**: manter por ora (rotação exige downtime/recriação de volume)
+- **Auditoria de mudança de status de comissão**: endpoint `PATCH /api/comissoes/:id/status` não chama `audit()` — melhoria futura
+- **Aria-labels em botões-ícone**: parcial; pass dedicada de acessibilidade recomendada
+- **sale-form-legacy.html**: arquivo backup não rastreado, deixado intacto
+
+### Arquivos tocados nesta sessão
+Backend:
+- `assets/js/server.js`, `/docker/travelos/api/server.js` (VPS)
+- `/docker/travelos/.env` (VPS)
+- `/docker/travelos/docker-compose.yml` (VPS)
+- `/docker/travelos/api/package.json` (VPS — +express-rate-limit)
+
+Frontend:
+- `assets/js/auth.js` (+ window.esc, TODO JWT cookie)
+- `assets/js/app.js` (idempotente)
+- `assets/js/theme.js` (listener bound flag)
+- `assets/js/notifications.js` (Notify.confirm + DOM-based toast)
+- `assets/css/style.css` (modal CSS + 30+ utility classes)
+- `clientes.html`, `dashboard.html`, `financeiro.html`, `relatorios.html`, `reservas.html`, `lembretes.html`
+- `comissoes-agente.html`, `comissoes-config.html`, `configuracoes.html`, `usuarios.html`
+- `sale-form.html`, `sale-finalize.html`, `sale-supplier-customer-payment.html`, `sale-supplier-agency-payment.html`
+
+Repo:
+- `CLAUDE.md` (senhas removidas)
+- `docker-compose.yml` (parametrizado via ${VAR})
+- `.gitignore` (+.env)
+- `.env.example` (novo)
+
+### Próximos passos sugeridos
+1. Migrar JWT de localStorage para cookie HttpOnly (endpoint refresh no backend)
+2. Rotacionar `MYSQL_ROOT_PASSWORD` + `EVOLUTION_DB_PASSWORD` em manutenção planejada
+3. Pass de acessibilidade (aria-label nos ícones-only buttons, labels com for)
+4. Continuar migração incremental dos 227 inline styles conforme features tocarem os arquivos
+5. Adicionar auditoria em `PATCH /api/comissoes/:id/status`
+
+---
+
+## Sessão anterior (2026-04-17) — Sprint 8 Documentos de Viagem
+
+Arquivada. Ver commit `f255ded` para detalhes.
 
 ### Sprint 8 — Documentos de Viagem ✅ (deploy feito, teste em navegador pendente)
 
