@@ -58,7 +58,7 @@ services:
     networks:
       - n8n_default
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p***REDACTED-DBROOT***"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -69,7 +69,7 @@ services:
     environment:
       - POSTGRES_DB=evolution
       - POSTGRES_USER=evolution
-      - POSTGRES_PASSWORD=Evolution@2025!
+      - POSTGRES_PASSWORD=${EVOLUTION_DB_PASSWORD}
     volumes:
       - evolution_pg:/var/lib/postgresql/data
     networks:
@@ -96,7 +96,7 @@ services:
       - SERVER_PORT=8080
       - SERVER_URL=https://evolution.srv1589437.hstgr.cloud
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=***REDACTED-EVO***
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
       - LOG_LEVEL=ERROR,WARN,INFO,LOG
       - LOG_COLOR=false
       - LOG_BAILEYS=warn
@@ -111,7 +111,7 @@ services:
       - CACHE_LOCAL_ENABLED=false
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://evolution:Evolution@2025!@evolution-db:5432/evolution
+      - DATABASE_CONNECTION_URI=postgresql://evolution:${EVOLUTION_DB_PASSWORD}@evolution-db:5432/evolution
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_DATA_OLD_MESSAGE=false
       - DATABASE_SAVE_MESSAGE_UPDATE=false
