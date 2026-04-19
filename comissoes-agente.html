@@ -102,6 +102,17 @@
 
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
     .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+
+    .ca-link       { color: var(--primary); text-decoration: none; }
+    .ca-tipo       { font-size: 11px; font-weight: 600; }
+    .ca-item       { font-size: 10px; color: var(--text-muted); }
+    .ca-agente     { font-size: 12px; font-weight: 600; }
+    .ca-mes        { font-size: 12px; }
+    .ca-base       { font-size: 12px; font-weight: 600; }
+    .ca-pct        { font-size: 12px; font-weight: 700; }
+    .ca-valor      { font-size: 13px; font-weight: 900; color: var(--text-heading); }
+    .ca-edit-btn   { width: 28px; height: 28px; background: #0d9488; }
+    .ca-edit-btn i { font-size: 11px; }
   </style>
 </head>
 <body>
@@ -414,7 +425,7 @@ async function buscarComissoes(page = 1) {
     document.getElementById('sum-valor').textContent  = fmtMoney(body.total_valor);
   } catch (err) {
     document.getElementById('comissoes-tbody').innerHTML =
-      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${err.message}</div></td></tr>`;
+      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${esc(err.message)}</div></td></tr>`;
   }
 }
 
@@ -432,23 +443,35 @@ function renderTabela(rows) {
     const tipo = TIPO_LABELS[r.tipo_produto] || r.tipo_produto || '—';
     const canEdit = ['diretor','gerente'].includes(userCargo);
     return `<tr>
-      <td><a href="sale-form.html?id=${r.venda_id}" class="fw-700" style="color:var(--primary);text-decoration:none">${r.venda_codigo || '—'}</a></td>
-      <td><span style="font-size:11px;font-weight:600">${tipo}</span>
-          ${r.item_descricao ? `<br><span style="font-size:10px;color:var(--text-muted)">${r.item_descricao}</span>` : ''}</td>
-      <td style="font-size:12px;font-weight:600">${r.agente_nome || '—'}</td>
-      <td><span class="nivel-badge ${nivelCls}">${NIVEL_LABELS[r.nivel] || r.nivel}</span></td>
-      <td style="font-size:12px">${r.mes_referencia}</td>
-      <td class="text-end" style="font-size:12px;font-weight:600">${fmtMoney(r.base_calculo)}</td>
-      <td class="text-end" style="font-size:12px;font-weight:700">${(+r.percentual).toFixed(1)}%</td>
-      <td class="text-end" style="font-size:13px;font-weight:900;color:var(--text-heading)">${fmtMoney(r.valor)}</td>
-      <td><span class="status-badge ${statusCls}">${r.status}</span></td>
+      <td><a href="sale-form.html?id=${encodeURIComponent(r.venda_id)}" class="fw-700 ca-link">${esc(r.venda_codigo || '—')}</a></td>
+      <td><span class="ca-tipo">${esc(tipo)}</span>
+          ${r.item_descricao ? `<br><span class="ca-item">${esc(r.item_descricao)}</span>` : ''}</td>
+      <td class="ca-agente">${esc(r.agente_nome || '—')}</td>
+      <td><span class="nivel-badge ${nivelCls}">${esc(NIVEL_LABELS[r.nivel] || r.nivel)}</span></td>
+      <td class="ca-mes">${esc(r.mes_referencia)}</td>
+      <td class="text-end ca-base">${fmtMoney(r.base_calculo)}</td>
+      <td class="text-end ca-pct">${(+r.percentual || 0).toFixed(1)}%</td>
+      <td class="text-end ca-valor">${fmtMoney(r.valor)}</td>
+      <td><span class="status-badge ${esc(statusCls)}">${esc(r.status)}</span></td>
       <td>
-        ${canEdit ? `<button class="acc-teal-btn" style="background:#0d9488;width:28px;height:28px"
-          title="Alterar status" onclick="abrirModalStatus(${r.venda_id},${r.id},'${r.status}','${r.venda_codigo||''}')">
-          <i class="bi bi-pencil" style="font-size:11px"></i></button>` : '—'}
+        ${canEdit ? `<button class="acc-teal-btn ca-edit-btn"
+          title="Alterar status"
+          data-venda-id="${r.venda_id}" data-id="${r.id}"
+          data-status="${esc(r.status)}" data-venda-codigo="${esc(r.venda_codigo||'')}"><i class="bi bi-pencil"></i></button>` : '—'}
       </td>
     </tr>`;
   }).join('');
+
+  tbody.querySelectorAll('.ca-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      abrirModalStatus(
+        Number(btn.dataset.vendaId),
+        Number(btn.dataset.id),
+        btn.dataset.status,
+        btn.dataset.vendaCodigo
+      );
+    });
+  });
 }
 
 /* ── KPIs ────────────────────────────────────────────────────── */
@@ -471,7 +494,7 @@ function renderKpis(rows, totalValor) {
 function renderFaixa(rows) {
   // Mostra só para agente_agente (leads da agência com progressão)
   const isAgenciaNivel = rows.some(r => r.nivel === 'agencia_agente');
-  if (!isAgenciaNivel || userCargo === 'agente' === false) {
+  if (!isAgenciaNivel || userCargo !== 'agente') {
     document.getElementById('faixa-wrap').style.display = 'none'; return;
   }
   document.getElementById('faixa-wrap').style.display = 'block';
@@ -480,7 +503,7 @@ function renderFaixa(rows) {
     .reduce((s, r) => s + +r.valor, 0);
   const faixa = getFaixaAtual(acumulado);
   const teto  = 30000;
-  const pct   = Math.min(acumulado / teto * 100, 100);
+  const pct   = teto > 0 ? Math.min(acumulado / teto * 100, 100) : 0;
   document.getElementById('faixa-bar').style.width          = `${pct}%`;
   document.getElementById('faixa-pct-badge').textContent    = `${faixa.pct}%`;
   document.getElementById('faixa-acumulado-label').textContent = `${fmtMoney(acumulado)} acumulado`;

@@ -24,6 +24,8 @@
     .nivel-forn { border-left: 3px solid #2563eb; }
     .nivel-agente { border-left: 3px solid #0d9488; }
     .add-row { background: var(--bg-page); padding: 0.75rem 1rem; border-top: 1px dashed var(--border-color); }
+    .forn-dd-item { padding: 0.5rem 0.75rem; cursor: pointer; font-size: 12px; }
+    .forn-dd-item:hover { background: var(--bg-page); }
   </style>
 </head>
 <body>
@@ -291,25 +293,39 @@ async function salvarForn() {
 
 // Autocomplete fornecedor
 let acTimer = null;
+let acBlurTimer = null;
+let acAbortCtrl = null;
 document.getElementById('add-forn-nome').addEventListener('input', function() {
   clearTimeout(acTimer);
+  acAbortCtrl?.abort();
   const q = this.value.trim();
   if (q.length < 2) { document.getElementById('dd-forn').style.display = 'none'; return; }
   acTimer = setTimeout(async () => {
-    const res  = await Auth.apiFetch(`/api/fornecedores?q=${encodeURIComponent(q)}&limit=8`);
-    const json = await res.json();
+    acAbortCtrl = new AbortController();
+    let json;
+    try {
+      const res  = await Auth.apiFetch(`/api/fornecedores?q=${encodeURIComponent(q)}&limit=8`, { signal: acAbortCtrl.signal });
+      json = await res.json();
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      return;
+    }
     const dd = document.getElementById('dd-forn');
+    dd.textContent = '';
     if (!json.ok || !json.data.length) { dd.style.display = 'none'; return; }
-    dd.innerHTML = json.data.map(f =>
-      `<div style="padding:.5rem .75rem;cursor:pointer;font-size:12px" onmousedown="selectForn(${f.id},'${f.nome.replace(/'/g,"\\'")}')">
-         ${f.nome}${f.cnpj ? ' — ' + f.cnpj : ''}
-       </div>`
-    ).join('');
+    for (const f of json.data) {
+      const item = document.createElement('div');
+      item.className = 'forn-dd-item';
+      item.textContent = f.cnpj ? `${f.nome} — ${f.cnpj}` : f.nome;
+      item.addEventListener('mousedown', () => selectForn(f.id, f.nome));
+      dd.appendChild(item);
+    }
     dd.style.display = 'block';
   }, 300);
 });
 document.getElementById('add-forn-nome').addEventListener('blur', () => {
-  setTimeout(() => { document.getElementById('dd-forn').style.display = 'none'; }, 200);
+  clearTimeout(acBlurTimer);
+  acBlurTimer = setTimeout(() => { document.getElementById('dd-forn').style.display = 'none'; }, 200);
 });
 
 function selectForn(id, nome) {

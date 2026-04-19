@@ -5,6 +5,7 @@
 
 const Theme = (() => {
   const STORAGE_KEY = 'travelos-theme';
+  let _btnBound = false;
 
   /**
    * Aplica o tema ao <html>
@@ -47,10 +48,13 @@ const Theme = (() => {
       apply(prefersDark ? 'dark' : 'light');
     }
 
-    // Vincula o botão de toggle (se existir na página)
-    const btn = document.getElementById('theme-toggle');
-    if (btn) {
-      btn.addEventListener('click', toggle);
+    // Vincula o botão de toggle (se existir na página) — uma única vez
+    if (!_btnBound) {
+      const btn = document.getElementById('theme-toggle');
+      if (btn) {
+        btn.addEventListener('click', toggle);
+        _btnBound = true;
+      }
     }
   }
 

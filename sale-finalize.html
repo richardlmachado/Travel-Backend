@@ -69,7 +69,11 @@
     .attach-acc-body { padding: 0.75rem; display: none; }
     .attach-acc-body.open { display: block; }
 
-    .required-border { border-color: var(--danger) !important; }
+    .form-control.required-border,
+    .form-select.required-border,
+    input.required-border,
+    select.required-border,
+    textarea.required-border { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
     .pago-badge { font-size: 10px; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 0.25rem; }
     .pago-badge.pago { background: #d1fae5; color: #065f46; }
     .pago-badge.pendente { background: #fef3c7; color: #92400e; }
@@ -248,11 +252,27 @@ function showDropdown(titleId, items) {
     dd.className = 'autocomplete-dropdown';
     wrap.appendChild(dd);
   }
-  dd.innerHTML = items.map(c =>
-    `<div class="autocomplete-item" onclick="selectPagante('${titleId}',${c.id},${JSON.stringify(c.nome).replace(/</g,'&lt;')})">
-       ${c.nome}${c.cpf ? ` — ${c.cpf}` : ''}${c.cnpj ? ` — ${c.cnpj}` : ''}
-     </div>`
-  ).join('') || '<div class="autocomplete-item text-muted">Nenhum resultado</div>';
+  dd.textContent = '';
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'autocomplete-item text-muted';
+    empty.textContent = 'Nenhum resultado';
+    dd.appendChild(empty);
+    return;
+  }
+  for (const c of items) {
+    const item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.dataset.titleId = titleId;
+    item.dataset.id = c.id;
+    item.dataset.nome = c.nome;
+    let label = c.nome;
+    if (c.cpf)  label += ` — ${c.cpf}`;
+    if (c.cnpj) label += ` — ${c.cnpj}`;
+    item.textContent = label;
+    item.addEventListener('click', () => selectPagante(titleId, c.id, c.nome));
+    dd.appendChild(item);
+  }
 }
 
 function selectPagante(titleId, id, nome) {
@@ -329,7 +349,7 @@ function onPagoChange(cb, titleId, instNum) {
 
 function renderInstallments(titleId) {
   const nEl = document.querySelector(`.title-installments[data-title="${titleId}"]`);
-  const n = parseInt(nEl?.value || 1);
+  const n = parseInt(nEl?.value || 1, 10);
   const amount = parseFloat(document.getElementById(`title-amount-${titleId}`)?.value || 0);
   const container = document.getElementById(`installments-${titleId}`);
   if (!container) return;
@@ -504,7 +524,7 @@ async function salvar() {
     const forma      = document.querySelector(`.title-forma[data-title="${titleId}"]`)?.value || 'Pix';
     const moeda      = document.querySelector(`.title-moeda[data-title="${titleId}"]`)?.value || 'BRL';
     const obs        = document.querySelector(`.title-obs[data-title="${titleId}"]`)?.value || '';
-    const nParc      = parseInt(document.querySelector(`.title-installments[data-title="${titleId}"]`)?.value || 1);
+    const nParc      = parseInt(document.querySelector(`.title-installments[data-title="${titleId}"]`)?.value || 1, 10);
 
     const parcelas = [];
     card.querySelectorAll('.installment-row').forEach((row, idx) => {

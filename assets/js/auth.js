@@ -3,6 +3,18 @@
  * Autenticação via API real com fallback local para desenvolvimento
  */
 
+// Helper global de escape HTML. Uso obrigatório em qualquer template string
+// que interpole dados vindos da API ou do usuário antes de ir para innerHTML.
+window.esc = function (value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+};
+
 const Auth = (() => {
   const STORAGE_KEY = 'travelos-user';
   const API_BASE    = '/api';
@@ -19,6 +31,8 @@ const Auth = (() => {
     }
 
     try {
+      // Uso de fetch direto aqui é intencional: login bootstrapa a sessão,
+      // então ainda não há token para apiFetch injetar.
       const res = await fetch(`${API_BASE}/auth/login`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,6 +56,8 @@ const Auth = (() => {
         loginAt: new Date().toISOString(),
       };
 
+      // TODO: migrar token para cookie HttpOnly no backend (req: /api/auth/refresh
+      // e leitura via credentials: 'include'). localStorage é roubável via XSS.
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 
       // Salvar permissões RBAC

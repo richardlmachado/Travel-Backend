@@ -68,6 +68,18 @@
     [data-bs-theme="dark"] .kpi-badge.warn   { background:rgba(180,83,9,.2);color:#fbbf24; }
     [data-bs-theme="dark"] .kpi-badge.muted  { background:rgba(148,163,184,.08); }
     [data-bs-theme="dark"] .kpi-badge.danger { background:rgba(220,38,38,.2);color:#f87171; }
+
+    .prod-leg-lbl  { flex: 1; }
+    .prod-leg-val  { font-weight: 800; color: var(--text-heading); }
+    .prod-dot-c0 { background: #2563eb; }
+    .prod-dot-c1 { background: #16a34a; }
+    .prod-dot-c2 { background: #d97706; }
+    .prod-dot-c3 { background: #7c3aed; }
+    .prod-dot-c4 { background: #0891b2; }
+
+    .rank-col     { flex: 1; min-width: 0; }
+    .rank-right   { text-align: right; }
+    .rank-margem  { color: #16a34a; }
   </style>
 </head>
 <body>
@@ -463,7 +475,7 @@ function renderChartProduto(dados) {
   });
 
   document.getElementById('prod-legenda').innerHTML = dados.slice(0,5).map((d,i) =>
-    `<div class="prod-leg-row"><div class="prod-dot" style="background:${colors[i]}"></div><span style="flex:1">${labels[i]}</span><span style="font-weight:800;color:var(--text-heading)">${fmtMK(d.receita)}</span></div>`
+    `<div class="prod-leg-row"><div class="prod-dot prod-dot-c${i}"></div><span class="prod-leg-lbl">${esc(labels[i])}</span><span class="prod-leg-val">${fmtMK(d.receita)}</span></div>`
   ).join('');
 }
 
@@ -479,13 +491,13 @@ function renderRankingAgentes(dados) {
     const margem = +a.receita - +a.custo;
     return `<div class="rank-row">
       <div class="rank-num ${medalhas[i]||''}">${i+1}</div>
-      <div style="flex:1;min-width:0">
-        <div class="rank-name">${a.nome}</div>
-        <div class="rank-sub">${a.qtd_vendas} venda(s)</div>
+      <div class="rank-col">
+        <div class="rank-name">${esc(a.nome)}</div>
+        <div class="rank-sub">${+a.qtd_vendas || 0} venda(s)</div>
       </div>
-      <div style="text-align:right">
+      <div class="rank-right">
         <div class="rank-val">${fmtMK(a.receita)}</div>
-        <div class="rank-sub" style="color:#16a34a">+${fmtMK(margem)}</div>
+        <div class="rank-sub rank-margem">+${fmtMK(margem)}</div>
       </div>
     </div>`;
   }).join('');
@@ -502,10 +514,10 @@ async function carregarUltimasVendas() {
     }
     wrap.innerHTML = r.data.map(v =>
       `<div class="venda-row">
-        <span class="venda-codigo">${v.codigo}</span>
-        <span class="venda-cliente">${v.cliente_nome||'—'}</span>
+        <span class="venda-codigo">${esc(v.codigo)}</span>
+        <span class="venda-cliente">${esc(v.cliente_nome||'—')}</span>
         <span class="venda-valor">${fmtMK(v.total_venda)}</span>
-        <span class="st-badge ${v.status}">${v.status}</span>
+        <span class="st-badge ${esc(v.status)}">${esc(v.status)}</span>
       </div>`
     ).join('');
   } catch {}

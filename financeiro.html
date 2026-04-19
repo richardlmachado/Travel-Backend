@@ -130,6 +130,21 @@
 
     .empty-state { text-align:center;padding:3rem 1rem;color:var(--text-muted); }
     .empty-state i { font-size:2.5rem;margin-bottom:.75rem;display:block;opacity:.4; }
+
+    .fin-link       { font-size:12px;font-weight:700;color:var(--primary); }
+    .fin-sm         { font-size:12px; }
+    .fin-val        { font-size:12px;font-weight:700; }
+    .fin-atrasado   { color:#dc2626; font-weight:700; }
+    .fin-pag-btn    { min-width:32px;font-size:11px; }
+    .status-badge.status-atrasado { background:#fee2e2;color:#991b1b; }
+    .parc-sm        { font-size:12px; }
+    .parc-valor     { font-weight:700; }
+    .parc-multa     { color:#d97706; }
+    .parc-venc-old  { color:#dc2626; font-weight:700; }
+    .parc-actions   { white-space:nowrap; }
+    .parc-btn       { font-size:10px; padding:.2rem .5rem; }
+    .parc-recibo    { color:#2563eb; border-color:#2563eb; }
+    .parc-estorno   { color:#dc2626; border-color:#dc2626; }
   </style>
 </head>
 <body>
@@ -720,21 +735,32 @@ function renderTitulos(rows) {
     const atrasado= +r.valor_atrasado > 0;
     const proxVenc= r.prox_vencimento;
     const proxOld = proxVenc && isOld(proxVenc.substring(0,10));
+    const statusRaw = r.status || 'pendente';
+    const STATUS_ALLOWED = ['pendente','em_aberto','parcial','pago','inadimplente','cancelado'];
+    const statusSafe = STATUS_ALLOWED.includes(statusRaw) ? statusRaw : 'pendente';
     return `
     <tr>
-      <td><button class="expand-btn" onclick="verParcelas(${r.id}, '${r.venda_codigo||''}')"><i class="bi bi-chevron-down"></i></button></td>
-      <td><a href="sale-form.html?id=${r.venda_id}" style="font-size:12px;font-weight:700;color:var(--primary)">${r.venda_codigo||'—'}</a></td>
-      <td style="font-size:12px">${r.cliente_nome||'—'}</td>
-      <td><span class="tipo-badge ${tipo.cls}">${tipo.label}</span></td>
-      <td style="font-size:12px">${r.forma_pagamento||'—'}</td>
-      <td class="text-end" style="font-size:12px;font-weight:700">${fmtM(r.valor)}</td>
-      <td class="text-center" style="font-size:12px">${r.parcelas_pagas||0}/${r.total_parcelas||0}</td>
-      <td class="text-end" style="font-size:12px;font-weight:700;color:${atrasado?'#dc2626':'inherit'}">${atrasado?fmtM(r.valor_atrasado):'—'}</td>
-      <td style="font-size:12px;color:${proxOld?'#dc2626':'inherit'}">${proxVenc?fmtD(proxVenc.substring(0,10)):'—'}</td>
-      <td><span class="status-badge ${r.status||'pendente'}">${r.status||'pendente'}</span></td>
-      <td><button class="btn-os-ghost btn-sm" onclick="verParcelas(${r.id}, '${r.venda_codigo||''}')" title="Ver parcelas" style="font-size:11px;padding:.25rem .6rem"><i class="bi bi-list-check"></i></button></td>
+      <td><button class="expand-btn fin-expand-btn" data-id="${r.id}" data-codigo="${esc(r.venda_codigo||'')}"><i class="bi bi-chevron-down"></i></button></td>
+      <td><a href="sale-form.html?id=${encodeURIComponent(r.venda_id)}" class="fin-link">${esc(r.venda_codigo||'—')}</a></td>
+      <td class="fin-sm">${esc(r.cliente_nome||'—')}</td>
+      <td><span class="tipo-badge ${tipo.cls}">${esc(tipo.label)}</span></td>
+      <td class="fin-sm">${esc(r.forma_pagamento||'—')}</td>
+      <td class="text-end fin-val">${fmtM(r.valor)}</td>
+      <td class="text-center fin-sm">${+r.parcelas_pagas||0}/${+r.total_parcelas||0}</td>
+      <td class="text-end fin-val ${atrasado?'fin-atrasado':''}">${atrasado?fmtM(r.valor_atrasado):'—'}</td>
+      <td class="fin-sm ${proxOld?'fin-atrasado':''}">${proxVenc?fmtD(proxVenc.substring(0,10)):'—'}</td>
+      <td><span class="status-badge ${statusSafe}">${esc(statusRaw)}</span></td>
+      <td><button class="btn-os-ghost btn-sm fin-ver-btn" data-id="${r.id}" data-codigo="${esc(r.venda_codigo||'')}" title="Ver parcelas"><i class="bi bi-list-check"></i></button></td>
     </tr>`;
   }).join('');
+
+  // Delegação: substitui onclick inline
+  const tbody = document.getElementById('fin-tbody');
+  if (tbody) {
+    tbody.querySelectorAll('.fin-expand-btn, .fin-ver-btn').forEach(btn => {
+      btn.addEventListener('click', () => verParcelas(Number(btn.dataset.id), btn.dataset.codigo));
+    });
+  }
 }
 
 function renderPaginacao() {
@@ -742,11 +768,14 @@ function renderPaginacao() {
   document.getElementById('fin-pag-info').textContent = `${geralTotal} título(s)`;
   const wrap = document.getElementById('fin-pag-btns');
   if (totalPages <= 1) { wrap.innerHTML = ''; return; }
-  let html = '';
+  wrap.innerHTML = '';
   for (let i = 1; i <= totalPages; i++) {
-    html += `<button class="btn-os-ghost btn-sm${i===geralPage?' active':''}" onclick="buscarTitulos(${i})" style="min-width:32px;font-size:11px">${i}</button>`;
+    const btn = document.createElement('button');
+    btn.className = `btn-os-ghost btn-sm fin-pag-btn${i===geralPage?' active':''}`;
+    btn.textContent = String(i);
+    btn.addEventListener('click', () => buscarTitulos(i));
+    wrap.appendChild(btn);
   }
-  wrap.innerHTML = html;
 }
 
 /* ── Modal Parcelas ─────────────────────────────────────── */
@@ -765,23 +794,38 @@ function verParcelas(pagId, codigo) {
     const rows = body.data;
     parcelasAtuais = rows;
     if (!rows.length) { document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center">Nenhuma parcela</td></tr>`; return; }
-    document.getElementById('parcelas-tbody').innerHTML = rows.map(pc => {
-      const pago = pc.pago ? `<span class="status-badge pago">Pago</span>` : (isOld(pc.data_vencimento?.substring(0,10)) ? `<span class="status-badge" style="background:#fee2e2;color:#991b1b">Atrasado</span>` : `<span class="status-badge pendente">Pendente</span>`);
-      const estornado = pc.estornado ? `<span class="status-badge cancelado" title="Estornado em ${fmtDt(pc.estornado_em)}">Estornado</span>` : '';
-      const btnRecibo  = pc.pago && !pc.estornado ? `<button class="btn-os-ghost btn-sm" onclick="gerarReciboParcela(${pc.id})" title="Gerar recibo" style="font-size:10px;padding:.2rem .5rem;color:#2563eb;border-color:#2563eb"><i class="bi bi-file-earmark-pdf"></i></button>` : '';
-      const btnEstorno = pc.pago && !pc.estornado ? `<button class="btn-os-ghost btn-sm" onclick="abrirEstorno(${pc.id})" title="Estornar" style="font-size:10px;padding:.2rem .5rem;color:#dc2626;border-color:#dc2626"><i class="bi bi-arrow-counterclockwise"></i></button>` : '';
+    const parcTbody = document.getElementById('parcelas-tbody');
+    parcTbody.innerHTML = rows.map(pc => {
+      const pago = pc.pago
+        ? `<span class="status-badge pago">Pago</span>`
+        : (isOld(pc.data_vencimento?.substring(0,10))
+            ? `<span class="status-badge status-atrasado">Atrasado</span>`
+            : `<span class="status-badge pendente">Pendente</span>`);
+      const estornado = pc.estornado
+        ? `<span class="status-badge cancelado" title="Estornado em ${esc(fmtDt(pc.estornado_em))}">Estornado</span>`
+        : '';
+      const btnRecibo  = pc.pago && !pc.estornado
+        ? `<button class="btn-os-ghost btn-sm parc-btn parc-recibo" data-id="${pc.id}" title="Gerar recibo"><i class="bi bi-file-earmark-pdf"></i></button>`
+        : '';
+      const btnEstorno = pc.pago && !pc.estornado
+        ? `<button class="btn-os-ghost btn-sm parc-btn parc-estorno" data-id="${pc.id}" title="Estornar"><i class="bi bi-arrow-counterclockwise"></i></button>`
+        : '';
+      const vencClass = (isOld(pc.data_vencimento?.substring(0,10)) && !pc.pago) ? 'parc-venc-old' : '';
       return `<tr>
-        <td style="font-size:12px">${pc.numero}</td>
-        <td class="text-end" style="font-size:12px;font-weight:700">${fmtM(pc.valor)}</td>
-        <td class="text-end" style="font-size:12px;color:#d97706">${pc.multa_encargo>0?fmtM(pc.multa_encargo):'—'}</td>
-        <td style="font-size:12px;${isOld(pc.data_vencimento?.substring(0,10))&&!pc.pago?'color:#dc2626;font-weight:700':''}">
-          ${pc.data_vencimento?fmtD(pc.data_vencimento.substring(0,10)):'—'}</td>
-        <td style="font-size:12px">${pc.data_pagamento?fmtDt(pc.data_pagamento):'—'}</td>
-        <td style="font-size:12px">${pc.conta||'—'}</td>
+        <td class="parc-sm">${+pc.numero}</td>
+        <td class="text-end parc-sm parc-valor">${fmtM(pc.valor)}</td>
+        <td class="text-end parc-sm parc-multa">${pc.multa_encargo>0?fmtM(pc.multa_encargo):'—'}</td>
+        <td class="parc-sm ${vencClass}">${pc.data_vencimento?fmtD(pc.data_vencimento.substring(0,10)):'—'}</td>
+        <td class="parc-sm">${pc.data_pagamento?esc(fmtDt(pc.data_pagamento)):'—'}</td>
+        <td class="parc-sm">${esc(pc.conta||'—')}</td>
         <td>${pago}${estornado}</td>
-        <td style="white-space:nowrap">${btnRecibo} ${btnEstorno}</td>
+        <td class="parc-actions">${btnRecibo} ${btnEstorno}</td>
       </tr>`;
     }).join('');
+    parcTbody.querySelectorAll('.parc-recibo').forEach(b =>
+      b.addEventListener('click', () => gerarReciboParcela(Number(b.dataset.id))));
+    parcTbody.querySelectorAll('.parc-estorno').forEach(b =>
+      b.addEventListener('click', () => abrirEstorno(Number(b.dataset.id))));
   }).catch(() => {
     document.getElementById('parcelas-tbody').innerHTML = `<tr><td colspan="8" class="text-center">Erro</td></tr>`;
   });

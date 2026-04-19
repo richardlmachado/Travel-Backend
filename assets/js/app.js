@@ -6,6 +6,8 @@
 
 const App = (() => {
 
+  let _initialized = false;
+
   /** Inicializa a sidebar responsiva */
   function _initSidebar() {
     const sidebar  = document.getElementById('sidebar');
@@ -56,6 +58,9 @@ const App = (() => {
    * Faz guard de autenticação, aplica tema e popula UI
    */
   async function init() {
+    if (_initialized) return;
+    _initialized = true;
+
     // 1. Protege a rota
     Auth.guard();
 

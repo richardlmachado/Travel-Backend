@@ -37,15 +37,21 @@ const Notify = (() => {
     toast.id = id;
     toast.className = `os-toast ${type}`;
     toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-      <i class="bi ${ICONS[type]} os-toast-icon"></i>
-      <span class="os-toast-body">${message}</span>
-      <button class="os-toast-close" aria-label="Fechar">
-        <i class="bi bi-x"></i>
-      </button>
-    `;
 
-    toast.querySelector('.os-toast-close').addEventListener('click', () => _remove(toast));
+    const icon = document.createElement('i');
+    icon.className = `bi ${ICONS[type]} os-toast-icon`;
+
+    const body = document.createElement('span');
+    body.className = 'os-toast-body';
+    body.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'os-toast-close';
+    closeBtn.setAttribute('aria-label', 'Fechar');
+    closeBtn.innerHTML = '<i class="bi bi-x"></i>';
+    closeBtn.addEventListener('click', () => _remove(toast));
+
+    toast.append(icon, body, closeBtn);
 
     container.appendChild(toast);
 

@@ -95,6 +95,21 @@
 
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
     .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+
+    .lbr-codigo   { color: var(--primary); text-decoration: none; font-weight: 700; }
+    .lbr-cliente  { font-size: 12px; font-weight: 600; max-width: 140px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lbr-data     { font-size: 11px; }
+    .lbr-dest     { font-size: 11px; max-width: 160px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lbr-erro     { font-size: 9px; color: #dc2626; cursor: help; }
+    .lbr-btn      { width: 28px; height: 28px; }
+    .lbr-btn i    { font-size: 11px; }
+    .lbr-btn-send   { background: #0d9488; }
+    .lbr-btn-cancel { background: #dc2626; }
+
+    .wa-qr-img    { width: 220px; height: 220px; }
+    .wa-qr-json   { font-size: 12px; }
   </style>
 </head>
 <body>
@@ -411,14 +426,31 @@ async function gerarQR() {
     const cont = document.getElementById('qr-container');
     cont.style.display = 'block';
     const qrBase64 = body.data?.base64 || body.data?.qrcode?.base64 || body.data?.qr;
+    cont.textContent = '';
     if (qrBase64) {
-      cont.innerHTML = `<div class="wa-qr-wrap"><img src="${qrBase64.startsWith('data:') ? qrBase64 : 'data:image/png;base64,'+qrBase64}" style="width:220px;height:220px"></div>`;
+      const wrap = document.createElement('div');
+      wrap.className = 'wa-qr-wrap';
+      const img = document.createElement('img');
+      img.className = 'wa-qr-img';
+      img.src = qrBase64.startsWith('data:') ? qrBase64 : 'data:image/png;base64,' + qrBase64;
+      wrap.appendChild(img);
+      cont.appendChild(wrap);
       document.getElementById('qr-hint').textContent = 'O QR expira em 30 segundos. Escaneie rapidamente.';
     } else {
-      cont.innerHTML = `<div class="alert alert-info" style="font-size:12px">${JSON.stringify(body.data, null, 2)}</div>`;
+      const alert = document.createElement('div');
+      alert.className = 'alert alert-info wa-qr-json';
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(body.data, null, 2);
+      alert.appendChild(pre);
+      cont.appendChild(alert);
     }
   } catch (e) {
-    document.getElementById('qr-loading').innerHTML = `<span class="text-danger">${e.message}</span>`;
+    const span = document.createElement('span');
+    span.className = 'text-danger';
+    span.textContent = e.message;
+    const loading = document.getElementById('qr-loading');
+    loading.textContent = '';
+    loading.appendChild(span);
   }
 }
 
@@ -446,7 +478,7 @@ async function buscarLembretes(page = 1) {
     renderPaginacao();
   } catch (err) {
     document.getElementById('lembretes-tbody').innerHTML =
-      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${err.message}</div></td></tr>`;
+      `<tr><td colspan="10" class="text-center py-5"><div class="empty-state"><i class="bi bi-exclamation-circle"></i>${esc(err.message)}</div></td></tr>`;
   }
 }
 
@@ -471,30 +503,40 @@ function renderTabela(rows) {
     const canalIcon = r.canal === 'whatsapp' ? 'bi-whatsapp' : r.canal === 'sistema' ? 'bi-bell' : 'bi-envelope';
     const isFalhou  = r.status === 'falhou';
     return `<tr>
-      <td><a href="sale-form.html?id=${r.venda_id}" style="color:var(--primary);text-decoration:none;font-weight:700">${r.venda_codigo||'—'}</a></td>
-      <td style="font-size:12px;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.cliente_nome||'—'}</td>
-      <td style="font-size:12px">${r.data_embarque ? fmtDateShort(r.data_embarque) : '—'}</td>
-      <td><span class="tipo-badge">${TIPO_LABELS[r.tipo]||r.tipo}</span></td>
-      <td><span class="canal-badge ${canalCls}"><i class="bi ${canalIcon}"></i>${r.canal}</span></td>
-      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.destinatario_email||r.destinatario_nome||'—'}</td>
-      <td style="font-size:11px">${fmtDate(r.agendado_para)}</td>
-      <td style="font-size:11px">${r.enviado_em ? fmtDate(r.enviado_em) : '—'}</td>
+      <td><a href="sale-form.html?id=${encodeURIComponent(r.venda_id)}" class="lbr-codigo">${esc(r.venda_codigo||'—')}</a></td>
+      <td class="lbr-cliente">${esc(r.cliente_nome||'—')}</td>
+      <td class="lbr-data">${r.data_embarque ? fmtDateShort(r.data_embarque) : '—'}</td>
+      <td><span class="tipo-badge">${esc(TIPO_LABELS[r.tipo]||r.tipo)}</span></td>
+      <td><span class="canal-badge ${canalCls}"><i class="bi ${canalIcon}"></i>${esc(r.canal)}</span></td>
+      <td class="lbr-dest">${esc(r.destinatario_email||r.destinatario_nome||'—')}</td>
+      <td class="lbr-data">${fmtDate(r.agendado_para)}</td>
+      <td class="lbr-data">${r.enviado_em ? fmtDate(r.enviado_em) : '—'}</td>
       <td>
-        <span class="status-badge ${r.status}">${r.status}</span>
-        ${isFalhou && r.erro ? `<br><span style="font-size:9px;color:#dc2626" title="${r.erro}"><i class="bi bi-info-circle"></i> ver erro</span>` : ''}
+        <span class="status-badge ${esc(r.status)}">${esc(r.status)}</span>
+        ${isFalhou && r.erro ? `<br><span class="lbr-erro" data-erro="${esc(r.erro)}"><i class="bi bi-info-circle"></i> ver erro</span>` : ''}
       </td>
       <td>
         <div class="d-flex gap-1">
-          ${r.status !== 'cancelado' ? `<button class="acc-teal-btn" style="width:28px;height:28px;background:#0d9488"
-            title="Disparar agora" onclick="disparar(${r.id})">
-            <i class="bi bi-send" style="font-size:11px"></i></button>` : ''}
-          ${r.status === 'agendado' ? `<button class="acc-teal-btn" style="width:28px;height:28px;background:#dc2626"
-            title="Cancelar" onclick="cancelar(${r.id})">
-            <i class="bi bi-x-lg" style="font-size:11px"></i></button>` : ''}
+          ${r.status !== 'cancelado' ? `<button class="acc-teal-btn lbr-btn lbr-btn-send"
+            title="Disparar agora" data-id="${r.id}" data-action="disparar"><i class="bi bi-send"></i></button>` : ''}
+          ${r.status === 'agendado' ? `<button class="acc-teal-btn lbr-btn lbr-btn-cancel"
+            title="Cancelar" data-id="${r.id}" data-action="cancelar"><i class="bi bi-x-lg"></i></button>` : ''}
         </div>
       </td>
     </tr>`;
   }).join('');
+
+  // Delegação de eventos (substitui onclick inline)
+  tbody.querySelectorAll('.lbr-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      if (btn.dataset.action === 'disparar') disparar(id);
+      else if (btn.dataset.action === 'cancelar') cancelar(id);
+    });
+  });
+  tbody.querySelectorAll('.lbr-erro').forEach(el => {
+    el.title = el.dataset.erro || '';
+  });
 }
 
 async function disparar(id) {

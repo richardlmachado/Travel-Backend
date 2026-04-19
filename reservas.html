@@ -475,24 +475,25 @@ function buildSaleCard(sale) {
     <button class="sale-card-action-btn" title="Pagamentos"><i class="bi bi-cash"></i></button>
     <button class="sale-card-action-btn" title="Passageiros"><i class="bi bi-people"></i></button>
   ` : '';
+  const idSafe = encodeURIComponent(sale.id);
   return `
-    <div class="sale-card" onclick="window.location.href='sale-form.html?n=${sale.id}'">
+    <div class="sale-card" data-sale-id="${esc(sale.id)}">
       <div class="sale-card-header ${hCls}">
-        <span class="sale-card-number">VENDA ${sale.number}</span>
+        <span class="sale-card-number">VENDA ${esc(sale.number)}</span>
         <div class="sale-card-actions">
-          <button class="sale-card-action-btn" title="Editar" onclick="event.stopPropagation();window.location.href='sale-form.html?n=${sale.id}'"><i class="bi bi-pencil"></i></button>
-          <button class="sale-card-action-btn" title="Duplicar" onclick="event.stopPropagation()"><i class="bi bi-copy"></i></button>
+          <button class="sale-card-action-btn sc-edit-btn" data-sale-id="${esc(sale.id)}" title="Editar"><i class="bi bi-pencil"></i></button>
+          <button class="sale-card-action-btn sc-dup-btn" title="Duplicar"><i class="bi bi-copy"></i></button>
           ${extraActions}
         </div>
       </div>
       <div class="sale-card-body">
         <div class="sale-status-dots">${statusDots}</div>
-        <div class="sale-card-client" title="${sale.clientName}">${sale.clientName}</div>
+        <div class="sale-card-client" title="${esc(sale.clientName)}">${esc(sale.clientName)}</div>
         <div class="sale-card-value">${fmtMoney(sale.grossTotal)}</div>
-        <div class="sale-card-period"><i class="bi bi-calendar2 me-1"></i>${sale.startDate} - ${sale.endDate}</div>
-        ${sale.supplier ? `<div class="sale-card-supplier"><i class="bi bi-building me-1"></i>${sale.supplier}</div>` : ''}
+        <div class="sale-card-period"><i class="bi bi-calendar2 me-1"></i>${esc(sale.startDate)} - ${esc(sale.endDate)}</div>
+        ${sale.supplier ? `<div class="sale-card-supplier"><i class="bi bi-building me-1"></i>${esc(sale.supplier)}</div>` : ''}
         <div class="sale-card-footer">
-          <i class="bi bi-clock me-1"></i>Criada em: ${sale.createdAt} — ${sale.consultant}
+          <i class="bi bi-clock me-1"></i>Criada em: ${esc(sale.createdAt)} — ${esc(sale.consultant)}
         </div>
       </div>
     </div>`;
@@ -512,6 +513,22 @@ function renderCards(sales) {
     return;
   }
   container.innerHTML = sales.map(buildSaleCard).join('');
+
+  container.querySelectorAll('.sale-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.sale-card-action-btn')) return;
+      window.location.href = `sale-form.html?n=${encodeURIComponent(card.dataset.saleId)}`;
+    });
+  });
+  container.querySelectorAll('.sc-edit-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      window.location.href = `sale-form.html?n=${encodeURIComponent(btn.dataset.saleId)}`;
+    });
+  });
+  container.querySelectorAll('.sc-dup-btn').forEach(btn => {
+    btn.addEventListener('click', e => e.stopPropagation());
+  });
 }
 
 function showLoadingCards() {
@@ -617,7 +634,7 @@ function updateSummaryFromData(sales) {
 /* ── Currency dropdown ──────────────────────────────────────── */
 function populateCurrencies() {
   const sel = document.getElementById('currency-filter');
-  sel.innerHTML = CURRENCIES.map(c => `<option value="${c.code}">${c.label} (${c.code})</option>`).join('');
+  sel.innerHTML = CURRENCIES.map(c => `<option value="${esc(c.code)}">${esc(c.label)} (${esc(c.code)})</option>`).join('');
 }
 
 /* ── Search Modal ───────────────────────────────────────────── */

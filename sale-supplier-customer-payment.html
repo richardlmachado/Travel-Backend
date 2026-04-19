@@ -221,11 +221,21 @@ function showAC(entryId, items) {
     dd.className = 'autocomplete-dropdown';
     wrap.appendChild(dd);
   }
-  dd.innerHTML = items.map(c =>
-    `<div class="autocomplete-item" onclick="selectPagante('${entryId}',${c.id},${JSON.stringify(c.nome).replace(/</g,'&lt;')})">
-       ${c.nome}${c.cpf?` — ${c.cpf}`:''}
-     </div>`
-  ).join('') || '<div class="autocomplete-item text-muted">Nenhum resultado</div>';
+  dd.textContent = '';
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'autocomplete-item text-muted';
+    empty.textContent = 'Nenhum resultado';
+    dd.appendChild(empty);
+    return;
+  }
+  for (const c of items) {
+    const item = document.createElement('div');
+    item.className = 'autocomplete-item';
+    item.textContent = c.cpf ? `${c.nome} — ${c.cpf}` : c.nome;
+    item.addEventListener('click', () => selectPagante(entryId, c.id, c.nome));
+    dd.appendChild(item);
+  }
 }
 
 function selectPagante(entryId, id, nome) {
@@ -379,7 +389,7 @@ async function salvar() {
       const stateEntry = payEntries[item.id]?.find(e => e.entryId === entryId);
       const moeda  = entryEl.querySelector('.pe-moeda')?.value || 'BRL';
       const forma  = entryEl.querySelector('.pe-forma')?.value || 'Pix';
-      const nParc  = parseInt(entryEl.querySelector('.pe-parcelas')?.value || 1);
+      const nParc  = parseInt(entryEl.querySelector('.pe-parcelas')?.value || 1, 10);
       const venc   = entryEl.querySelector('.pe-venc')?.value || '';
       const paganteId = stateEntry?.pagante_id || null;
 

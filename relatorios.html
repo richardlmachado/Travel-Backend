@@ -586,7 +586,7 @@ async function buscarVendas() {
     </div>`;
     $('v-table-body').innerHTML = html;
   } catch(e) {
-    $('v-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+    $('v-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${esc(e.message||'Erro ao carregar')}</div>`;
   }
 }
 
@@ -669,7 +669,7 @@ async function buscarDRE() {
     dreData = await Auth.apiFetch('/api/financeiro/dre?' + params).then(r => r.json());
     renderDRE(dreData);
   } catch(e) {
-    $('f-dre-wrap').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar DRE'}</div>`;
+    $('f-dre-wrap').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${esc(e.message||'Erro ao carregar DRE')}</div>`;
   }
 }
 
@@ -908,7 +908,7 @@ async function buscarComissoes() {
     </div>`;
     $('c-table-body').innerHTML = html;
   } catch(e) {
-    $('c-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+    $('c-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${esc(e.message||'Erro ao carregar')}</div>`;
   }
 }
 
@@ -1038,7 +1038,7 @@ async function buscarClientes() {
     </div>`;
     $('cl-table-body').innerHTML = html;
   } catch(e) {
-    $('cl-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${e.message||'Erro ao carregar'}</div>`;
+    $('cl-table-body').innerHTML = `<div class="empty-rel"><i class="bi bi-exclamation-triangle"></i>${esc(e.message||'Erro ao carregar')}</div>`;
   }
 }
 

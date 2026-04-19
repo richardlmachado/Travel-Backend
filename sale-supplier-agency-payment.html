@@ -299,7 +299,7 @@ async function salvar() {
       if (valor <= 0) return;
       const moeda  = entryEl.querySelector('.pe-moeda')?.value || 'BRL';
       const forma  = entryEl.querySelector('.pe-forma')?.value || 'Pix';
-      const nParc  = parseInt(entryEl.querySelector('.pe-parcelas')?.value || 1);
+      const nParc  = parseInt(entryEl.querySelector('.pe-parcelas')?.value || 1, 10);
       const venc   = entryEl.querySelector('.pe-venc')?.value || '';
       const status = entryEl.querySelector('.pe-status')?.value || 'pendente';
 
