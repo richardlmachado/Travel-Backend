@@ -312,6 +312,7 @@
   const modalFornecedor = new bootstrap.Modal('#modalFornecedor');
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const TIPO_FORN = { operadora:'Operadora', consolidadora:'Consolidadora', hotel:'Hotel', aerea:'Aérea', seguro:'Seguro', outro:'Outro' };
 
   // ── Tabs ─────────────────────────────────────────────────────
@@ -349,7 +350,7 @@
     const sel = document.getElementById('c-agente');
     const cur = sel.value;
     sel.innerHTML = '<option value="">Sem agente específico</option>' +
-      data.data.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+      data.data.map(u => `<option value="${u.id}">${esc(u.nome)}</option>`).join('');
     if (cur) sel.value = cur;
   }
 
@@ -376,22 +377,22 @@
       <tr>
         <td>
           <div class="d-flex align-items-center gap-2">
-            <div class="os-avatar sm">${(c.nome||'?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()}</div>
+            <div class="os-avatar sm">${esc((c.nome||'?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase())}</div>
             <div>
-              <div class="fw-600">${c.nome}</div>
-              <div class="text-muted" style="font-size:11px">${c.email||'—'}</div>
+              <div class="fw-600">${esc(c.nome)}</div>
+              <div class="text-muted" style="font-size:11px">${esc(c.email)||'—'}</div>
             </div>
           </div>
         </td>
-        <td>${c.telefone||c.whatsapp||'—'}</td>
-        <td>${c.cpf||c.passaporte||'—'}</td>
-        <td>${c.agente_nome||'—'}</td>
+        <td>${esc(c.telefone||c.whatsapp)||'—'}</td>
+        <td>${esc(c.cpf||c.passaporte)||'—'}</td>
+        <td>${esc(c.agente_nome)||'—'}</td>
         <td>${fmtDate(c.criado_em)}</td>
         <td class="text-end">
           <button class="os-icon-btn btn-edit-cliente" data-id="${c.id}" title="Editar">
             <i class="bi bi-pencil-fill"></i>
           </button>
-          <button class="os-icon-btn text-danger btn-del-cliente" data-id="${c.id}" data-nome="${c.nome}" title="Excluir">
+          <button class="os-icon-btn text-danger btn-del-cliente" data-id="${c.id}" data-nome="${esc(c.nome)}" title="Excluir">
             <i class="bi bi-trash-fill"></i>
           </button>
         </td>

@@ -22,11 +22,14 @@ services:
     environment:
       - DB_HOST=travelos-db
       - DB_USER=travelos
-      - DB_PASS=***REDACTED-DB***
+      - DB_PASS=${DB_PASS}
       - DB_NAME=travelos
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=https://app.srv1589437.hstgr.cloud
+      - CANAL_LEMBRETE_PADRAO=email
       - EVOLUTION_API_URL=http://evolution-api:8080
-      - EVOLUTION_API_KEY=***REDACTED-EVO***
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
       - EVOLUTION_INSTANCE=travelos
     depends_on:
       travelos-db:
@@ -45,10 +48,10 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=***REDACTED-DBROOT***
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=travelos
       - MYSQL_USER=travelos
-      - MYSQL_PASSWORD=***REDACTED-DB***
+      - MYSQL_PASSWORD=${DB_PASS}
     volumes:
       - travelos_db:/var/lib/mysql
       - /docker/travelos/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -1,24 +1,57 @@
-const express  = require('express');
-const mysql    = require('mysql2/promise');
-const cors     = require('cors');
-const bcrypt   = require('bcryptjs');
-const jwt      = require('jsonwebtoken');
+const express   = require('express');
+const mysql     = require('mysql2/promise');
+const cors      = require('cors');
+const bcrypt    = require('bcryptjs');
+const jwt       = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 
 const app        = express();
-const JWT_SECRET = process.env.JWT_SECRET || 'travelos_secret_2025';
+const JWT_SECRET = process.env.JWT_SECRET;
 const PORT       = process.env.PORT || 3000;
 
-app.use(cors());
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('[FATAL] JWT_SECRET ausente ou menor que 32 caracteres — abortando.');
+  process.exit(1);
+}
+if (!process.env.DB_PASS) {
+  console.error('[FATAL] DB_PASS ausente — abortando.');
+  process.exit(1);
+}
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://app.srv1589437.hstgr.cloud')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error('Origem não permitida: ' + origin));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 app.use(express.json());
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Muitas tentativas. Aguarde 15 minutos.' },
+});
 
 // Pool MySQL
 const pool = mysql.createPool({
-  host:               process.env.DB_HOST || 'travelos-db',
-  user:               process.env.DB_USER || 'travelos',
-  password:           process.env.DB_PASS || '***REDACTED-DB***',
-  database:           process.env.DB_NAME || 'travelos',
-  waitForConnections: true,
-  connectionLimit:    10,
+  host:                  process.env.DB_HOST || 'travelos-db',
+  user:                  process.env.DB_USER || 'travelos',
+  password:              process.env.DB_PASS,
+  database:              process.env.DB_NAME || 'travelos',
+  waitForConnections:    true,
+  connectionLimit:       10,
+  queueLimit:            50,
+  connectTimeout:        10000,
+  enableKeepAlive:       true,
+  keepAliveInitialDelay: 10000,
 });
 
 // ── Middleware JWT ────────────────────────────────────────────
@@ -96,37 +129,48 @@ async function audit(tabela, registro_id, acao, campo, valor_antes, valor_depois
 }
 
 // ── Comissão engine ──────────────────────────────────────────
+// Usa conexão dedicada + SELECT ... FOR UPDATE para serializar leituras
+// concorrentes do acumulado mensal (evita dupla aplicação do mesmo teto).
 async function calcularComissao(reserva_id, agente_id, origem_lead, valor_venda, mes_referencia) {
-  let percentual;
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    let percentual;
 
-  if (origem_lead === 'agente') {
-    percentual = 50;
-  } else {
-    // Busca acumulado do mês ANTES desta venda
-    const [[{ acumulado }]] = await pool.query(
-      `SELECT COALESCE(SUM(valor_comissao),0) as acumulado
-       FROM comissoes
-       WHERE agente_id = ? AND mes_referencia = ? AND status != 'estornado'`,
-      [agente_id, mes_referencia]
+    if (origem_lead === 'agente') {
+      percentual = 50;
+    } else {
+      const [[{ acumulado }]] = await conn.query(
+        `SELECT COALESCE(SUM(valor_comissao),0) as acumulado
+         FROM comissoes
+         WHERE agente_id = ? AND mes_referencia = ? AND status != 'estornado'
+         FOR UPDATE`,
+        [agente_id, mes_referencia]
+      );
+
+      if (acumulado >= 30000)      percentual = 30;
+      else if (acumulado >= 10000) percentual = 20 + Math.floor((acumulado - 10000) / 2000) + 1;
+      else                         percentual = 20;
+
+      percentual = Math.min(percentual, 30);
+    }
+
+    const valor_comissao = +(valor_venda * percentual / 100).toFixed(2);
+
+    await conn.query(
+      `INSERT INTO comissoes (reserva_id,agente_id,origem_lead,percentual,valor_venda,valor_comissao,mes_referencia)
+       VALUES (?,?,?,?,?,?,?)`,
+      [reserva_id, agente_id, origem_lead, percentual, valor_venda, valor_comissao, mes_referencia]
     );
 
-    // Tabela progressiva: 20% até 10k, +1% a cada 2k, teto 30%
-    if (acumulado >= 30000)      percentual = 30;
-    else if (acumulado >= 10000) percentual = 20 + Math.floor((acumulado - 10000) / 2000) + 1;
-    else                         percentual = 20;
-
-    percentual = Math.min(percentual, 30);
+    await conn.commit();
+    return { percentual, valor_comissao };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-
-  const valor_comissao = +(valor_venda * percentual / 100).toFixed(2);
-
-  await pool.query(
-    `INSERT INTO comissoes (reserva_id,agente_id,origem_lead,percentual,valor_venda,valor_comissao,mes_referencia)
-     VALUES (?,?,?,?,?,?,?)`,
-    [reserva_id, agente_id, origem_lead, percentual, valor_venda, valor_comissao, mes_referencia]
-  );
-
-  return { percentual, valor_comissao };
 }
 
 // ── Health ────────────────────────────────────────────────────
@@ -135,7 +179,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── Auth ──────────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
     if (!email || !senha)
@@ -344,11 +388,15 @@ app.get('/api/fornecedores', auth, checkPerm('fornecedores','ver'), async (req, 
 
 app.get('/api/fornecedores/:id', auth, checkPerm('fornecedores','ver'), async (req, res) => {
   try {
-    const [[f]] = await pool.query('SELECT * FROM fornecedores WHERE id=?', [req.params.id]);
+    const [[f]] = await pool.query(
+      'SELECT * FROM fornecedores WHERE id=? AND loja_id=?',
+      [req.params.id, req.user.loja_id]
+    );
     if (!f) return res.status(404).json({ ok: false, error: 'Fornecedor não encontrado' });
     const [reservas] = await pool.query(
       `SELECT r.codigo, r.destino, r.status, r.valor_total, r.criado_em FROM reservas r
-       WHERE r.fornecedor_id = ? ORDER BY r.criado_em DESC LIMIT 20`, [req.params.id]
+       WHERE r.fornecedor_id = ? AND r.loja_id = ? ORDER BY r.criado_em DESC LIMIT 20`,
+      [req.params.id, req.user.loja_id]
     );
     res.json({ ok: true, data: { ...f, reservas } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -373,8 +421,8 @@ app.put('/api/fornecedores/:id', auth, checkPerm('fornecedores','editar'), async
     const { nome, razao_social, cnpj, tipo, contato_nome, contato_email, contato_telefone, condicoes_pgto, comissao_padrao, observacoes } = req.body;
     await pool.query(
       `UPDATE fornecedores SET nome=?,razao_social=?,cnpj=?,tipo=?,contato_nome=?,contato_email=?,
-       contato_telefone=?,condicoes_pgto=?,comissao_padrao=?,observacoes=? WHERE id=?`,
-      [nome, razao_social, cnpj, tipo, contato_nome, contato_email, contato_telefone, condicoes_pgto, comissao_padrao, observacoes, req.params.id]
+       contato_telefone=?,condicoes_pgto=?,comissao_padrao=?,observacoes=? WHERE id=? AND loja_id=?`,
+      [nome, razao_social, cnpj, tipo, contato_nome, contato_email, contato_telefone, condicoes_pgto, comissao_padrao, observacoes, req.params.id, req.user.loja_id]
     );
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -382,7 +430,8 @@ app.put('/api/fornecedores/:id', auth, checkPerm('fornecedores','editar'), async
 
 app.delete('/api/fornecedores/:id', auth, checkPerm('fornecedores','excluir'), async (req, res) => {
   try {
-    await pool.query('UPDATE fornecedores SET ativo=0 WHERE id=?', [req.params.id]);
+    await pool.query('UPDATE fornecedores SET ativo=0 WHERE id=? AND loja_id=?',
+      [req.params.id, req.user.loja_id]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -392,7 +441,7 @@ app.get('/api/reservas', auth, async (req, res) => {
   try {
     const { status, tipo_produto, agente_id, page = 1, limit = 20, q } = req.query;
     const offset = (page - 1) * limit;
-    let where = 'WHERE (r.loja_id = ? OR r.loja_id IS NULL)', params = [req.user.loja_id];
+    let where = 'WHERE r.loja_id = ?', params = [req.user.loja_id];
 
     // Agente só vê suas próprias reservas
     if (req.user.role === 'agente') {
@@ -497,7 +546,7 @@ app.put('/api/reservas/:id', auth, async (req, res) => {
        status_pgto, vencimento||null, observacoes, req.params.id]
     );
 
-    await audit('reservas', req.params.id, 'edicao', 'geral', null, destino, req.user.id);
+    await audit('reservas', req.params.id, 'edicao', 'geral', null, destino, req.user.id, req.user.loja_id);
     broadcast('reserva_atualizada', { id: req.params.id });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -509,7 +558,7 @@ app.patch('/api/reservas/:id/status', auth, async (req, res) => {
     const [[old]] = await pool.query('SELECT status, agente_id, origem_lead, valor_total FROM reservas WHERE id=?', [req.params.id]);
 
     await pool.query('UPDATE reservas SET status=? WHERE id=?', [status, req.params.id]);
-    await audit('reservas', req.params.id, 'status', 'status', old.status, status, req.user.id);
+    await audit('reservas', req.params.id, 'status', 'status', old.status, status, req.user.id, req.user.loja_id);
 
     // Gera comissão ao confirmar
     if (status === 'confirmada' && old.status !== 'confirmada' && old.agente_id) {
@@ -639,18 +688,28 @@ app.get('/api/eventos', (req, res) => {
   if (!token) return res.status(401).json({ ok: false, error: 'Não autorizado' });
   try { req.user = jwt.verify(token, JWT_SECRET); } catch { return res.status(401).json({ ok: false, error: 'Token inválido' }); }
 
-  res.setHeader('Content-Type',  'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection',    'keep-alive');
+  res.setHeader('Content-Type',       'text/event-stream');
+  res.setHeader('Cache-Control',      'no-cache');
+  res.setHeader('Connection',         'keep-alive');
+  res.setHeader('X-Accel-Buffering',  'no');
   res.flushHeaders();
   sseClients.add(res);
-  req.on('close', () => sseClients.delete(res));
+
+  const heartbeat = setInterval(() => {
+    try { res.write(':heartbeat\n\n'); }
+    catch { clearInterval(heartbeat); sseClients.delete(res); }
+  }, 25000);
+
+  req.on('close', () => { clearInterval(heartbeat); sseClients.delete(res); });
   res.write(`data: ${JSON.stringify({ tipo: 'conectado', ts: new Date().toISOString() })}\n\n`);
 });
 
 function broadcast(tipo, payload) {
   const msg = `data: ${JSON.stringify({ tipo, payload, ts: new Date().toISOString() })}\n\n`;
-  sseClients.forEach(client => client.write(msg));
+  sseClients.forEach(client => {
+    try { client.write(msg); }
+    catch { sseClients.delete(client); }
+  });
 }
 
 // ── Vendas ────────────────────────────────────────────────────
@@ -661,15 +720,14 @@ function broadcast(tipo, payload) {
  */
 async function gerarCodigoVenda(conn, loja_id, data_abertura) {
   const dia = (data_abertura || new Date().toISOString().slice(0, 10));
+  // LAST_INSERT_ID(expr) grava e devolve o valor atômico desta conexão,
+  // evitando race entre INSERT e SELECT em dois comandos separados.
   await conn.query(
     `INSERT INTO vendas_seq (loja_id, dia, seq) VALUES (?, ?, 1)
-     ON DUPLICATE KEY UPDATE seq = seq + 1`,
+     ON DUPLICATE KEY UPDATE seq = LAST_INSERT_ID(seq + 1)`,
     [loja_id, dia]
   );
-  const [[{ seq }]] = await conn.query(
-    'SELECT seq FROM vendas_seq WHERE loja_id = ? AND dia = ?',
-    [loja_id, dia]
-  );
+  const [[{ seq }]] = await conn.query('SELECT LAST_INSERT_ID() AS seq');
   const ymd = dia.replace(/-/g, '');
   return `${ymd}-${String(seq).padStart(4, '0')}`;
 }
@@ -711,7 +769,9 @@ app.get('/api/vendas', auth, checkPerm('vendas','ver'), async (req, res) => {
               v.total_custo, v.total_venda, v.data_abertura, v.data_fechamento,
               v.cotacao_validade, v.criado_em,
               c.nome  AS cliente_nome,  c.tipo_pessoa,
-              u.nome  AS agente_nome
+              u.nome  AS agente_nome,
+              (SELECT MIN(vi.data_inicio) FROM venda_itens vi WHERE vi.venda_id = v.id) AS data_viagem_inicio,
+              (SELECT MAX(vi.data_fim)    FROM venda_itens vi WHERE vi.venda_id = v.id) AS data_viagem_fim
          FROM vendas v
          LEFT JOIN clientes  c ON v.cliente_id = c.id
          LEFT JOIN usuarios  u ON v.agente_id  = u.id
@@ -1188,10 +1248,26 @@ app.post('/api/vendas/:id/pagamentos/sync', auth, checkPerm('financeiro','editar
 
     await conn.query('DELETE FROM pagamentos WHERE venda_id=? AND loja_id=? AND tipo=?', [req.params.id, req.user.loja_id, tipo]);
 
+    const MOEDAS_VALIDAS = ['BRL', 'USD', 'EUR', 'ARS', 'GBP', 'CLP'];
     const ids = [];
     for (const pag of pagamentos) {
       const valor = +(pag.valor || 0);
       if (valor <= 0) continue;
+
+      if (pag.moeda && !MOEDAS_VALIDAS.includes(pag.moeda)) {
+        throw new Error(`Moeda inválida: ${pag.moeda}`);
+      }
+
+      if (pag.pagante_id) {
+        const [rows] = await conn.query(
+          `SELECT 1 FROM clientes WHERE id=? AND loja_id=?
+           UNION ALL
+           SELECT 1 FROM fornecedores WHERE id=? AND loja_id=?
+           LIMIT 1`,
+          [pag.pagante_id, req.user.loja_id, pag.pagante_id, req.user.loja_id]
+        );
+        if (!rows.length) throw new Error(`pagante_id ${pag.pagante_id} não pertence a esta loja`);
+      }
 
       const [r] = await conn.query(
         `INSERT INTO pagamentos
@@ -2011,19 +2087,22 @@ async function checkAndDispararLembretes() {
          )
        GROUP BY v.id`);
 
+    const canalPadrao = (process.env.CANAL_LEMBRETE_PADRAO || 'email').toLowerCase();
+
     for (const v of vendas) {
       const assunto = `Lembrete de Embarque — ${v.codigo}`;
+      const canalEscolhido = (canalPadrao === 'whatsapp' && v.cliente_telefone) ? 'whatsapp' : 'email';
       const [ins] = await pool.query(
         `INSERT INTO venda_lembretes
            (loja_id, venda_id, tipo, canal, status, agendado_para,
             destinatario_email, destinatario_nome, assunto, disparado_por, criado_por)
          VALUES (?,?,?,?,?,NOW(),?,?,?,?,?)`,
-        [v.loja_id, v.id, 'checkin_48h', 'email', 'agendado',
+        [v.loja_id, v.id, 'checkin_48h', canalEscolhido, 'agendado',
          v.cliente_email, v.cliente_nome, assunto, 'automatico', v.agente_id]
       );
       const lembreteId = ins.insertId;
       try {
-        if (v.canal === 'whatsapp' && v.cliente_telefone) {
+        if (canalEscolhido === 'whatsapp') {
           await enviarWhatsAppLembrete({ telefone: v.cliente_telefone, mensagem: null, venda_codigo: v.codigo });
         } else {
           await enviarEmailLembrete({ ...v, assunto });
@@ -2044,9 +2123,13 @@ async function checkAndDispararLembretes() {
   } catch (e) { console.error('[CRON] Erro no checkLembretes:', e.message); }
 }
 
-// Roda ao iniciar e a cada hora
-checkAndDispararLembretes();
-setInterval(checkAndDispararLembretes, 60 * 60 * 1000);
+// Roda ao iniciar e a cada hora, blindado contra rejeições não tratadas
+async function runCronSafely() {
+  try { await checkAndDispararLembretes(); }
+  catch (e) { console.error('[CRON] falha não tratada:', e); }
+}
+runCronSafely();
+setInterval(runCronSafely, 60 * 60 * 1000);
 
 // GET /api/lembretes — lista todos os lembretes
 app.get('/api/lembretes', auth, checkPerm('lembretes','ver'), async (req, res) => {
