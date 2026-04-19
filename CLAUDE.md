@@ -15,12 +15,15 @@ Infra: VPS Ubuntu 24.04, Docker Compose (nginx + API + MySQL + Traefik HTTPS). U
 
 Front + back em paralelo. Front copia estáticos para `/var/www/travelos/` (bind-mount do nginx Docker). Back faz rebuild do container da API.
 
+Credenciais de SSH e VPS estão em `c:/tmp/deploy.py` (fora do repo) e nunca devem vir para cá.
+
 ```bash
 # Frontend
 py -3 c:/tmp/deploy.py
 
-# Backend (só quando server.js mudar)
-py -3 -c "import paramiko; ssh=paramiko.SSHClient(); ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()); ssh.connect('31.97.250.95',username='root',password='***REDACTED-SSH***',timeout=15); _,o,_=ssh.exec_command('cd /docker/travelos && docker compose up -d --build travelos-api 2>&1'); print(o.read().decode()); ssh.close()"
+# Backend (só quando server.js mudar) — usar o script local c:/tmp/deploy_api.py
+# que lê SSH credentials do ambiente e executa:
+#   docker compose up -d --build travelos-api
 ```
 
 `deploy.py` ignora: `.git`, `.claude`, `CLAUDE.md`, `SPEC.md`, `node_modules`, `.next`, `package*.json`, `migrate_sprint2.sql`.
@@ -58,6 +61,6 @@ Repositório: `https://github.com/richardlmachado/Travel-Backend`
 - Nunca usar React, Vue, Angular, TypeScript, jQuery ou `var`
 - Nunca usar `!important` no CSS nem estilos inline no HTML
 - Nunca mockar dados — usar `Auth.apiFetch` contra a API real
-- Nunca alterar `migrate_sprint2.sql` sem aplicar no container: `docker exec travelos-travelos-db-1 mysql -u travelos -p***REDACTED-DB*** travelos < arquivo.sql`
+- Nunca alterar `migrate_sprint2.sql` sem aplicar no container. Senha do DB está em `/docker/travelos/.env` no VPS — usar `docker exec -i travelos-travelos-db-1 mysql -u travelos -p"$DB_PASS" travelos < arquivo.sql`
 - Nunca encerrar uma sessão de alterações sem rodar o deploy acima
 - Nunca encerrar uma sessão sem fazer push para o GitHub
